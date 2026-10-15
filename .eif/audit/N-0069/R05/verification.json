@@ -1,0 +1,148 @@
+{
+  "task": "R05 only",
+  "baselineCommit": "37118f59da8692875bb4c881cd9994697d91c60d",
+  "testTimeout": 30000,
+  "finalPool": "threads",
+  "finalRunsSequential": true,
+  "repositorySuiteGreen": false,
+  "nodeAccepted": false,
+  "receipts": [
+    {
+      "command": "npx vitest run src/lib/training/__tests__/weeklyProgrammeValidator.test.ts src/lib/training/__tests__/weeklyProgramme.test.ts src/lib/training/__tests__/exerciseEligibility.test.ts --reporter=verbose",
+      "cwd": "C:/Reclaim-R05-verify-20261014/app",
+      "log": "isolated-focused-final.txt",
+      "exitCode": 0,
+      "logWorkspaceSha256": "eb3cd1fd9e31a19c86c2c79dee679d78dd964cb520845ae0eb9c6e46730f9ac1",
+      "logGitNormalizedSha256": "eb3cd1fd9e31a19c86c2c79dee679d78dd964cb520845ae0eb9c6e46730f9ac1",
+      "passed": 119,
+      "failed": 0,
+      "files": 2,
+      "note": "91 R05 plus 28 R03. Obsolete weeklyProgramme.test.ts selector matches no file; R04 run separately."
+    },
+    {
+      "command": "npx vitest run src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts --reporter=verbose",
+      "cwd": "C:/Reclaim-R05-verify-20261014/app",
+      "log": "isolated-r04-final.txt",
+      "exitCode": 0,
+      "logWorkspaceSha256": "bb2ecac536eb701e52be16a8b03e62cfc0855e6f21794a547c9a8cb9d242939b",
+      "logGitNormalizedSha256": "bb2ecac536eb701e52be16a8b03e62cfc0855e6f21794a547c9a8cb9d242939b",
+      "passed": 21,
+      "failed": 0,
+      "files": 1
+    },
+    {
+      "command": "npm run typecheck",
+      "cwd": "C:/Reclaim-R05-verify-20261014/app",
+      "log": "isolated-typecheck-final.txt",
+      "exitCode": 0,
+      "logWorkspaceSha256": "cd35ebdba9e12b61678eec835bf92424979bd88f78501689ba82b1dffbf391cc",
+      "logGitNormalizedSha256": "cd35ebdba9e12b61678eec835bf92424979bd88f78501689ba82b1dffbf391cc"
+    },
+    {
+      "command": "npm run typecheck",
+      "cwd": "C:/Reclaim/app",
+      "log": "typecheck-final.txt",
+      "exitCode": 0,
+      "logWorkspaceSha256": "cd35ebdba9e12b61678eec835bf92424979bd88f78501689ba82b1dffbf391cc",
+      "logGitNormalizedSha256": "cd35ebdba9e12b61678eec835bf92424979bd88f78501689ba82b1dffbf391cc"
+    },
+    {
+      "command": "npm test -- --reporter=verbose",
+      "cwd": "C:/Reclaim-R05-verify-20261014/app",
+      "log": "isolated-full-final.txt",
+      "exitCode": 1,
+      "logWorkspaceSha256": "ed3ff714f74076500cc61bd8dd82ce5b2886e543e21cd65c8b8350d56b239cba",
+      "logGitNormalizedSha256": "ce97f7cbdca4e0d192ff4f1eacb9aa6bf209d992014e0c55520e71bc1d578c2b",
+      "passed": 1229,
+      "failed": 4,
+      "files": 188,
+      "durationSeconds": 467.52,
+      "classification": "Exactly four committed-baseline failures documented by R04; no new scoped regression."
+    },
+    {
+      "command": "npm test -- --reporter=verbose",
+      "cwd": "C:/Reclaim/app",
+      "log": "full-vitest-final.txt",
+      "exitCode": 1,
+      "logWorkspaceSha256": "a010665e45edfdd8501b8a2818bbc49a544aeaacafc1d22b488f82236c6d1b92",
+      "logGitNormalizedSha256": "a010665e45edfdd8501b8a2818bbc49a544aeaacafc1d22b488f82236c6d1b92",
+      "passed": 1234,
+      "failed": 4,
+      "files": 189,
+      "durationSeconds": 223.53,
+      "classification": "Same four existing mixed-worktree failures documented by R04; no new scoped regression."
+    },
+    {
+      "command": "Git Bash: npm run audit:training-dual-paths",
+      "cwd": "C:/Reclaim-R05-verify-20261014/app",
+      "log": "isolated-dual-path-final.txt",
+      "exitCode": 0,
+      "logWorkspaceSha256": "1270202c5f10caa3fe336c07aeba5ad290635f7696d014daec0e97a5bd999d43",
+      "logGitNormalizedSha256": "1270202c5f10caa3fe336c07aeba5ad290635f7696d014daec0e97a5bd999d43",
+      "passed": 31,
+      "failed": 0
+    },
+    {
+      "command": "Git Bash: npm run audit:training-dual-paths",
+      "cwd": "C:/Reclaim/app",
+      "log": "dual-path-final.txt",
+      "exitCode": 0,
+      "logWorkspaceSha256": "0dd8080c5e0bde3107071dfa1f145f876ad93f92ff87b4e949a572755b35748b",
+      "logGitNormalizedSha256": "0dd8080c5e0bde3107071dfa1f145f876ad93f92ff87b4e949a572755b35748b",
+      "passed": 31,
+      "failed": 0
+    },
+    {
+      "command": "npm run med-catalog-qa",
+      "cwd": "C:/Reclaim/app",
+      "log": "catalogue-final.txt",
+      "exitCode": 0,
+      "logWorkspaceSha256": "8d2c62b1b989cccffe1afe1f2307aa0fe21a2f5d53f054620f09e7a6f86ead2f",
+      "logGitNormalizedSha256": "8d2c62b1b989cccffe1afe1f2307aa0fe21a2f5d53f054620f09e7a6f86ead2f",
+      "rows": 357,
+      "governanceIssues": 0
+    },
+    {
+      "command": "python -m pytest scripts/test_eif_node.py -q",
+      "cwd": "C:/Reclaim",
+      "log": "wrapper-final.txt",
+      "exitCode": 1,
+      "logWorkspaceSha256": "a5d2629eb3c1d0243f36537d63717617fc741b56dc16f86cc5254df4497e0b5a",
+      "logGitNormalizedSha256": "e00be567537a442769784add90a1948e20c253598d1211b2f71cc40428b85ef7",
+      "passed": 1,
+      "failed": 2,
+      "classification": "Established LEASE_NOT_OWNER replay blocker, separate from R05 source correctness."
+    },
+    {
+      "command": "EIF_RUN=R20261015R05 python scripts/eif_node.py status --node N-0069",
+      "cwd": "C:/Reclaim",
+      "log": "eif-status-final.txt",
+      "exitCode": 2,
+      "logWorkspaceSha256": "b5c1ceeb29827828dfcca1d6266d6a92068e893d48ff819c972c435a1327ebd1",
+      "logGitNormalizedSha256": "71d43034ee6f4be5e5cfd6298d1250d2637e32db70f882488e71d31417302590",
+      "classification": "LEASE_NOT_OWNER: R20261014R03; no transition attempted."
+    },
+    {
+      "command": "npx vitest run src/lib/training/__tests__/r05-independent-probe.test.ts --reporter=verbose",
+      "cwd": "C:/Reclaim-R05-verify-20261014/app",
+      "log": "model-probes-legacy-final.txt",
+      "exitCode": 0,
+      "logWorkspaceSha256": "af19431a5144d6800007c7a93661f0090a922d6f2f3fc7f12dd636720de0a1a2",
+      "logGitNormalizedSha256": "af19431a5144d6800007c7a93661f0090a922d6f2f3fc7f12dd636720de0a1a2",
+      "passed": 9,
+      "failed": 0,
+      "independence": "Separate fresh-context agent, gpt-6-astra selected through collaboration tool."
+    },
+    {
+      "command": "node reviewer-adversarial.cjs (esbuild of reviewer-adversarial.ts)",
+      "cwd": "C:/Reclaim",
+      "log": "reviewer-adversarial-latest.txt",
+      "exitCode": 0,
+      "logWorkspaceSha256": "51278e3eb6fc2b8611ced867ecb2c63d71302b22c5315f4cc159231ac3a3b8e0",
+      "logGitNormalizedSha256": "51278e3eb6fc2b8611ced867ecb2c63d71302b22c5315f4cc159231ac3a3b8e0",
+      "passed": 17,
+      "failed": 0,
+      "independence": "Separate fresh-context agent, same model; independent mutation selection on literal fixture."
+    }
+  ]
+}

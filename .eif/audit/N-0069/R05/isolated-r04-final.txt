@@ -1,0 +1,31 @@
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+
+ RUN  v4.0.8 C:/Reclaim-R05-verify-20261014/app
+
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > 2 days preserve declared doses and trace sessions across weeks 1–4 50ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > 3 days preserve declared doses and trace sessions across weeks 1–4 35ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > 4 days preserve declared doses and trace sessions across weeks 1–4 36ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > 5 days preserve declared doses and trace sessions across weeks 1–4 34ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > 6 days preserve declared doses and trace sessions across weeks 1–4 38ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > retains objectives when an entire calendar exposure day is absent 10ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > keeps prescription unchanged for translations, duplicated labels and whitespace 14ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > applies all approved goal blends and injury constraints across 2–6 days 147ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > reports the phase-one five-day floor-only fixture without dropping objectives 6ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > uses available dumbbell alternatives and applies dislikes and forbidden movements 6ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > retains entered rack exception and exercise-specific load policy 7ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > reports saved cap conflicts rather than trimming required exposures 4ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > preserves accepted running/hybrid placement for 2 days 9ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > preserves accepted running/hybrid placement for 3 days 11ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > preserves accepted running/hybrid placement for 4 days 12ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > preserves accepted running/hybrid placement for 5 days 10ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > preserves accepted running/hybrid placement for 6 days 12ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > flags pending legacy policies without disabling accepted session generation 77ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > does not alias future weeks or alter persisted started/guided snapshots 14ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > fails closed for unsupported policy and unavailable materialized exercise 13ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > captures complete plans, diagnostic outcomes and objective policy hash when requested 0ms
+
+ Test Files  1 passed (1)
+      Tests  21 passed (21)
+   Start at  09:19:44
+   Duration  1.99s (transform 430ms, setup 109ms, collect 455ms, tests 550ms, environment 0ms, prepare 127ms)
+

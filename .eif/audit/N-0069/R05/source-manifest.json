@@ -1,0 +1,26 @@
+{
+  "baselineCommit": "37118f59da8692875bb4c881cd9994697d91c60d",
+  "sourceRoot": "C:\\Reclaim-R05-verify-20261014",
+  "policyVersion": "weekly-20261014-v2",
+  "sources": {
+    "app/src/lib/training/weeklyProgrammeValidator.ts": {
+      "reviewedFilesystemSha256": "6bfe75037fcb1c7cb7d8d77c4e1edcec69252458ec0e37850e44c8861a797336",
+      "gitNormalizedSha256": "9439512c5f6af887a7e92fb92e1843fb7421abc2a34fbeff615eeccdbb523810",
+      "gitBlobOid": "03d1c462e0b2e1e9536482190d90bcd62ac3e732"
+    },
+    "app/src/lib/training/__tests__/weeklyProgrammeValidator.test.ts": {
+      "reviewedFilesystemSha256": "9833670a25a056e7508ee0c3287a77688eaf1131b15f5ab277aea21d11cc4edc",
+      "gitNormalizedSha256": "1f14967a06d716a7c6e28dcb1229f2b8341b7e1b33559184f2ff990ac4a014d7",
+      "gitBlobOid": "5bd26bc93000493d524992d7c024a6065af33fe8"
+    }
+  },
+  "fixtures": {
+    "path": ".eif/audit/N-0069/R05/outcomes.json.gz",
+    "sha256": "7ea5ebc4f26f3ac7f1497f843e8a7faecbb706e1ba77ff060615b2b00c49a36d",
+    "uncompressedSha256": "13ae544e756db2e1f140ce8767ba6b89a40ae325bc3583c69af7903b3d9571c1",
+    "adversarialCount": 63,
+    "publicScenarioCount": 45,
+    "validPublicScenarios": 23,
+    "invalidPublicScenarios": 22
+  }
+}

@@ -1,0 +1,12 @@
+{"name":"final-only forbidden alternative","status":"invalid","codes":["ineligible_final_alternative"],"pass":true}
+{"name":"both altered reps","status":"invalid","codes":["exposure_policy_mismatch","baseline_ceiling_exceeded"],"pass":true}
+{"name":"both altered load policy","status":"invalid","codes":["exposure_policy_mismatch","unanchored_external_load"],"pass":true}
+{"name":"same ID altered equipment","status":"invalid","codes":["catalogue_metadata_mismatch"],"pass":true}
+{"name":"late external zero","status":"unresolved","codes":["load_requires_confirmation"],"pass":true}
+{"name":"optional programmeValidation object","status":"invalid","codes":["invalid_payload"],"pass":true}
+{"name":"falsy alternatives","status":"invalid","codes":["invalid_payload"],"pass":true}
+{"name":"falsy warmups","status":"invalid","codes":["invalid_payload"],"pass":true}
+{"name":"invalid approved IDs","status":"invalid","codes":["exposure_policy_missing"],"pass":true}
+{"name":"corrupt history despite baseline","status":"invalid","codes":["invalid_load_evidence"],"pass":true}
+{"name":"missing declared final week","status":"invalid","codes":["programme_declaration_incomplete"],"pass":true}
+{"name":"unmutated reviewed fixture","status":"valid","pass":true}

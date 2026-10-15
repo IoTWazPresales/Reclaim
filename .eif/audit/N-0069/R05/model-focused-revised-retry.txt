@@ -1,0 +1,113 @@
+
+ RUN  v4.0.8 C:/Reclaim-R05-verify-20261014/app
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯⎯ Unhandled Error ⎯⎯⎯⎯⎯⎯⎯
+Error: [vitest-pool]: Timeout starting threads runner.
+ ❯ Timeout.<anonymous> ../../Reclaim/app/node_modules/vitest/dist/chunks/cli-api.BQ-bjcRi.js:7235:65
+ ❯ listOnTimeout node:internal/timers:605:17
+ ❯ processTimers node:internal/timers:541:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  no tests
+      Tests  no tests
+     Errors  1 error
+   Start at  21:55:01
+   Duration  5.87s (transform 0ms, setup 0ms, collect 0ms, tests 0ms, environment 0ms, prepare 0ms)
+
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > passes the hand-reviewed policy fixture without calling any generator 54ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects removed slot for missing_training_exposure 9ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects removed final exercise for incomplete_allocation 8ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects removed final session for missing_strength_session 7ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects equipment mismatch for ineligible_exercise 7ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects injury mismatch for ineligible_exercise 7ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects disliked exercise for ineligible_exercise 8ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects forbidden intent for ineligible_exercise 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects duplicate exercise for duplicate_exercise 7ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects unknown exercise for unknown_exercise 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects spoofed catalogue metadata for unknown_exercise 6ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects spoofed equipment under real ID for catalogue_metadata_mismatch 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects changed load policy bypass for exposure_policy_mismatch 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects changed allocation and final reps together for exposure_policy_mismatch 6ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects forged final alternative for ineligible_final_alternative 7ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects non-repetition alternative for ineligible_alternative 6ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects corrupt policy enum for invalid_policy_status 6ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects malformed final work array for invalid_payload 2ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects missing trusted policy for exposure_policy_missing 6ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects missing approved candidates field for exposure_policy_missing 7ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects malformed approved candidates for exposure_policy_missing 9ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects malformed optional validation metadata for invalid_payload 2ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects malformed optional alternatives for invalid_payload 2ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects malformed optional warmups for invalid_payload 2ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects compound offered for an isolation slot for ineligible_alternative 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects unknown allocation status for invalid_allocation_status 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects unknown session kind for invalid_session_kind 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects numeric strategy ID for invalid_payload 1ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects missing strategy ID for invalid_payload 1ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects hidden daily allocation error for allocation_day_issue 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects unsupported final validation status for invalid_payload 1ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects warmup beyond own load policy for invalid_warmup 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects external kg on pure bodyweight for invalid_load_state 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects invalid own history for invalid_load_evidence 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects missing requirements hidden in output for requirement_declaration_mismatch 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects lowered generated target for requirement_declaration_mismatch 4ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects unknown requirement for unknown_allocation 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects duplicate exposure ID for duplicate_exposure 7ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects wrong exposure placement for missing_training_exposure 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects incompatible alternative for ineligible_alternative 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects unknown alternative for ineligible_alternative 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects missing candidate selection for incomplete_allocation 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects zero reps for invalid_prescription 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects fractional reps for invalid_prescription 7ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects NaN reps for invalid_prescription 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects negative rest for invalid_prescription 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects infinite rest for invalid_prescription 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects wrong set indices for invalid_prescription 8ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects negative weight for invalid_load 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects NaN weight for invalid_load 6ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects infinite weight for invalid_load 6ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects baseline ceiling for baseline_ceiling_exceeded 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects load transferred to unknown implement for unanchored_external_load 3ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects invalid warmup for invalid_warmup 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects actual set cap for session_set_budget 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects reported time exceeds cap for session_time_budget 6ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects actual work exceeds time despite false slot flag for session_time_budget 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects rest alone exceeds time for session_time_budget 4ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects nonfinite time for invalid_time_budget 6ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects trace missing for requirement_trace_missing 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects compiler falsely marked feasible with errors for allocation_issue 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects compiler infeasible with apparently good work for compiler_infeasible 4ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > rejects allocation day removed for missing_allocation_day 3ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > distinguishes unknown external zero and unresolved target policy from validity 11ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > reports the accepted rack exception truthfully without changing its policy 14ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > accepts independently calculated existing warmups without counting them as work 4ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > detects unknown zero loads in later sets and leaves history qualification unresolved 17ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > detects absent and duplicate entire weeks against independent declarations 18ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > passes a complete hand-reviewed four-week programme 29ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > independent R05 whole-programme validation > does not use generator calls or templates as an oracle 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > public compiler and final session validator integration > strength 2 days is validated across weeks 1–4 124ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > public compiler and final session validator integration > running 2 days is validated across weeks 1–4 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > public compiler and final session validator integration > hybrid 2 days is validated across weeks 1–4 61ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > public compiler and final session validator integration > strength 3 days is validated across weeks 1–4 95ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > public compiler and final session validator integration > running 3 days is validated across weeks 1–4 4ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > public compiler and final session validator integration > hybrid 3 days is validated across weeks 1–4 98ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > public compiler and final session validator integration > strength 4 days is validated across weeks 1–4 107ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > public compiler and final session validator integration > running 4 days is validated across weeks 1–4 4ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > public compiler and final session validator integration > hybrid 4 days is validated across weeks 1–4 108ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > public compiler and final session validator integration > strength 5 days is validated across weeks 1–4 113ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > public compiler and final session validator integration > running 5 days is validated across weeks 1–4 3ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > public compiler and final session validator integration > hybrid 5 days is validated across weeks 1–4 111ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > public compiler and final session validator integration > strength 6 days is validated across weeks 1–4 118ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > public compiler and final session validator integration > running 6 days is validated across weeks 1–4 4ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > public compiler and final session validator integration > hybrid 6 days is validated across weeks 1–4 109ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > public compiler and final session validator integration > fails the Phase 1 five-day floor fixture 28ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > public compiler and final session validator integration > fails the Phase 1 five-day dumbbells/bench/floor fixture 52ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > public compiler and final session validator integration > detects a mislabeled delivered run and a deleted hybrid run 89ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeValidator.test.ts > public compiler and final session validator integration > captures all explicit public-programme outcomes when requested 1ms

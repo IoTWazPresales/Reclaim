@@ -1,0 +1,2 @@
+eif_node: program.py status --node N-0069 failed (2):
+ERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03

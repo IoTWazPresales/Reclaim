@@ -1,3 +1,22 @@
+## 2026-10-15: R05 independent programme validation source checkpoint
+
+The validator now checks final sessions against trusted, separately captured
+weekly declarations and exposure prescriptions; it does not call generation as
+its expected-answer oracle. Missing coverage, ineligible work, incomplete
+allocations, invalid loads/prescriptions, caps and hybrid/run omissions are
+explicit errors. Legacy target uncertainty, unqualified history, external zero
+loads and the retained rack exception remain unresolved rather than valid.
+Focused R05 91/91 and R03/R04 49/49 pass; two fresh-context reviews checked the
+same final hashes (17 direct probes; 9 different-model probes). Typechecks and
+dual-path checks pass. Isolated full suite has 1229 passes and the four known
+baseline failures. Mixed full suite: 1234 passes / 4 existing failures; catalogue
+QA: 357 rows, zero issues. Final source receipt is in
+`.eif/audit/N-0069/R05/result.md`. Existing unrelated work remains outside scope.
+No UI/history fetch, persistence or started-session behavior was changed.
+Public EIF status still fails LEASE_NOT_OWNER: R20261014R03; no ownership
+transition, runtime repair, acceptance or N-0069 completion is claimed.
+Stop after R05; do not start R06 or another task.
+
 ## 2026-10-14: R04 weekly objectives and allocation source checkpoint
 
 Weekly policy weekly-20261014-v2 declares named approved objectives before

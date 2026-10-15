@@ -1,0 +1,53 @@
+
+ RUN  v4.0.8 C:/Reclaim-R05-verify-20261014/app
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯⎯ Unhandled Error ⎯⎯⎯⎯⎯⎯⎯
+Error: [vitest-pool]: Timeout starting threads runner.
+ ❯ Timeout.<anonymous> ../../Reclaim/app/node_modules/vitest/dist/chunks/cli-api.BQ-bjcRi.js:7235:65
+ ❯ listOnTimeout node:internal/timers:605:17
+ ❯ processTimers node:internal/timers:541:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  no tests
+      Tests  no tests
+     Errors  1 error
+   Start at  21:48:35
+   Duration  5.86s (transform 0ms, setup 0ms, collect 0ms, tests 0ms, environment 0ms, prepare 0ms)
+
+stdout | src/lib/training/__tests__/r05-independent-probe.test.ts > independent adversarial review > missing strategy
+missing strategy THREW TypeError: Cannot read properties of undefined (reading 'startsWith')
+
+stdout | src/lib/training/__tests__/r05-independent-probe.test.ts > independent adversarial review > numeric strategy
+numeric strategy THREW TypeError: declaration.strategyId.startsWith is not a function
+
+stdout | src/lib/training/__tests__/r05-independent-probe.test.ts > independent adversarial review > malformed history sets
+malformed history sets {"status":"invalid","issues":[{"code":"invalid_load_evidence","severity":"error","message":"Exercise history has invalid numeric values or identity.","weekIndex":1,"dayKey":"1","exerciseId":"barbell_bench_press","provenance":"docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09"}],"coverage":[{"weekIndex":1,"requirementId":"bench","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"fly","expectedSets":2,"actualSets":2,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"squat","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"quadFollow","expectedSets":2,"actualSets":2,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"lateral","expectedSets":3,"actualSets":3,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"pushdown","expectedSets":3,"actualSets":3,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"row-heavy","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"pulldown","expectedSets":2,"actualSets":2,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"deadlift","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"hingeFollow","expectedSets":2,"actualSets":2,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"curl","expectedSets":3,"actualSets":3,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"ohp","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1}]}
+
+stdout | src/lib/training/__tests__/r05-independent-probe.test.ts > independent adversarial review > unknown final validation status
+unknown final validation status {"status":"valid","issues":[],"coverage":[{"weekIndex":1,"requirementId":"bench","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"fly","expectedSets":2,"actualSets":2,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"squat","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"quadFollow","expectedSets":2,"actualSets":2,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"lateral","expectedSets":3,"actualSets":3,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"pushdown","expectedSets":3,"actualSets":3,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"row-heavy","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"pulldown","expectedSets":2,"actualSets":2,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"deadlift","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"hingeFollow","expectedSets":2,"actualSets":2,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"curl","expectedSets":3,"actualSets":3,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"ohp","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1}]}
+
+stdout | src/lib/training/__tests__/r05-independent-probe.test.ts > independent adversarial review > allocation day error
+allocation day error {"status":"valid","issues":[],"coverage":[{"weekIndex":1,"requirementId":"bench","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"fly","expectedSets":2,"actualSets":2,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"squat","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"quadFollow","expectedSets":2,"actualSets":2,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"lateral","expectedSets":3,"actualSets":3,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"pushdown","expectedSets":3,"actualSets":3,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"row-heavy","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"pulldown","expectedSets":2,"actualSets":2,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"deadlift","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"hingeFollow","expectedSets":2,"actualSets":2,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"curl","expectedSets":3,"actualSets":3,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"ohp","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1}]}
+
+stdout | src/lib/training/__tests__/r05-independent-probe.test.ts > independent adversarial review > warmup above baseline
+warmup above baseline {"status":"valid","issues":[],"coverage":[{"weekIndex":1,"requirementId":"bench","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"fly","expectedSets":2,"actualSets":2,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"squat","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"quadFollow","expectedSets":2,"actualSets":2,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"lateral","expectedSets":3,"actualSets":3,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"pushdown","expectedSets":3,"actualSets":3,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"row-heavy","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"pulldown","expectedSets":2,"actualSets":2,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"deadlift","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"hingeFollow","expectedSets":2,"actualSets":2,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"curl","expectedSets":3,"actualSets":3,"expectedExposures":1,"actualExposures":1},{"weekIndex":1,"requirementId":"ohp","expectedSets":4,"actualSets":4,"expectedExposures":1,"actualExposures":1}]}
+
+ × src/lib/training/__tests__/r05-independent-probe.test.ts > independent adversarial review > missing strategy 40ms
+   → Cannot read properties of undefined (reading 'startsWith')
+ × src/lib/training/__tests__/r05-independent-probe.test.ts > independent adversarial review > numeric strategy 6ms
+   → declaration.strategyId.startsWith is not a function
+ ✓ src/lib/training/__tests__/r05-independent-probe.test.ts > independent adversarial review > malformed history sets 20ms
+ × src/lib/training/__tests__/r05-independent-probe.test.ts > independent adversarial review > unknown final validation status 19ms
+   → expected 'valid' not to be 'valid' // Object.is equality
+ × src/lib/training/__tests__/r05-independent-probe.test.ts > independent adversarial review > allocation day error 9ms
+   → expected 'valid' not to be 'valid' // Object.is equality
+ × src/lib/training/__tests__/r05-independent-probe.test.ts > independent adversarial review > warmup above baseline 9ms
+   → expected 'valid' not to be 'valid' // Object.is equality

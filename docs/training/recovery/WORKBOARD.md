@@ -23,7 +23,7 @@ Start only the task ID named by the operator or the first ready task below. Read
 | [R02](tasks/R02-setup-contract.md) | Normalize setup/preview/confirmed profile; partial uncommitted code | none | N-0070 | setup draft, setup UI, preview |
 | [R03](tasks/R03-eligibility.md) | Shared contract independently verified; scoped source checkpoint, EIF acceptance open; see [R03 evidence](../../../.eif/audit/N-0069/R03/result.md) | none | N-0069 | eligibility module, catalogue eligibility tests |
 | [R04](tasks/R04-weekly-allocation.md) | Versioned requirements before allocation source-verified; scoped checkpoint, EIF replay blocked; see [R04 evidence](../../../.eif/audit/N-0069/R04/result.md) | R03 | N-0069 | weekly compiler/types, planner, day adapter/engine boundary |
-| [R05](tasks/R05-programme-validation.md) | Independent whole-programme validator and explicit infeasibility | R04 | N-0069 | validator module and validator tests |
+| [R05](tasks/R05-programme-validation.md) | Independent whole-programme validator source verified; scoped checkpoint with baseline failures, EIF acceptance blocked; see [R05 evidence](../../../.eif/audit/N-0069/R05/result.md) | R04 | N-0069 | validator module and validator tests |
 | [R06](tasks/R06-performance-evidence.md) | Canonical, qualified history and progression inputs; partial uncommitted code | R02 | N-0070 | history API/seed, progression, engine history adapter |
 | [R07](tasks/R07-adjustment-contract.md) | Existing autoregulation result reaches effective guidance | R06 | N-0070 | adjustment adapter, derived state and guidance projections |
 | [R08](tasks/R08-substitution.md) | Safe exercise-specific substitution and truthful scope | R03, R06 | N-0070 | replacement UI/adapter and persistence boundary |
