@@ -122,3 +122,10 @@ This is an operator-authorized scoped source checkpoint, with baseline assertion
 failures and EIF/runtime acceptance explicitly outstanding. It is not a validated
 node or N-0070 acceptance. Push details are recorded in `push-receipt.json` after
 commit. Stop after R07; do not start R08 or another task.
+
+Source checkpoint `c46baa798f93c7b950ba936cc8b98ed4ad11ec75` is pushed to `origin/fix/training-confident-ux`.
+`git ls-remote` verified that exact source SHA after the push; all nine committed
+source blobs match the reviewed manifest. `push-receipt.json` records the result.
+Receipt documentation is a subsequent commit. Test logs are normalized to UTF-8
+and trailing formatting whitespace is removed; assertions/diagnostics are intact.
+No EIF attachment, approval, acceptance or completion is claimed.

@@ -1,0 +1,14 @@
+{
+  "source_commit": "c46baa798f93c7b950ba936cc8b98ed4ad11ec75",
+  "branch": "fix/training-confident-ux",
+  "push_command": "git push origin HEAD:fix/training-confident-ux",
+  "push_exit": 0,
+  "remote_verification_command": "git ls-remote origin refs/heads/fix/training-confident-ux",
+  "remote_observed": "c46baa798f93c7b950ba936cc8b98ed4ad11ec75\trefs/heads/fix/training-confident-ux",
+  "source_remote_verified": true,
+  "source_manifest_matches_commit": true,
+  "eif_evidence_attachment": "not retried; established LEASE_NOT_OWNER: R20261014R03",
+  "eif_evidence_id": null,
+  "N-0070_accepted": false,
+  "stopped_after": "R07"
+}

@@ -1,3 +1,13 @@
+## 2026-10-15: R07 source pushed; stop after R07
+
+Source checkpoint c46baa798f93c7b950ba936cc8b98ed4ad11ec75 is pushed and remote-verified on
+fix/training-confident-ux. All nine source blobs match the isolated final gates:
+109 focused passes; full suite 1,291 passed / four existing baseline failures.
+EIF evidence attachment remains blocked by LEASE_NOT_OWNER: R20261014R03;
+N-0070 is open, with no acceptance, completion or shipping approval. Device and
+watch journeys remain UNABLE_TO_VERIFY. Receipt: .eif/audit/N-0070/R07/push-receipt.json.
+Unrelated changes are preserved. Stop after R07; no R08 or another task started.
+
 ## 2026-10-15: R07 adjustment source checkpoint
 
 R07 only. The audited 100 -> 95 kg recommendation now saves a -5 kg overlay and
