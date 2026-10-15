@@ -1,0 +1,35 @@
+[
+  {
+    "name": "focused-isolated",
+    "command": "npx vitest run src/lib/training/__tests__/autoregulationOverlay.test.ts src/lib/training/__tests__/sessionAdjustment.test.ts src/lib/training/__tests__/trainingNotificationWorkPlan.test.ts src/lib/training/runtime/__tests__/autoregulation.test.ts src/lib/training/__tests__/scheduleGuidedTrainingNextSetFromDb.test.ts src/lib/training/__tests__/scheduleGuidedTrainingAfterSetPersist.cursor.test.ts src/lib/training/__tests__/guidedWearDelivery.simulation.test.ts src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts src/lib/training/__tests__/performanceHistory.test.ts src/lib/training/__tests__/performanceHistoryApi.test.ts src/lib/training/__tests__/doubleProgression.test.ts --reporter=verbose",
+    "cwd": "C:\\Reclaim-R07-verify-20261015\\app",
+    "pid": 63440,
+    "exit": 0,
+    "seconds": 26.03,
+    "stopped": null,
+    "source_matches_before": true,
+    "source_matches_after": true
+  },
+  {
+    "name": "typecheck-isolated",
+    "command": "npm run typecheck",
+    "cwd": "C:\\Reclaim-R07-verify-20261015\\app",
+    "pid": 44388,
+    "exit": 0,
+    "seconds": 24.03,
+    "stopped": null,
+    "source_matches_before": true,
+    "source_matches_after": true
+  },
+  {
+    "name": "full-isolated",
+    "command": "npm test -- --reporter=verbose",
+    "cwd": "C:\\Reclaim-R07-verify-20261015\\app",
+    "pid": 48724,
+    "exit": 1,
+    "seconds": 224.08,
+    "stopped": null,
+    "source_matches_before": true,
+    "source_matches_after": true
+  }
+]

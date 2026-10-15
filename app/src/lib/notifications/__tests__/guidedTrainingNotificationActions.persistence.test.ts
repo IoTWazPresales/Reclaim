@@ -82,6 +82,10 @@ vi.mock('@/lib/api', () => ({
 }));
 
 import { handleGuidedTrainingNotificationAction } from '@/lib/notifications/guidedTrainingNotificationActions';
+import { buildNotificationWorkChain } from '@/lib/training/trainingSessionProgression';
+import { recommendSessionAdjustment } from '@/lib/training/autoregulationOverlay';
+import { getExerciseById } from '@/lib/training/engine';
+import type { TrainingSessionItemRow } from '@/lib/api';
 
 const response = {} as NotificationResponse;
 
@@ -125,6 +129,30 @@ describe('guidedTrainingNotificationActions persistence (fire-time derivation)',
       nextSetIndex: 2,
       nextExerciseId: 'bench',
       nextSessionItemId: 'item-1',
+    });
+  });
+
+  it('phone/watch Done logs the adjusted target after reload, ignoring stale payload values', async () => {
+    const exercise = getExerciseById('barbell_bench_press')!;
+    const target = { setIndex: 2, suggestedWeight: 100, targetReps: 8, restSeconds: 90 };
+    const outcome = recommendSessionAdjustment({
+      exerciseId: exercise.id, currentSetIndex: 1, currentSetRpe: 9, currentSetReps: 8,
+      currentSetWeight: 100, suggestedWeight: 100, targetReps: 8, previousSets: [], plannedSets: [target],
+    }, target, exercise);
+    if (outcome.status !== 'applied') throw new Error(outcome.message);
+    const row = {
+      id: 'item-1', exercise_id: exercise.id, planned: { sets: [target] }, performed: { sets: [] },
+      autoregulation_adjustments: { 2: { ...outcome.overlay, appliedAt: '' } },
+    } as unknown as TrainingSessionItemRow;
+    persistMocks.loadGuidedTrainingNotificationWorkChain.mockResolvedValue(buildNotificationWorkChain([JSON.parse(JSON.stringify(row))]));
+    const stalePayload = { type: 'TRAINING_SET' as const, sessionId: 'sess-1', suggestedWeight: 100, targetReps: 12 };
+    await handleGuidedTrainingNotificationAction({
+      action: 'SET_DONE', key: 'adjusted-watch-done', response,
+      data: stalePayload,
+    });
+    expect(persistMocks.applySetCompletion).toHaveBeenCalledWith({
+      sessionId: 'sess-1', sessionItemId: 'item-1', exerciseId: exercise.id,
+      setIndex: 2, weight: 95, reps: 8,
     });
   });
 

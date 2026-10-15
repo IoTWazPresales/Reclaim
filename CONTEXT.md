@@ -1,3 +1,19 @@
+## 2026-10-15: R07 adjustment source checkpoint
+
+R07 only. The audited 100 -> 95 kg recommendation now saves a -5 kg overlay and
+reads 95 kg / 8 reps consistently across phone and guidance after reload. Typed
+unit-aware outcomes, persistence-before-publication and canonical pending-work
+projection preserve frozen planned sets and performed history. No numerical rule,
+automatic skip, new fatigue input or pending scientific decision changed.
+
+Final isolated focused 109/109, typecheck, dual-path 31/31, catalogue 357/0 and ten
+separate Node probe groups pass. Final full suite completes: 1,291 passed / four
+established baseline failures; no new assertion failure. Wrapper is 1 pass / two
+ownership-blocked failures. EIF attachment remains blocked by R20261014R03;
+N-0070 stays open. No ADB device, renders or watch journey. Evidence and limits:
+.eif/audit/N-0070/R07/result.md. Push receipt follows the source checkpoint.
+Stop after R07; no R08 or another task was started. Unrelated changes preserved.
+
 ## 2026-10-15: R06 source pushed; EIF attachment still blocked
 
 Source checkpoint 77726c6d3ae31f85212503c8c21dee3cc626bac8 is pushed and remote-

@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { TrainingSessionItemRow } from '@/lib/api';
+import { recommendSessionAdjustment } from '../autoregulationOverlay';
+import catalog from '../catalog/exercises.v1.json';
+import type { Exercise } from '../types';
 
 const apiMocks = vi.hoisted(() => ({
   getTrainingSession: vi.fn(),
@@ -78,6 +81,28 @@ describe('scheduleGuidedTrainingNextSetFromDb', () => {
     vi.clearAllMocks();
     apiMocks.scheduleTrainingNowPrompt.mockResolvedValue('training_now:sess-1');
     apiMocks.clearTrainingTimedPrompt.mockResolvedValue(undefined);
+  });
+
+  it('formats the persisted R07 effective weight and reps in the phone/Wear next-set prompt', async () => {
+    const exercise = catalog.find(ex => ex.id === 'barbell_bench_press') as Exercise;
+    const row = item('a', exercise.id, [1, 2, 3], [1, 2]);
+    const target = { setIndex: 3, suggestedWeight: 100, targetReps: 8, restSeconds: 90 };
+    row.planned = { ...row.planned!, sets: [target] };
+    const outcome = recommendSessionAdjustment({
+      exerciseId: exercise.id, currentSetIndex: 2, currentSetRpe: 10,
+      currentSetReps: 8, currentSetWeight: 100, targetReps: 8, suggestedWeight: 100,
+      previousSets: [], plannedSets: [target],
+    }, target, exercise);
+    if (outcome.status !== 'applied') throw new Error(outcome.message);
+    row.autoregulation_adjustments = { 3: { ...outcome.overlay, appliedAt: '' } };
+    apiMocks.getTrainingSession.mockResolvedValue({
+      session: { id: 'sess-1', current_exercise_index: 0 }, items: [JSON.parse(JSON.stringify(row))],
+    });
+    await scheduleGuidedTrainingNextSetFromDb('sess-1');
+    expect(apiMocks.scheduleTrainingNowPrompt).toHaveBeenCalledWith(expect.objectContaining({
+      body: expect.stringContaining('90kg'),
+    }), { deferReconcile: true });
+    expect(apiMocks.scheduleTrainingNowPrompt.mock.calls[0][0].body).toContain('6 reps');
   });
 
   it('loadGuidedTrainingNotificationWorkChain reads DB items', async () => {

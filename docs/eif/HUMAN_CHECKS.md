@@ -1,5 +1,17 @@
 # Human checks — PRG-20260917T222550
 
+## R07 / N-0070 ? UNABLE_TO_VERIFY, unregistered (2026-10-15)
+
+R07 changes effective session targets and their explanations. ADB `devices`
+returned an empty list; no render or Android/watch delivery is verified. Steps:
+[unregistered R07 device checks](../../.eif/audit/N-0070/R07/human-check.md).
+The established `LEASE_NOT_OWNER: R20261014R03` blocker prevents EIF attachment
+and queue registration. This is a manual tracking note, not successful public
+registration, operator approval, criterion acceptance or shipping permission.
+No repeated governance investigation or bypass was attempted. Source evidence:
+[R07 result](../../.eif/audit/N-0070/R07/result.md). Stop after R07.
+
+
 Device, Play Console, and live-DB steps the agent cannot complete. Continue the programme; do not block other nodes on these.
 
 **2026-10-07 operator steps still outside the repo.** Install the new preview, then save training setup on the phone so the saved plan is rebuilt. Allow location on a run and confirm the saved route drops the 200 m around home and that Health Connect receives a run. Upload `deadlift.webp` with `node scripts/stills/upload-supabase.mjs` from `app/` once `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are in the environment. The service role key is not in `app/.env`. Everkinetic has no file for Romanian deadlift, trap-bar deadlift, hip thrust, one-arm row, pull-up, Bulgarian split squat, plank, kettlebell swing, farmer’s walk, goblet squat, or face pulls. Turn on leaked-password protection in the Supabase dashboard for project `bgtosdgrvjwlpqxqjvdf`. Do not move `moddatetime`. Sleep erasure still needs a throwaway account that already has a Health Connect sleep row. Do not delete the retained account to test it. Submit `docs/release/PLAY_DATA_SAFETY_AND_FGS.md` in Play Console, including the foreground-service demo video.

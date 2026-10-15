@@ -1,5 +1,17 @@
 # Awaiting visual approval — PRG-20260917T222550
 
+## R07 / N-0070 ? UNABLE_TO_VERIFY, unregistered (2026-10-15)
+
+R07 changes effective session targets and their explanations. ADB `devices`
+returned an empty list; no render or Android/watch delivery is verified. Steps:
+[unregistered R07 device checks](../../.eif/audit/N-0070/R07/human-check.md).
+The established `LEASE_NOT_OWNER: R20261014R03` blocker prevents EIF attachment
+and queue registration. This is a manual tracking note, not successful public
+registration, operator approval, criterion acceptance or shipping permission.
+No repeated governance investigation or bypass was attempted. Source evidence:
+[R07 result](../../.eif/audit/N-0070/R07/result.md). Stop after R07.
+
+
 UI that changed what the user sees. Production chrome redesign (N-0030) stays parked.
 
 **Operator approval, 2026-10-05.** The operator approved the queued review for N-0007, N-0016, N-0018, N-0028, N-0032, and N-0058, accepted the 1.0.5 / versionCode 15 client (N-0010), and waived the remaining OEM 15-minute battery check (N-0025) on the emulator rest-in-idle evidence. Ledger `status` was tried with `--run R20260930C` and still returned `LEASE_NOT_OWNER`, so these approvals are the human record. They are not ledger `complete` events. N-0018 and N-0058 were not exercised on the device. N-0007's empty-query spinner was not reproduced on the device. N-0047 is not part of this approval.

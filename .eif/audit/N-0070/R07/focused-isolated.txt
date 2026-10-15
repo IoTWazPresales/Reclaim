@@ -1,0 +1,444 @@
+
+ RUN  v4.0.8 C:/Reclaim-R07-verify-20261015/app
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+stdout | src/lib/training/__tests__/performanceHistoryApi.test.ts > production API and seed boundary > paginates canonical history and fails the entire seed on a later page error
+[Reclaim DEBUG] [performance seed] history unavailable Error: offline
+    at getRecentExercisePerformances (C:/Reclaim-R07-verify-20261015/app/src/lib/api.ts:2542:22)
+    at Module.loadTrainingPerformanceSeed (C:/Reclaim-R07-verify-20261015/app/src/lib/training/trainingProgramPerformanceSeed.ts:27:20)
+    at C:/Reclaim-R07-verify-20261015/app/src/lib/training/__tests__/performanceHistoryApi.test.ts:61:18
+    at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:753:20
+
+stdout | src/lib/training/__tests__/performanceHistoryApi.test.ts > production API and seed boundary > distinguishes absent from failed reads and clears stale snapshot evidence in both cases
+[Reclaim DEBUG] [performance seed] history unavailable Error: network unavailable
+    at getRecentExercisePerformances (C:/Reclaim-R07-verify-20261015/app/src/lib/api.ts:2542:22)
+    at Module.loadTrainingPerformanceSeed (C:/Reclaim-R07-verify-20261015/app/src/lib/training/trainingProgramPerformanceSeed.ts:27:20)
+    at C:/Reclaim-R07-verify-20261015/app/src/lib/training/__tests__/performanceHistoryApi.test.ts:76:20
+    at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:753:20
+
+stdout | src/lib/training/__tests__/performanceHistoryApi.test.ts > production API and seed boundary > distinguishes absent from failed reads and clears stale snapshot evidence in both cases
+[Reclaim DEBUG] [performance seed] history unavailable Error: Training performance history unavailable
+    at getRecentExercisePerformances (C:/Reclaim-R07-verify-20261015/app/src/lib/api.ts:2543:22)
+    at Module.loadTrainingPerformanceSeed (C:/Reclaim-R07-verify-20261015/app/src/lib/training/trainingProgramPerformanceSeed.ts:27:20)
+    at C:/Reclaim-R07-verify-20261015/app/src/lib/training/__tests__/performanceHistoryApi.test.ts:76:20
+    at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:753:20
+
+stdout | src/lib/training/__tests__/performanceHistoryApi.test.ts > production API and seed boundary > keeps failure explicit in the map-only compatibility export too
+[Reclaim DEBUG] [performance seed] history unavailable Error: offline
+    at getRecentExercisePerformances (C:/Reclaim-R07-verify-20261015/app/src/lib/api.ts:2542:22)
+    at loadTrainingPerformanceSeed (C:/Reclaim-R07-verify-20261015/app/src/lib/training/trainingProgramPerformanceSeed.ts:27:20)
+    at Module.loadLastSessionPerformanceSeed (C:/Reclaim-R07-verify-20261015/app/src/lib/training/trainingProgramPerformanceSeed.ts:37:16)
+    at C:/Reclaim-R07-verify-20261015/app/src/lib/training/__tests__/performanceHistoryApi.test.ts:88:5
+    at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:753:20
+
+stdout | src/lib/training/__tests__/performanceHistoryApi.test.ts > production API and seed boundary > propagates authentication failure and treats an empty requested set as absent without querying
+[Reclaim DEBUG] [performance seed] history unavailable Error: No session
+    at requireUser (C:/Reclaim-R07-verify-20261015/app/src/lib/api.ts:32:25)
+    at getRecentExercisePerformances (C:/Reclaim-R07-verify-20261015/app/src/lib/api.ts:2529:16)
+    at Module.loadTrainingPerformanceSeed (C:/Reclaim-R07-verify-20261015/app/src/lib/training/trainingProgramPerformanceSeed.ts:27:20)
+    at C:/Reclaim-R07-verify-20261015/app/src/lib/training/__tests__/performanceHistoryApi.test.ts:97:13
+    at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:753:20
+
+ ✓ src/lib/training/__tests__/performanceHistoryApi.test.ts > production API and seed boundary > reads owned canonical items, never requires a replica, and covers exercises outside the old fixed seed 7ms
+ ✓ src/lib/training/__tests__/performanceHistoryApi.test.ts > production API and seed boundary > keeps unfinished latest work instead of an older completed success in both batch APIs 2ms
+ ✓ src/lib/training/__tests__/performanceHistoryApi.test.ts > production API and seed boundary > paginates canonical history and fails the entire seed on a later page error 33ms
+ ✓ src/lib/training/__tests__/performanceHistoryApi.test.ts > production API and seed boundary > distinguishes absent from failed reads and clears stale snapshot evidence in both cases 9ms
+ ✓ src/lib/training/__tests__/performanceHistoryApi.test.ts > production API and seed boundary > keeps failure explicit in the map-only compatibility export too 4ms
+ ✓ src/lib/training/__tests__/performanceHistoryApi.test.ts > production API and seed boundary > propagates authentication failure and treats an empty requested set as absent without querying 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > uses frozen working sets without a set-log replica and does not mutate stored rows 5ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects unfinished latest work instead of falling back to older success 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects partial latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects skipped latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects missing_plan latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects missing_performed latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects duplicate latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects extra latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects missing_timestamp latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects mixed latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects invalid_rpe latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects external_zero latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects missing_weight latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > does not skip an incomplete session to construct two stagnant sessions 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > recognizes improving reps below the top and preserves the two-hold deload 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects mismatched exercise, unit, source, duplicate sessions and legacy numeric input 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > distinguishes bodyweight zero, assistance and carry/time units 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > reports rounded increments and deload targets without promising an unapplied change 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects a recent incomplete session even when a caller passes an older successful last map 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > preserves D-P2-01 ceiling over several ended sessions and describes actual prescribed work 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > passes qualification and the applied reason through the committed R04 allocated-day path 9ms
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > phone/watch Done logs the adjusted target after reload, ignoring stale payload values
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-10-15T19:36:25.048Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'barbell_bench_press',
+  setIndex: 2,
+  note: 'db_derived_at_fire_time',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > phone/watch Done logs the adjusted target after reload, ignoring stale payload values
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] {
+  phase: 'set_done_persist',
+  persistPath: 'supabase',
+  sessionItemId: 'item-1',
+  setIndex: 2,
+  exerciseId: 'barbell_bench_press'
+}
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-10-15T19:36:25.049Z',
+  delivery: undefined,
+  action: 'QUERY_INVALIDATION',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'barbell_bench_press',
+  setIndex: 2,
+  queryInvalidation: true,
+  writeOnline: true,
+  note: 'training:* after SET_DONE',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > phone/watch Done logs the adjusted target after reload, ignoring stale payload values
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-10-15T19:36:25.049Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  acceptanceReason: 'accepted',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'barbell_bench_press',
+  setIndex: 2,
+  writeOnline: true,
+  restSeconds: 90,
+  nextCurrentSetIndex: 2,
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE completes the DB-derived pending set (payload carries no set identity)
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-10-15T19:36:25.051Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  note: 'db_derived_at_fire_time',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE completes the DB-derived pending set (payload carries no set identity)
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] {
+  phase: 'set_done_persist',
+  persistPath: 'supabase',
+  sessionItemId: 'item-1',
+  setIndex: 1,
+  exerciseId: 'bench'
+}
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-10-15T19:36:25.052Z',
+  delivery: undefined,
+  action: 'QUERY_INVALIDATION',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  queryInvalidation: true,
+  writeOnline: true,
+  note: 'training:* after SET_DONE',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE completes the DB-derived pending set (payload carries no set identity)
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-10-15T19:36:25.052Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  acceptanceReason: 'accepted',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  writeOnline: true,
+  restSeconds: 90,
+  nextCurrentSetIndex: 2,
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SKIP_SET persists through applySetSkip on the derived target before scheduling
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-10-15T19:36:25.053Z',
+  delivery: undefined,
+  action: 'SKIP_SET',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  note: 'db_derived_at_fire_time',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SKIP_SET persists through applySetSkip on the derived target before scheduling
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] {
+  phase: 'skip_set_persist',
+  persistPath: 'supabase',
+  sessionItemId: 'item-1',
+  setIndex: 1,
+  exerciseId: 'bench'
+}
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-10-15T19:36:25.053Z',
+  delivery: undefined,
+  action: 'QUERY_INVALIDATION',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  queryInvalidation: true,
+  writeOnline: true,
+  note: 'training:* after SKIP_SET',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SKIP_SET persists through applySetSkip on the derived target before scheduling
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-10-15T19:36:25.053Z',
+  delivery: undefined,
+  action: 'SKIP_SET',
+  acceptanceReason: 'accepted',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  writeOnline: true,
+  restSeconds: 90,
+  nextCurrentSetIndex: 2,
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE marks the response key processed AFTER persisting (retry-safe)
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-10-15T19:36:25.054Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  note: 'db_derived_at_fire_time',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE marks the response key processed AFTER persisting (retry-safe)
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] {
+  phase: 'set_done_persist',
+  persistPath: 'supabase',
+  sessionItemId: 'item-1',
+  setIndex: 1,
+  exerciseId: 'bench'
+}
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-10-15T19:36:25.054Z',
+  delivery: undefined,
+  action: 'QUERY_INVALIDATION',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  queryInvalidation: true,
+  writeOnline: true,
+  note: 'training:* after SET_DONE',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE marks the response key processed AFTER persisting (retry-safe)
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-10-15T19:36:25.054Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  acceptanceReason: 'accepted',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  writeOnline: true,
+  restSeconds: 90,
+  nextCurrentSetIndex: 2,
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE with mismatched issuedAt does not persist
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] stale prompt issuedAt — ignoring { action: 'SET_DONE', sessionId: 'sess-1', issuedAt: 'old-revision' }
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE persist failure does not mark and rethrows for queue retry
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-10-15T19:36:25.055Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  note: 'db_derived_at_fire_time',
+  source: 'phone_notification'
+}
+
+stderr | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE persist failure does not mark and rethrows for queue retry
+[Reclaim] [NOTIF_ACTION] SET_DONE failed Error: persist boom
+    at C:/Reclaim-R07-verify-20261015/app/src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts:234:59
+    at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:157:11
+    at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:753:26
+    at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1636:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1602:10)
+    at runTest (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1309:12)
+    at runSuite (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1468:8)
+    at runSuite (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1468:8)
+    at runFiles (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1526:3)
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE with no pending work finalizes instead of only clearing prompts
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] no pending work in DB — finalize open session { action: 'SET_DONE', sessionId: 'sess-1' }
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE with no pending work finalizes instead of only clearing prompts
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] finalized after no-pending-work Done { sessionId: 'sess-1', verb: 'SET_DONE' }
+
+ ✓ src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > phone/watch Done logs the adjusted target after reload, ignoring stale payload values 6ms
+ ✓ src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE completes the DB-derived pending set (payload carries no set identity) 1ms
+ ✓ src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SKIP_SET persists through applySetSkip on the derived target before scheduling 1ms
+ ✓ src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE marks the response key processed AFTER persisting (retry-safe) 1ms
+ ✓ src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE with mismatched issuedAt does not persist 1ms
+ ✓ src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE persist failure does not mark and rethrows for queue retry 3ms
+ ✓ src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE with no pending work finalizes instead of only clearing prompts 1ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > reproduces the audited zero-delta adapter and corrects 100 → 95 through the real reader 4ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > projects weight/reps for barbell_bench_press with equipment rounding and reload 1ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > projects weight/reps for dumbbell_bench_press with equipment rounding and reload 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > projects weight/reps for push_ups with equipment rounding and reload 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > uses absolute targets relative to the next frozen prescription, without compounding overlays 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > rest and guidance target the adjusted pending set after jumping into partially completed work 1ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > leaves assistance reduction unapproved, and safely projects explicit rep-only assistance 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > does not interpret farmer_walk units as simple reps 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > does not interpret plank units as simple reps 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > does not interpret 21s units as simple reps 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > reports invalid input without a promised adjustment: {"currentSetWeight":null} 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > reports invalid input without a promised adjustment: {"currentSetWeight":-1} 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > reports invalid input without a promised adjustment: {"currentSetReps":0} 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > reports invalid input without a promised adjustment: {"currentSetReps":1.5} 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > reports invalid input without a promised adjustment: {"targetReps":0} 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > reports invalid input without a promised adjustment: {"currentSetRpe":null} 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > reports invalid input without a promised adjustment: {"currentSetRpe":11} 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > reports absent RPE and absent next set explicitly 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > does not activate automatic set skipping or multiplier-only fatigue output 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > does not promise a reduction rounded back to the same load 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > rejects corrupt persisted overlays for every consumer: {"weightDelta":null,"repsDelta":0} 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > rejects corrupt persisted overlays for every consumer: {"weightDelta":-101,"repsDelta":0} 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > rejects corrupt persisted overlays for every consumer: {"weightDelta":0,"repsDelta":-8} 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > retains R06 unit qualification for inconsistent bodyweight and uncalibrated external load 0ms
+ ✓ src/lib/training/__tests__/autoregulationOverlay.test.ts > R07 applied adjustment contract > never rewrites already completed work or summary inputs 0ms
+stdout | src/lib/training/__tests__/sessionAdjustment.test.ts > R07 persisted overlay publication (real API and cache adapter) > publishes only after the DB write and preserves frozen plan, completion and other adjustments
+[Reclaim DEBUG] [SESSION_CURSOR] autoregulation adjustment saved {
+  sessionItemId: 'item',
+  setIndex: 2,
+  adjustment: {
+    weightDelta: -5,
+    repsDelta: 0,
+    reason: 'High effort. Next set: 95kg · 8 reps · Total bar weight.'
+  }
+}
+
+stdout | src/lib/training/__tests__/sessionAdjustment.test.ts > R07 persisted overlay publication (real API and cache adapter) > retains the existing target and rejects a failed read, without publishing a false success
+[Reclaim DEBUG] [SESSION_CURSOR] failed to read adjustments {
+  readError: Error: read unavailable
+      at C:/Reclaim-R07-verify-20261015/app/src/lib/training/__tests__/sessionAdjustment.test.ts:66:17
+      at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:861:60
+      at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:157:11
+      at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:753:26
+      at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1636:20
+      at new Promise (<anonymous>)
+      at runWithTimeout (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1602:10)
+      at runTest (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1309:12)
+      at runSuite (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1468:8)
+      at runSuite (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1468:8)
+}
+
+stdout | src/lib/training/__tests__/sessionAdjustment.test.ts > R07 persisted overlay publication (real API and cache adapter) > retains the existing target and rejects a failed write, without publishing a false success
+[Reclaim DEBUG] [SESSION_CURSOR] failed to write adjustments {
+  writeError: Error: write unavailable
+      at C:/Reclaim-R07-verify-20261015/app/src/lib/training/__tests__/sessionAdjustment.test.ts:66:17
+      at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:861:60
+      at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:157:11
+      at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:753:26
+      at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1636:20
+      at new Promise (<anonymous>)
+      at runWithTimeout (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1602:10)
+      at runTest (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1309:12)
+      at runSuite (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1468:8)
+      at runSuite (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1468:8)
+}
+
+ ✓ src/lib/training/__tests__/sessionAdjustment.test.ts > R07 persisted overlay publication (real API and cache adapter) > publishes only after the DB write and preserves frozen plan, completion and other adjustments 7ms
+ ✓ src/lib/training/__tests__/sessionAdjustment.test.ts > R07 persisted overlay publication (real API and cache adapter) > retains the existing target and rejects a failed read, without publishing a false success 2ms
+ ✓ src/lib/training/__tests__/sessionAdjustment.test.ts > R07 persisted overlay publication (real API and cache adapter) > retains the existing target and rejects a failed write, without publishing a false success 1ms
+stdout | src/lib/training/__tests__/scheduleGuidedTrainingNextSetFromDb.test.ts > scheduleGuidedTrainingNextSetFromDb > formats the persisted R07 effective weight and reps in the phone/Wear next-set prompt
+[Reclaim DEBUG] [GUIDED_SCHEDULE] NEXT_SET immediate set prompt from DB chain { sessionId: 'sess-1', exerciseId: 'barbell_bench_press', setIndex: 3 }
+
+stdout | src/lib/training/__tests__/scheduleGuidedTrainingNextSetFromDb.test.ts > scheduleGuidedTrainingNextSetFromDb > replaces prompts with an immediate set prompt from DB pending work
+[Reclaim DEBUG] [GUIDED_SCHEDULE] NEXT_SET immediate set prompt from DB chain { sessionId: 'sess-1', exerciseId: 'ex1', setIndex: 2 }
+
+stdout | src/lib/training/__tests__/scheduleGuidedTrainingNextSetFromDb.test.ts > scheduleGuidedTrainingNextSetFromDb > clears prompt slots and re-arms stale when session is complete
+[Reclaim DEBUG] [GUIDED_SCHEDULE] NEXT_SET — session complete, clear prompts, keep stale safety net { sessionId: 'sess-2' }
+
+ ✓ src/lib/training/__tests__/scheduleGuidedTrainingNextSetFromDb.test.ts > scheduleGuidedTrainingNextSetFromDb > formats the persisted R07 effective weight and reps in the phone/Wear next-set prompt 6ms
+ ✓ src/lib/training/__tests__/scheduleGuidedTrainingNextSetFromDb.test.ts > scheduleGuidedTrainingNextSetFromDb > loadGuidedTrainingNotificationWorkChain reads DB items 1ms
+ ✓ src/lib/training/__tests__/scheduleGuidedTrainingNextSetFromDb.test.ts > scheduleGuidedTrainingNextSetFromDb > loadGuidedTrainingNotificationWorkChain honours session cursor 0ms
+ ✓ src/lib/training/__tests__/scheduleGuidedTrainingNextSetFromDb.test.ts > scheduleGuidedTrainingNextSetFromDb > replaces prompts with an immediate set prompt from DB pending work 1ms
+ ✓ src/lib/training/__tests__/scheduleGuidedTrainingNextSetFromDb.test.ts > scheduleGuidedTrainingNextSetFromDb > clears prompt slots and re-arms stale when session is complete 1ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - High RPE Rules > should reduce weight 5% for RPE 9 1ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - High RPE Rules > should reduce weight 10% for RPE 10 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - High RPE Rules > should NOT reduce for normal RPE (7) 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Rep Drop Rules > should reduce weight when reps drop 20%+ 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Rep Drop Rules > should apply larger reduction for 30%+ rep drop 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Strong Performance > should suggest increase for low RPE exceeding target 1ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Strong Performance > should NOT suggest increase if just meeting target 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Fatigue Detection > should detect fatigue from multiple high RPE sets 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Fatigue Detection > should detect rising RPE pattern 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Bodyweight Safety > should NEVER suggest negative weight 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Bodyweight Safety > should reduce target reps for bodyweight exercises instead of weight 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Session Fatigue Detection > should report low fatigue for fresh sets 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Session Fatigue Detection > should report high fatigue for many high RPE sets 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Rest Time Adjustment > should extend rest for high RPE 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Rest Time Adjustment > should extend more for RPE 10 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Rest Time Adjustment > should shorten for low RPE 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Rest Time Adjustment > should maintain minimum rest of 45 seconds 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Trace Integrity > should include rule ID in all adjustments 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Trace Integrity > should include confidence in all adjustments 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Trace Integrity > should include human-readable message 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > decideDoubleProgression > all sets at top of range with RPE <= 8 → +2.5kg upper body 2ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > decideDoubleProgression > all sets at top of range → +5kg lower body 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > decideDoubleProgression > reps below range → hold with a rep goal 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > decideDoubleProgression > RPE 9-10 → hold even at top of rep range 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > decideDoubleProgression > two consecutive holds → deload 10% rounded to step 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > decideDoubleProgression > bodyweight at 3×12 → suggest adding weight, never prescribe 0kg copy 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > decideDoubleProgression > bodyweight below cap → progress by reps 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > decideDoubleProgression > returns null with no history 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > countHoldStreak > counts consecutive failed sessions at the same weight (newest first) 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > countHoldStreak > breaks streak when a session met the increase criteria 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > countHoldStreak > breaks streak when weight moved up between sessions 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > helpers > meetsIncreaseCriteria requires every set at top of range under the RPE cap 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > helpers > summarizes mixed-rep sessions honestly 0ms
+ ✓ src/lib/training/__tests__/scheduleGuidedTrainingAfterSetPersist.cursor.test.ts > scheduleGuidedTrainingAfterSetPersist cursor + rest parity > after jump cursor, next prompt names jumped exercise not session-order first 2ms
+ ✓ src/lib/training/__tests__/scheduleGuidedTrainingAfterSetPersist.cursor.test.ts > scheduleGuidedTrainingAfterSetPersist cursor + rest parity > last set of exercise with next exercise yields between-exercise rest > 0 1ms
+ ✓ src/lib/training/__tests__/guidedWearDelivery.simulation.test.ts > guided Wear delivery simulation (headless) > cursor jump: chain next is jumped exercise, not session-order pending[0] 2ms
+ ✓ src/lib/training/__tests__/guidedWearDelivery.simulation.test.ts > guided Wear delivery simulation (headless) > between-exercise rest parity: last set without restSeconds + hasNextExercise → 90 0ms
+ ✓ src/lib/training/__tests__/guidedWearDelivery.simulation.test.ts > guided Wear delivery simulation (headless) > Wear Next-set deep-link does not open Done confirm overlay 0ms
+ ✓ src/lib/training/__tests__/guidedWearDelivery.simulation.test.ts > guided Wear delivery simulation (headless) > already-performed set suppresses overlay Done 0ms
+ ✓ src/lib/training/__tests__/trainingNotificationWorkPlan.test.ts > trainingNotificationWorkPlan > lists pending sets in order across exercises 2ms
+ ✓ src/lib/training/__tests__/trainingNotificationWorkPlan.test.ts > trainingNotificationWorkPlan > builds next target from DB-shaped performed state (no lookahead chain) 1ms
+ ✓ src/lib/training/__tests__/trainingNotificationWorkPlan.test.ts > trainingNotificationWorkPlan > when cursor is set, next follows cursor (not session-order first pending) 0ms
+
+ Test Files  11 passed (11)
+      Tests  109 passed (109)
+   Start at  21:36:16
+   Duration  17.91s (transform 1.02s, setup 604ms, collect 8.90s, tests 149ms, environment 1ms, prepare 1.00s)

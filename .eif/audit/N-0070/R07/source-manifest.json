@@ -1,0 +1,15 @@
+{
+  "baseline": "5e8879d25fbee27028b09b052de2ceba7958f4fb",
+  "checkout": "C:\\Reclaim-R07-verify-20261015",
+  "files": {
+    "app/src/components/training/TrainingSessionView.tsx": "7916fd8a5045d1939d0f1e7432bd877ba205565d4e263bcab65bb5769c420101",
+    "app/src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts": "10b071bcf377a3393dc0dd1d92cce6e5ffe1f6a96b387920c57702cb9aca3d45",
+    "app/src/lib/training/__tests__/autoregulationOverlay.test.ts": "de8e065da3f866bc0eac68a16080c3c690c244d57dc720e975bdac8fdff4ed2e",
+    "app/src/lib/training/__tests__/scheduleGuidedTrainingNextSetFromDb.test.ts": "b3c96191dec3bd695b5eea5e00813d79dca5e9ed6b39b5acab195a9fa0bb1bff",
+    "app/src/lib/training/__tests__/sessionAdjustment.test.ts": "519ed87cc6f66e008fc70f41fafde01a0063d8704c980805660360afa2fed9ae",
+    "app/src/lib/training/autoregulationOverlay.ts": "d8f68612db1025c18a62ec65866f853132f0b2a9e652ac5edeae40f404009d90",
+    "app/src/lib/training/sessionAdjustment.ts": "6c9aec62bdaf62046cbe3289dc1d68c558f9e1a42c05cf62ac6f8230ba56c496",
+    "app/src/lib/training/sessionDerivedState.ts": "4784b7b2746d0b1a55e5fd929e45d2f0d312326fbb0437bef253e353c72688fd",
+    "app/src/lib/training/trainingSessionProgression.ts": "9f6eacf5d985ebe6db106ec4ea2dd1ecd9029b5547c294cbb245011f6beeb2e0"
+  }
+}

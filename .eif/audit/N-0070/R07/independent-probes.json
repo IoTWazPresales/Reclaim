@@ -1,0 +1,96 @@
+[
+  {
+    "name": "100kg to 95kg contract output",
+    "pass": true,
+    "evidence": {
+      "producer": {
+        "adjustedWeight": 95,
+        "weightMultiplier": 0.95
+      },
+      "before": {
+        "persistedWeightDelta": 0,
+        "reader": {
+          "weight": 100,
+          "reps": 8
+        }
+      },
+      "after": {
+        "applied": {
+          "status": "applied",
+          "setIndex": 2,
+          "weightKg": 95,
+          "reps": 8,
+          "loadConvention": "total_bar",
+          "ruleId": "FIRST_SET_HIGH_RPE",
+          "message": "High effort. Next set: 95kg · 8 reps · Total bar weight.",
+          "overlay": {
+            "weightDelta": -5,
+            "repsDelta": 0,
+            "reason": "High effort. Next set: 95kg · 8 reps · Total bar weight."
+          }
+        },
+        "persisted": {
+          "weightDelta": -5,
+          "repsDelta": 0,
+          "reason": "High effort. Next set: 95kg · 8 reps · Total bar weight."
+        },
+        "reader": {
+          "weight": 95,
+          "reps": 8,
+          "autoregMessage": "High effort. Next set: 95kg · 8 reps · Total bar weight."
+        },
+        "guidance": {
+          "sessionItemId": "one",
+          "exerciseId": "barbell_bench_press",
+          "exerciseName": "Barbell Bench Press",
+          "setIndex": 2,
+          "suggestedWeight": 95,
+          "targetReps": 8,
+          "restSeconds": 90
+        }
+      },
+      "plannedUnchanged": true,
+      "performedUnchanged": true
+    }
+  },
+  {
+    "name": "producer-to-legacy-reader proves audited 100kg failure",
+    "pass": true
+  },
+  {
+    "name": "absolute target reconstructs 95kg from frozen 110kg with -15kg overlay",
+    "pass": true
+  },
+  {
+    "name": "JSON reload agrees with pending guidance while later sets remain frozen",
+    "pass": true
+  },
+  {
+    "name": "very high effort uses unchanged 90kg and 6-rep rule after first set",
+    "pass": true
+  },
+  {
+    "name": "bodyweight first-set high effort has explicit no effect",
+    "pass": true
+  },
+  {
+    "name": "assistance remains unsupported rather than reversing load direction",
+    "pass": true
+  },
+  {
+    "name": "skip advisory cannot create overlay or completion",
+    "pass": true
+  },
+  {
+    "name": "completed indices cannot be rewritten by overlays",
+    "pass": true
+  },
+  {
+    "name": "corrupt saved targets do not reach guidance",
+    "pass": true
+  },
+  {
+    "name": "invalid effort data returns explicit no adjustment",
+    "pass": true
+  }
+]

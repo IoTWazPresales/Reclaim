@@ -1,0 +1,24 @@
+{
+  "command": "npm test -- --reporter=verbose",
+  "checkout": "C:/Reclaim-R07-verify-20261015/app",
+  "completed": true,
+  "exit": 1,
+  "test_files": 193,
+  "passed_files": 190,
+  "failed_files": 3,
+  "passed": 1291,
+  "failed": 4,
+  "total": 1295,
+  "failure_assertions": [
+    "src/lib/training/__tests__/routineVolumeMeasurement.test.ts > routine volume measurement harness > measures the two-pass TrainingScreen path across goals \u00d7 days \u00d7 equipment \u00d7 frequency 636ms",
+    "src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > clamps a new session when a tighter cap is supplied 15ms",
+    "src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > leaves a started session snapshot frozen when a later build is capped 6ms",
+    "src/lib/training/__tests__/runSession.test.ts > run route migration > stores the training session link as text and keeps the link on the same user 8ms"
+  ],
+  "baseline_reference": ".eif/audit/N-0070/R06/result.md and .eif/audit/N-0069/R05/recheck.md",
+  "unexpected_assertion_failures": 0,
+  "raw_log_sha256": "4a72ea87439b9dc75964573524ae47277262cd89623b27b13fa3efd2cdc2b0bb",
+  "raw_log_local_path": ".eif/audit/N-0070/R07/full-isolated.txt",
+  "source_matches_before_after": true,
+  "gate_passed": false
+}

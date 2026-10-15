@@ -13,7 +13,6 @@ import {
   type TrainingSessionItemRow,
   type TrainingSetLogRow,
   updateSessionCursorState,
-  updateItemAutoregulationAdjustments,
 } from '@/lib/api';
 import {
   updateTrainingSessionItem,
@@ -22,11 +21,11 @@ import {
 } from '@/data/TrainingRepository';
 import { getLastPerformanceForExercise } from '@/lib/training/lastPerformance';
 import { getExerciseById } from '@/lib/training/engine';
-import { applyAutoregulation } from '@/lib/training/runtime';
+import { recommendSessionAdjustment } from '@/lib/training/autoregulationOverlay';
+import { persistAppliedSessionAdjustment } from '@/lib/training/sessionAdjustment';
 import {
   isExerciseFullyLoggedForItem,
   getAdjustedSetParams,
-  type LocalAdjustments,
 } from '@/lib/training/sessionDerivedState';
 import {
   deriveActiveWorkTarget,
@@ -368,7 +367,6 @@ function TrainingSessionView({
   const restStartNotifiedRef = useRef<string | null>(null);
   const appStateRef = useRef(AppState.currentState);
   
-  const [localAdjustments, setLocalAdjustments] = useState<LocalAdjustments>({});
   const [lastAutoregulationMessage, setLastAutoregulationMessage] = useState<string | null>(null);
   
   // Idempotency guard for set logging (prevent double-submit)
@@ -734,20 +732,56 @@ function TrainingSessionView({
       try {
         logger.debug('[SET_DONE_FLOW] Handler called', { itemId: currentItem.id, setIndex });
 
-        // Compute autoregulation if RPE provided
-        if (rpe !== undefined) {
+        const completedAt = new Date().toISOString();
+        let completionWroteOnline = false;
+
+        try {
+          const { wroteOnline } = await applySetCompletion({
+            sessionId,
+            sessionItemId: currentItem.id,
+            exerciseId: currentItem.exercise_id,
+            setIndex,
+            weight,
+            reps,
+            rpe,
+            completedAt,
+          });
+          completionWroteOnline = wroteOnline;
+          patchSessionItemPerformedInCache(qc, sessionId, currentItem.id, {
+            setIndex,
+            weight,
+            reps,
+            rpe,
+            completedAt,
+          });
+          if (!wroteOnline) {
+            setIsOffline(true);
+            setOfflineQueueSize((prev) => prev + 1);
+          }
+          qc.invalidateQueries({ queryKey: ['training:set_logs', currentItem.id] });
+          logger.debug('[SET_DONE_FLOW] Set completion applied', { setIndex, wroteOnline });
+        } catch (persistError: any) {
+          logger.warn('[SET_DONE_FLOW] Persist failed', persistError);
+          qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
+          Alert.alert('Warning', 'Set could not be saved. Please try again.');
+          loggingInFlight.current.delete(logKey);
+          return;
+        }
+
+        // Completion is canonical; only successfully persisted work may adjust a future target.
+        if (completionWroteOnline) {
           const planned = currentItem.planned?.sets ?? [];
           const currentPlanned = planned.find(s => s.setIndex === setIndex);
           if (currentPlanned) {
-            const allLogged = getPerformedSetsFromItem(currentItem);
-            const autoregResult = applyAutoregulation({
+            const allLogged = getPerformedSetsFromItem(currentItem).filter(s => s.setIndex < setIndex);
+            const outcome = recommendSessionAdjustment({
               exerciseId: currentItem.exercise_id,
               currentSetIndex: setIndex,
               currentSetRpe: rpe,
               currentSetReps: reps,
               currentSetWeight: weight,
-              targetReps: currentPlanned.targetReps ?? reps,
-              suggestedWeight: currentPlanned.suggestedWeight ?? weight,
+              targetReps: getAdjustedSetParams(currentItem, setIndex, {}).reps,
+              suggestedWeight: weight,
               previousSets: allLogged.map(s => ({
                 id: `${currentItem.id}_set_${s.setIndex}`,
                 exerciseId: currentItem.exercise_id,
@@ -764,61 +798,21 @@ function TrainingSessionView({
                 suggestedWeight: s.suggestedWeight,
                 restSeconds: s.restSeconds,
               })),
-            });
-            if (autoregResult.adjustment) {
-              const adj = {
-                weightDelta: autoregResult.adjustment.weightDelta ?? 0,
-                repsDelta: autoregResult.adjustment.targetRepsDelta ?? 0,
-                reason: autoregResult.adjustment.ruleId ?? 'rpe',
-              };
-              const nextSetIdx = setIndex + 1;
-              setLocalAdjustments(prev => ({
-                ...prev,
-                [currentItem.id]: {
-                  ...(prev[currentItem.id] ?? {}),
-                  [nextSetIdx]: adj,
-                },
-              }));
-              updateItemAutoregulationAdjustments(currentItem.id, nextSetIdx, adj)
-                .catch(err => logger.debug('[SESSION] autoregulation DB write failed', { err }));
-              setLastAutoregulationMessage(autoregResult.message);
+            }, planned.find(s => s.setIndex === setIndex + 1 && !isSetPerformedOnItem(currentItem, s.setIndex)), getExerciseById(currentItem.exercise_id));
+            if (outcome.status === 'applied') {
+              try {
+                await persistAppliedSessionAdjustment(qc, sessionId, currentItem.id, outcome);
+                setLastAutoregulationMessage(outcome.message);
+              } catch (error) {
+                logger.warn('[SESSION] autoregulation adjustment not saved', error);
+                setLastAutoregulationMessage('No new adjustment applied: saving failed. The existing next target is retained.');
+              }
+            } else {
+              setLastAutoregulationMessage(outcome.message);
             }
           }
-        }
-
-        const completedAt = new Date().toISOString();
-
-        try {
-          const { wroteOnline } = await applySetCompletion({
-            sessionId,
-            sessionItemId: currentItem.id,
-            exerciseId: currentItem.exercise_id,
-            setIndex,
-            weight,
-            reps,
-            rpe,
-            completedAt,
-          });
-          patchSessionItemPerformedInCache(qc, sessionId, currentItem.id, {
-            setIndex,
-            weight,
-            reps,
-            rpe,
-            completedAt,
-          });
-          if (!wroteOnline) {
-            setIsOffline(true);
-            setOfflineQueueSize((prev) => prev + 1);
-          }
-          loggingInFlight.current.delete(logKey);
-          qc.invalidateQueries({ queryKey: ['training:set_logs', currentItem.id] });
-          logger.debug('[SET_DONE_FLOW] Set completion applied', { setIndex, wroteOnline });
-        } catch (persistError: any) {
-          logger.warn('[SET_DONE_FLOW] Persist failed', persistError);
-          qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
-          Alert.alert('Warning', 'Set could not be saved. Please try again.');
-          loggingInFlight.current.delete(logKey);
-          return;
+        } else {
+          setLastAutoregulationMessage('No adjustment applied: completion is queued offline.');
         }
 
         const plannedSets = currentItem.planned?.sets || [];
@@ -907,7 +901,9 @@ function TrainingSessionView({
         // Remove from in-flight set on error
         loggingInFlight.current.delete(logKey);
       }
-      // Note: logKey removal is handled in try/catch blocks above (immediate removal on success/error)
+      finally {
+        loggingInFlight.current.delete(logKey);
+      }
     },
     [currentItem, qc, sessionId, isEnded, itemsWithOverrides, currentExerciseIndex, shouldForceGuidedNotifications, effectiveNotificationMode, cancelRestFinishNotification],
   );
@@ -1696,7 +1692,10 @@ function TrainingSessionView({
           exerciseId: item.exercise_id,
           exercise: ex,
           orderIndex: item.order_index,
-          plannedSets: item.planned?.sets || [],
+          plannedSets: (item.planned?.sets ?? []).map(set => {
+            const effective = getAdjustedSetParams(item, set.setIndex, {});
+            return { ...set, suggestedWeight: effective.weight, targetReps: effective.reps };
+          }),
           intents: item.planned?.intents || [],
           priority: item.planned?.priority || 'accessory',
           decisionTrace: item.planned?.decisionTrace,
@@ -1933,45 +1932,19 @@ function TrainingSessionView({
           const isResting = !!(restTimer && restTimer.exerciseId === currentItem?.id);
 
           if (isResting) {
-            // Compute "next" set info for the rest countdown card
-            const nextSetInfo = (() => {
-              const nextPendingSet = plannedSets.find((s) => {
-                return !performedSets.some((p) => p.setIndex === s.setIndex);
-              });
-              if (nextPendingSet) {
-                return {
-                  exerciseName: exercise.name,
-                  setIndex: nextPendingSet.setIndex,
-                  totalSets: plannedSets.length,
-                  weight: nextPendingSet.suggestedWeight,
-                  reps: nextPendingSet.targetReps,
-                  isNewExercise: false,
-                };
-              }
-              // Current exercise is done — peek at next exercise
-              const nextItemIdx = currentExerciseIndex + 1;
-              const nextItem = itemsWithOverrides[nextItemIdx];
-              if (nextItem && !nextItem.skipped) {
-                const nextEx = getExerciseById(nextItem.exercise_id);
-                const nextFirstSet = nextItem.planned?.sets?.[0];
-                return {
-                  exerciseName: nextEx?.name ?? 'Next exercise',
-                  setIndex: nextFirstSet?.setIndex ?? 1,
-                  totalSets: nextItem.planned?.sets?.length ?? 0,
-                  weight: nextFirstSet?.suggestedWeight ?? 0,
-                  reps: nextFirstSet?.targetReps ?? 0,
-                  isNewExercise: true,
-                };
-              }
-              return {
-                exerciseName: exercise.name,
-                setIndex: 1,
-                totalSets: plannedSets.length,
-                weight: 0,
-                reps: 0,
-                isNewExercise: false,
-              };
-            })();
+            // Rest, focus and external guidance share the canonical pending target.
+            const nextTarget = activeWorkTarget;
+            const nextItem = nextTarget ? itemsWithOverrides[nextTarget.exerciseIndex] : undefined;
+            const nextExercise = nextItem ? getExerciseById(nextItem.exercise_id) : null;
+            const effective = nextItem && nextTarget ? getAdjustedSetParams(nextItem, nextTarget.setIndex, {}) : null;
+            const nextSetInfo = {
+              exerciseName: nextExercise?.name ?? exercise.name,
+              setIndex: nextTarget?.setIndex ?? 1,
+              totalSets: nextItem?.planned?.sets?.length ?? 0,
+              weight: effective?.weight ?? 0,
+              reps: effective?.reps ?? 0,
+              isNewExercise: !!nextItem && nextItem.id !== currentItem.id,
+            };
 
             return (
               <>
@@ -2030,7 +2003,7 @@ function TrainingSessionView({
               const planned = plannedSets.find((s) => s.setIndex === firstPendingSetIndex);
               if (planned) {
                 // Check for autoregulation adjustment
-                const adjusted = getAdjustedSetParams(currentItem, planned.setIndex, localAdjustments);
+                const adjusted = getAdjustedSetParams(currentItem, planned.setIndex, {});
                 return {
                   setIndex: planned.setIndex,
                   weight: adjusted.weight,
@@ -2149,6 +2122,7 @@ function TrainingSessionView({
           const focusedSet = overlayPlannedSets.find((s) => s.setIndex === overlayWorkTarget.setIndex);
           if (!focusedSet || !overlayExercise) return null;
           const focusedPerformed = isSetPerformedOnItem(overlayItem, overlayWorkTarget.setIndex);
+          const effective = getAdjustedSetParams(overlayItem, focusedSet.setIndex, {});
 
           return (
             <SetFocusOverlay
@@ -2156,15 +2130,15 @@ function TrainingSessionView({
               exerciseName={overlayExercise.name}
               setIndex={focusedSet.setIndex}
               totalSets={overlayPlannedSets.length}
-              plannedWeight={focusedSet.suggestedWeight}
-              plannedReps={focusedSet.targetReps}
+              plannedWeight={effective.weight}
+              plannedReps={effective.reps}
               isCompleted={focusedPerformed}
               isResting={!!(restTimer && restTimer.exerciseId === overlayItem.id)}
               restRemaining={restTimer ? restCountdown.remaining : undefined}
               restPaused={restTimerPaused}
               reduceMotion={reduceMotion}
               onDone={() => {
-                handleSetComplete(focusedSet.setIndex, focusedSet.suggestedWeight, focusedSet.targetReps);
+                handleSetComplete(focusedSet.setIndex, effective.weight, effective.reps);
                 setShowNotificationFocusOverlay(false);
               }}
               onAdjust={() => {
@@ -2200,8 +2174,8 @@ function TrainingSessionView({
               visible
               setIndex={editSet.setIndex}
               totalSets={plannedSets.length}
-              initialWeight={existingPerf?.weight ?? editSet.suggestedWeight}
-              initialReps={existingPerf?.reps ?? editSet.targetReps}
+              initialWeight={existingPerf?.weight ?? getAdjustedSetParams(currentItem, editSet.setIndex, {}).weight}
+              initialReps={existingPerf?.reps ?? getAdjustedSetParams(currentItem, editSet.setIndex, {}).reps}
               initialRpe={existingPerf?.rpe ?? null}
               isUpdate={!!existingPerf}
               weightStep={editDialogWeightStep}

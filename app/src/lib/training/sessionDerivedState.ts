@@ -29,21 +29,22 @@ export function getAdjustedSetParams(
   const baseWeight = planned?.suggestedWeight ?? 0;
   const baseReps = planned?.targetReps ?? 0;
 
-  const localAdj = localAdjustments[item.id]?.[setIndex];
-  if (localAdj) {
-    return {
-      weight: baseWeight + localAdj.weightDelta,
-      reps: baseReps + localAdj.repsDelta,
-      autoregMessage: localAdj.reason,
-    };
+  // Past completion is immutable history; overlays only describe pending work.
+  if (!planned || getLoggedSetIndices(item).includes(setIndex)) {
+    return { weight: baseWeight, reps: baseReps };
   }
-
-  const dbAdj = item.autoregulation_adjustments?.[setIndex];
-  if (dbAdj) {
+  const adjustment = localAdjustments[item.id]?.[setIndex] ?? item.autoregulation_adjustments?.[setIndex];
+  if (adjustment) {
+    const weight = baseWeight + adjustment.weightDelta;
+    const reps = baseReps + adjustment.repsDelta;
+    if (!Number.isFinite(adjustment.weightDelta) || !Number.isFinite(adjustment.repsDelta) ||
+        !Number.isFinite(weight) || weight < 0 || !Number.isInteger(reps) || reps < 1) {
+      return { weight: baseWeight, reps: baseReps, autoregMessage: 'No adjustment applied: the saved adjustment is invalid.' };
+    }
     return {
-      weight: baseWeight + dbAdj.weightDelta,
-      reps: baseReps + dbAdj.repsDelta,
-      autoregMessage: dbAdj.reason,
+      weight,
+      reps,
+      autoregMessage: adjustment.reason,
     };
   }
 

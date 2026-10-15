@@ -1,3 +1,4 @@
+import { getAdjustedSetParams } from './sessionDerivedState';
 /**
  * Pure session progression from DB-shaped items — pending work, notification chain,
  * and in-memory simulation helpers for tests (no I/O).
@@ -63,13 +64,14 @@ export function workTargetToNotificationNext(
   const planned = item.planned?.sets?.find((s) => s.setIndex === target.setIndex);
   if (!planned) return null;
   const meta = getExerciseById(target.exerciseId);
+  const effective = getAdjustedSetParams(item, target.setIndex, {});
   return {
     sessionItemId: target.sessionItemId,
     exerciseId: target.exerciseId,
     exerciseName: meta?.name ?? 'Exercise',
     setIndex: target.setIndex,
-    suggestedWeight: planned.suggestedWeight,
-    targetReps: planned.targetReps,
+    suggestedWeight: effective.weight,
+    targetReps: effective.reps,
     restSeconds: planned.restSeconds ?? 90,
   };
 }
