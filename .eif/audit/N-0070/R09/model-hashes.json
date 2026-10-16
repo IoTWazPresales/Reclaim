@@ -1,0 +1,62 @@
+﻿[
+    {
+        "file":  "app/src/lib/api.ts",
+        "expected":  "93c87dbab0661f865f7f3ea19199f7a2af101006174fd479f198c35200c27469",
+        "actual":  "93c87dbab0661f865f7f3ea19199f7a2af101006174fd479f198c35200c27469",
+        "match":  true
+    },
+    {
+        "file":  "app/src/lib/training/buildProgramDaySession.ts",
+        "expected":  "0a7ff84409799d212dd9210e7b943ff7e527fc7dcfdcfcf33e0e82421b7c533c",
+        "actual":  "0a7ff84409799d212dd9210e7b943ff7e527fc7dcfdcfcf33e0e82421b7c533c",
+        "match":  true
+    },
+    {
+        "file":  "app/src/lib/training/programPlanner.ts",
+        "expected":  "fee7e95b691ff79b49e73797aecda7fa4e80c6d2bf3d5f8aa703014fc61510ce",
+        "actual":  "fee7e95b691ff79b49e73797aecda7fa4e80c6d2bf3d5f8aa703014fc61510ce",
+        "match":  true
+    },
+    {
+        "file":  "app/src/lib/training/preview/index.ts",
+        "expected":  "c435488ac36d62b827ff3f3e0c631308f7b5c02eaca6a5ec53862304010a2be4",
+        "actual":  "c435488ac36d62b827ff3f3e0c631308f7b5c02eaca6a5ec53862304010a2be4",
+        "match":  true
+    },
+    {
+        "file":  "app/src/lib/training/preview/__tests__/setupContract.test.ts",
+        "expected":  "9c88742a07caf6457975f0ca1d42db28b46bc34e3af9942cd8291666a8839d64",
+        "actual":  "9c88742a07caf6457975f0ca1d42db28b46bc34e3af9942cd8291666a8839d64",
+        "match":  true
+    },
+    {
+        "file":  "app/src/lib/training/programmeProjection.ts",
+        "expected":  "a1d56c6a2eedd11ece111fb5c282c38626aa8f19617ce888d0a42a2827bf0d6e",
+        "actual":  "a1d56c6a2eedd11ece111fb5c282c38626aa8f19617ce888d0a42a2827bf0d6e",
+        "match":  true
+    },
+    {
+        "file":  "app/src/lib/training/programmeWeekProposal.ts",
+        "expected":  "d0dc2065314734bc553ee01e4ecc70d781696cca701f5772df24b00ad83cce17",
+        "actual":  "d0dc2065314734bc553ee01e4ecc70d781696cca701f5772df24b00ad83cce17",
+        "match":  true
+    },
+    {
+        "file":  "app/src/lib/training/__tests__/programmePersistence.integration.test.ts",
+        "expected":  "ec95d101fdd4672e7c5474c7d664f0c5b3202125e1f274283eeb000f3024a825",
+        "actual":  "ec95d101fdd4672e7c5474c7d664f0c5b3202125e1f274283eeb000f3024a825",
+        "match":  true
+    },
+    {
+        "file":  "app/src/screens/TrainingScreen.tsx",
+        "expected":  "3be6763f6c1670ea04be86a377434efe5e3539250504897c8d2a92de7fab4d74",
+        "actual":  "3be6763f6c1670ea04be86a377434efe5e3539250504897c8d2a92de7fab4d74",
+        "match":  true
+    },
+    {
+        "file":  "app/src/screens/training/TrainingSetupScreen.tsx",
+        "expected":  "8711dbf36fda024206ba2eebaa1c7aefd2ddf10a0ae1fc35f96d202c5dd0605f",
+        "actual":  "8711dbf36fda024206ba2eebaa1c7aefd2ddf10a0ae1fc35f96d202c5dd0605f",
+        "match":  true
+    }
+]

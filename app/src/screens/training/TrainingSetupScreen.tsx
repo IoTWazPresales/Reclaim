@@ -30,6 +30,8 @@ import {
 } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { buildFourWeekPlan, generateProgramDays } from '@/lib/training/programPlanner';
+import { programmeWeekProposal } from '@/lib/training/programmeWeekProposal';
+import { assertStartableProgramme } from '@/lib/training/buildProgramDaySession';
 import type { ExperienceLevel, TrainingGoal } from '@/lib/training/types';
 import { resolveExperienceLevel } from '@/lib/training/experienceLevel';
 import {
@@ -348,6 +350,15 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         timeWindow.endRange = timeEnd;
       }
 
+      // Resolve and validate before replacing the saved profile or active programme.
+      const startDate = new Date();
+      startDate.setHours(0, 0, 0, 0);
+      const plan = buildFourWeekPlan(decisionProfile, selectedWeekdaysJs, startDate);
+      for (const week of plan.weeks) for (const proposal of programmeWeekProposal(plan, week.weekIndex, programSnapshot).values()) assertStartableProgramme(proposal);
+      if (plan.weeks.some(week => week.compilation?.status === 'infeasible')) {
+        throw new Error('This programme cannot meet your current requirements. Review equipment, constraints and training days before saving.');
+      }
+
       // 1) Save/Upsert profile
       const profile = await upsertTrainingProfile({
         ...profileWrite,
@@ -361,16 +372,6 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       }
 
       // 3) Create a 4-week program instance
-      const startDate = new Date();
-      startDate.setHours(0, 0, 0, 0);
-
-      const plan = buildFourWeekPlan(
-        decisionProfile,
-        // IMPORTANT: pass JS weekdays (0..6) to planner
-        selectedWeekdaysJs,
-        startDate,
-      );
-
       const programInstance = await createProgramInstance({
         // CRITICAL: Use local date formatting to prevent weekday drift in timezones ahead of UTC
         // See dateUtils.ts for rationale

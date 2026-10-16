@@ -1,3 +1,5 @@
+import { programDayInput, weeklyProgrammeSummary } from '@/lib/training/programmeProjection';
+import { programmeWeekProposal } from '@/lib/training/programmeWeekProposal';
 // Training Screen - Main entry point for training module
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { View, ScrollView, Alert, Linking } from 'react-native';
@@ -28,16 +30,13 @@ import { useReclaimTabScreenScroll } from '@/theme/useReclaimTabScreenScroll';
 import {
   buildProgramDaySession,
   materializePlannedSessionItems,
+  assertStartableProgramme,
 } from '@/lib/training/buildProgramDaySession';
 import {
   isPostSetupReconcileActive,
   POST_SETUP_RECONCILE_MS,
   resolveActiveSessionViewState,
 } from '@/lib/training/activeSessionQueryTruth';
-import {
-  computeWeeklyMuscleSessionCounts,
-  formatWeeklyMuscleSetLine,
-} from '@/lib/training/weeklyVolumeSummary';
 import { markTrainingSessionStartForHealthConnect } from '@/lib/health/exerciseSessionWriter';
 import {
   loadTrainingPerformanceSeed,
@@ -50,6 +49,7 @@ import {
   listTrainingSessions,
   getTrainingSession,
   getTrainingProfile,
+  getFrozenProgramDayItems,
   logTrainingEvent,
   getActiveProgramInstance,
   getProgramDays,
@@ -273,6 +273,13 @@ export default function TrainingScreen() {
     refetchOnWindowFocus: false,
   });
 
+  const frozenWeekQ = useQuery({
+    queryKey: ['training:frozenWeek', activeProgramQ.data?.id, programDaysWeekQ.data?.map(day => day.id)],
+    queryFn: () => getFrozenProgramDayItems((programDaysWeekQ.data ?? []).map(day => day.id)),
+    enabled: !!programDaysWeekQ.data?.length,
+    staleTime: 0,
+  });
+
   // Load sessions
   const sessionsQ = useQuery({
     queryKey: ['training:sessions'],
@@ -482,41 +489,25 @@ export default function TrainingScreen() {
     const orderedDays = [...programDaysWeekForUI].sort((a: any, b: any) =>
       String(a.date).localeCompare(String(b.date)),
     );
-    const dayInput = (day: any) => ({
-      label: day.label,
-      intents: day.intents,
-      template_key: day.template_key,
-      weekIndex: day.week_index,
-    });
-    const muscleSessionCounts = computeWeeklyMuscleSessionCounts(
-      orderedDays.map((day: any) => buildProgramDaySession(dayInput(day), snapshot, { adaptiveTrainingEnabled })),
-    );
-    const usedIds: string[] = [];
+    const muscleSessionCounts = undefined;
+    const weeks = new Map<number, ReturnType<typeof programmeWeekProposal>>();
     const plansByDate = new Map<string, ReturnType<typeof buildProgramDaySession>>();
     for (const day of orderedDays) {
-      const plan = buildProgramDaySession(dayInput(day), snapshot, {
-        adaptiveTrainingEnabled,
-        weeklyMuscleSessionCounts: muscleSessionCounts,
-        avoidExerciseIds: [...usedIds],
-      });
-      for (const item of plan.exercises) usedIds.push(item.exerciseId);
-      plansByDate.set(String(day.date), plan);
+      if (!weeks.has(day.week_index)) weeks.set(day.week_index, programmeWeekProposal(program.plan, day.week_index, snapshot, { adaptiveTrainingEnabled }));
+      const proposal = weeks.get(day.week_index)?.get(day.day_index) ?? buildProgramDaySession(programDayInput(day, program.plan), snapshot, { adaptiveTrainingEnabled });
+      plansByDate.set(String(day.date), proposal);
     }
-    const weekPlans = [...plansByDate.values()];
     return {
-      weeklySetsLine: formatWeeklyMuscleSetLine(weekPlans),
+      weeklySetsLine: frozenWeekQ.isSuccess ? weeklyProgrammeSummary(orderedDays.map(day => ({
+        proposal: plansByDate.get(String(day.date))!, frozen: frozenWeekQ.data?.[day.id],
+      }))) : 'Weekly recorded work unavailable',
       muscleSessionCounts,
       plansByDate,
     };
-  }, [activeProgramQ.data, programDaysWeekForUI, lastPerfSeedQ.data, adaptiveTrainingEnabled]);
+  }, [activeProgramQ.data, programDaysWeekForUI, lastPerfSeedQ.data, adaptiveTrainingEnabled, frozenWeekQ.data, frozenWeekQ.isSuccess]);
 
   const buildPlanForProgramDay = useCallback(
-    (programDay: {
-      label: string;
-      intents: MovementIntent[];
-      template_key: SessionTemplate;
-      weekIndex?: number;
-    }) => {
+    (programDay: any) => {
       const program = activeProgramQ.data;
       if (!program) return null;
       const dated = programDay as { date?: string };
@@ -526,10 +517,8 @@ export default function TrainingScreen() {
         program.profile_snapshot as TrainingProfileSnapshot,
         lastPerfSeedQ.data,
       );
-      return buildProgramDaySession(programDay, snapshot, {
-        weeklyMuscleSessionCounts: weekSessionVolume.muscleSessionCounts,
-        adaptiveTrainingEnabled,
-      });
+      return programmeWeekProposal(program.plan, programDay.week_index, snapshot, { adaptiveTrainingEnabled }).get(programDay.day_index)
+        ?? buildProgramDaySession(programDayInput(programDay, program.plan), snapshot, { adaptiveTrainingEnabled });
     },
     [activeProgramQ.data, lastPerfSeedQ.data, weekSessionVolume, adaptiveTrainingEnabled],
   );
@@ -601,6 +590,7 @@ export default function TrainingScreen() {
       /** Prep countdown duration — first-set notification scheduled after DB write */
       prepSeconds?: number;
     }) => {
+      assertStartableProgramme(plan);
       const sessionId = prepSessionId ?? `training_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
       const program = activeProgramQ.data;
 
@@ -627,6 +617,11 @@ export default function TrainingScreen() {
       await updateTrainingSession(sessionId, {
         decisionTrace: {
           notificationMode,
+          planningProfile: {
+            goals: plan.goals, equipment_access: plan.constraints.availableEquipment,
+            constraints: { injuries: plan.constraints.injuries, forbiddenMovements: plan.constraints.forbiddenMovements, preferences: plan.constraints.preferences },
+            experienceLevel: plan.userState.experienceLevel, baselines: plan.userState.estimated1RM,
+          },
           ...(plan.template === 'run'
             ? { run: true, runTargetMinutes: plan.estimatedDurationMinutes }
             : {}),
@@ -664,6 +659,7 @@ export default function TrainingScreen() {
       setPendingPlan(null);
       setSelectedProgramDay(null);
       qc.invalidateQueries({ queryKey: ['training:sessions'] });
+      qc.invalidateQueries({ queryKey: ['training:frozenWeek'] });
       qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
 
       if (variables.prepSessionId) {
@@ -733,15 +729,11 @@ export default function TrainingScreen() {
               try {
                 await endInProgressSessionWithOptionalEnergySummary(inProgressSession);
                 await qc.invalidateQueries({ queryKey: ['training:sessions'] });
+                await qc.invalidateQueries({ queryKey: ['training:frozenWeek'] });
                 await qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
                 // Now allow preview to proceed
                 setSelectedProgramDay(programDay);
-                const plan = buildPlanForProgramDay({
-                  label: programDay.label,
-                  intents: programDay.intents,
-                  template_key: programDay.template_key,
-                  weekIndex: programDay.week_index,
-                });
+                const plan = buildPlanForProgramDay(programDay);
                 if (!plan) return;
                 setPendingPlan(plan);
                 setShowPreview(true);
@@ -765,18 +757,14 @@ export default function TrainingScreen() {
 
                   await deleteTrainingSession(activeId);
                   await qc.invalidateQueries({ queryKey: ['training:sessions'] });
+                  await qc.invalidateQueries({ queryKey: ['training:frozenWeek'] });
                   await qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
                   await qc.invalidateQueries({ queryKey: ['training:session', activeId] });
                   setActiveSessionId(null);
 
                   // Now allow preview to proceed
                   setSelectedProgramDay(programDay);
-                  const plan = buildPlanForProgramDay({
-                    label: programDay.label,
-                    intents: programDay.intents,
-                    template_key: programDay.template_key,
-                    weekIndex: programDay.week_index,
-                  });
+                  const plan = buildPlanForProgramDay(programDay);
                   if (!plan) return;
                   setPendingPlan(plan);
                   setShowPreview(true);
@@ -796,12 +784,7 @@ export default function TrainingScreen() {
       const program = activeProgramQ.data;
       if (!program) return;
 
-      const plan = buildPlanForProgramDay({
-        label: programDay.label,
-        intents: programDay.intents,
-        template_key: programDay.template_key,
-        weekIndex: programDay.week_index,
-      });
+      const plan = buildPlanForProgramDay(programDay);
       if (!plan) return;
 
       setPendingPlan(plan);
@@ -870,6 +853,10 @@ export default function TrainingScreen() {
 
   const handleConfirmSession = useCallback(async () => {
     if (!pendingPlan || !selectedProgramDay) return;
+    try { assertStartableProgramme(pendingPlan); } catch (error) {
+      Alert.alert('Programme needs review', error instanceof Error ? error.message : 'Review training setup before starting.');
+      return;
+    }
 
     // FIX: Double-check for active session before starting (defensive check)
     if (inProgressSession) {
@@ -885,6 +872,7 @@ export default function TrainingScreen() {
               try {
                 await endInProgressSessionWithOptionalEnergySummary(inProgressSession);
                 await qc.invalidateQueries({ queryKey: ['training:sessions'] });
+                await qc.invalidateQueries({ queryKey: ['training:frozenWeek'] });
                 await qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
                 setActiveSessionId(null);
               } catch (error: any) {
@@ -904,6 +892,7 @@ export default function TrainingScreen() {
                 await clearBufferedSessionWrites(activeId);
                 await deleteTrainingSession(activeId);
                 await qc.invalidateQueries({ queryKey: ['training:sessions'] });
+                await qc.invalidateQueries({ queryKey: ['training:frozenWeek'] });
                 await qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
                 await qc.invalidateQueries({ queryKey: ['training:session', activeId] });
                 setActiveSessionId(null);
@@ -1006,25 +995,18 @@ export default function TrainingScreen() {
     try {
       const plan =
         weekSessionVolume.plansByDate.get(String(nextDay.date)) ??
-        buildProgramDaySession(
-          {
-            label: nextDay.label,
-            intents: (nextDay.intents || []) as MovementIntent[],
-            template_key: nextDay.template_key as SessionTemplate,
-            weekIndex: nextDay.week_index,
-          },
-          withProfileLastPerformance(activeProgramQ.data.profile_snapshot as TrainingProfileSnapshot, lastPerfSeedQ.data),
-          { weeklyMuscleSessionCounts: weekSessionVolume.muscleSessionCounts, adaptiveTrainingEnabled },
-        );
+        buildPlanForProgramDay(nextDay);
+      if (!plan) return null;
       return {
         programDay: nextDay,
         plan,
         date: new Date(nextDay.date),
       };
-    } catch {
+    } catch (error) {
+      if (__DEV__) logger.debug('[TrainingScreen] next programme proposal unavailable', error);
       return null;
     }
-  }, [programDaysFourWeekQ.data, activeProgramQ.data, lastPerfSeedQ.data, weekSessionVolume, adaptiveTrainingEnabled]);
+  }, [programDaysFourWeekQ.data, activeProgramQ.data, lastPerfSeedQ.data, weekSessionVolume, adaptiveTrainingEnabled, buildPlanForProgramDay]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1101,11 +1083,13 @@ export default function TrainingScreen() {
           if (activeSessionId) dismissedResumeSessionIdRef.current = activeSessionId;
           setActiveSessionId(null);
           qc.invalidateQueries({ queryKey: ['training:sessions'] });
+          qc.invalidateQueries({ queryKey: ['training:frozenWeek'] });
           qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
         }}
         onCancel={() => {
           if (activeSessionId) dismissedResumeSessionIdRef.current = activeSessionId;
           setActiveSessionId(null);
+          qc.invalidateQueries({ queryKey: ['training:frozenWeek'] });
         }}
       />
     );

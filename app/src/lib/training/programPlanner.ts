@@ -1,6 +1,7 @@
 // Training Program Planner - Generates deterministic 4-week training blocks
 import { type TrainingProfileRow } from '../api';
-import type { MovementIntent, SessionTemplate, TrainingGoal } from './types';
+import type { MovementIntent, SessionTemplate, TrainingGoal, TrainingProfileSnapshot } from './types';
+import { WEEKLY_POLICY_VERSION } from './weeklyProgrammeTypes';
 import { formatLocalDateYYYYMMDD } from './dateUtils';
 import { isNonLegTrainingTemplate, resolveTrainingMode } from './trainingMode';
 import { balancedStrategyId, compileProgrammeWeek } from './weeklyProgramme';
@@ -24,6 +25,7 @@ export type WeekPlan = {
 };
 
 export type FourWeekProgramPlan = {
+  programme?: { policyVersion: string; input: TrainingProfileSnapshot };
   weeks: WeekPlan[];
   selectedWeekdays: number[];
   goals: Record<TrainingGoal, number>;
@@ -150,14 +152,22 @@ export function buildFourWeekPlan(
     weeklyDayPlans[weekday] = { ...dayPlan, weekday };
   }
 
-  const compilation = compileProgrammeWeek(Object.values(weeklyDayPlans), {
+  const input: TrainingProfileSnapshot = {
     goals,
     equipment_access: profile.equipment_access ?? [],
-    constraints: profile.constraints,
+    constraints: {
+      injuries: profile.constraints?.injuries,
+      forbiddenMovements: profile.constraints?.forbiddenMovements,
+      preferences: profile.constraints?.preferences,
+    },
     baselines: profile.baselines,
     experienceLevel: profile.constraints?.experienceLevel,
     trainingMode: mode,
-  }, { daysPerWeek, strategyId: mode === 'running' ? 'running-v1' : split[0]?.strategyId?.startsWith('balanced-v1:') ? `balanced-v1:${daysPerWeek}` : 'legacy-intents-v1' });
+    baselineInputs: profile.constraints?.baselineInputs,
+    runningGoal: profile.constraints?.runningGoal,
+    runningDistanceKm: profile.constraints?.runningDistanceKm,
+  };
+  const compilation = compileProgrammeWeek(Object.values(weeklyDayPlans), input, { daysPerWeek, strategyId: mode === 'running' ? 'running-v1' : split[0]?.strategyId?.startsWith('balanced-v1:') ? `balanced-v1:${daysPerWeek}` : 'legacy-intents-v1' });
   for (const weekday of uiWeekdays) weeklyDayPlans[weekday].allocation = compilation.days[weekday];
 
   // Replicate for 4 weeks
@@ -171,6 +181,7 @@ export function buildFourWeekPlan(
   }
 
   return {
+    programme: JSON.parse(JSON.stringify({ policyVersion: WEEKLY_POLICY_VERSION, input })),
     weeks,
     selectedWeekdays: uiWeekdays, // Store as UI weekdays (1-7) for generateProgramDays
     goals,

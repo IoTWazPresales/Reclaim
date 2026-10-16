@@ -6,6 +6,7 @@
  * otherwise unchanged here.
  */
 import { buildSessionFromProgramDay } from './engine';
+import { WEEKLY_POLICY_VERSION } from './weeklyProgrammeTypes';
 import type {
   DecisionTrace,
   ExercisePriority,
@@ -31,6 +32,21 @@ export type ProgramDaySessionOptions = {
   /** Exercise ids already used on an earlier day this week. */
   avoidExerciseIds?: string[];
 };
+
+/** DB day rows keep the existing schema; allocation lives in programme plan JSON. */
+export function resolveProgramDayAllocation(
+  plan: { programme?: { policyVersion: string }; weeks?: Array<{ weekIndex?: number; days: Record<number, { allocation?: import('./weeklyProgrammeTypes').AllocatedProgrammeDay }> }> } | null | undefined,
+  day: { week_index?: number; day_index?: number },
+): import('./weeklyProgrammeTypes').AllocatedProgrammeDay | undefined {
+  const week = plan?.weeks?.find(entry => entry.weekIndex === day.week_index);
+  const allocation = week?.days?.[day.day_index ?? 0]?.allocation;
+  const versioned = !!plan?.programme || plan?.weeks?.some(entry => Object.values(entry.days).some(value => value.allocation));
+  if (versioned && (!allocation || allocation.policyVersion !== WEEKLY_POLICY_VERSION ||
+    (plan?.programme && plan.programme.policyVersion !== allocation.policyVersion) || allocation.dayKey !== String(day.day_index))) {
+    throw new Error('Saved weekly allocation is missing or unsupported. Review training setup before starting.');
+  }
+  return allocation;
+}
 
 export function buildProgramDaySession(
   programDay: ProgramDayForSession,
@@ -62,6 +78,7 @@ export function materializePlannedSessionItems(
   sessionId: string,
   plan: SessionPlan,
 ): PersistedPlannedItem[] {
+  assertStartableProgramme(plan);
   return plan.exercises.map((ex, idx) => ({
     id: `${sessionId}_item_${idx}`,
     exerciseId: ex.exerciseId,
@@ -74,6 +91,13 @@ export function materializePlannedSessionItems(
       decisionTrace: ex.decisionTrace,
     }),
   }));
+}
+
+/** Enforce before any session write as well as at the pure materialization boundary. */
+export function assertStartableProgramme(plan: SessionPlan): void {
+  if (plan.programmeValidation?.status === 'infeasible' || plan.programmeValidation?.issues.some(issue => issue.severity === 'error')) {
+    throw new Error('This programme is infeasible. Review training setup before starting.');
+  }
 }
 
 export type SessionPlanWriteInput = {

@@ -1,3 +1,7 @@
+## 2026-10-16 — R09 source consistency checkpoint; N-0070 remains open
+
+R09 only: versioned weekly programme input/allocation JSON, shared preview/setup/TrainingScreen projection with R05 validation, explicit saved day identity, frozen started/guided prescriptions, completed/frozen/provisional muscle-set summaries and existing effective guidance authority. No new rules, migration or live data. Independent 49 focused + 10 probes and additional 29 focused + 7 samples pass; ten source hashes match. Both typechecks, dual-path 31/31, catalogue 357/0 pass. Full suite 1,326 pass / same four baseline failures; wrapper 1 pass / 2 established LEASE_NOT_OWNER failures. Source/evidence branch checkpoint only: `.eif/audit/N-0070/R09/result.md`; publication receipt follows. No ownership bypass/EIF acceptance. Android/device is UNABLE_TO_VERIFY, R11 owns acceptance. Latest saved attempt/day muscle-set summary excludes repeated-attempt aggregation and run duration. Unrelated changes preserved. Stop after R09; do not start R10 or another task.
+
 ## 2026-10-15: R08 source pushed; no acceptance; stop after R08
 
 R08 source/evidence checkpoint 3de2a5b8d5fcec9d9ce8cbf02ce18b303d9f067c is pushed and remote-verified on fix/training-confident-ux. All 18 committed source blobs match the frozen independent verification. Full suite: 1,320 passed / four matching baseline failures. Receipt: .eif/audit/N-0070/R08/push-receipt.json. EIF ownership, distributed atomicity and Android confirmation remain outstanding; no N-0070 acceptance or shipping approval. No R09 started.

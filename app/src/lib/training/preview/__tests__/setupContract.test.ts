@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { prepareTrainingSetup, type TrainingSetupDraft } from '../../setupDraft';
 import { dryRunTrainingGeneration } from '../index';
 import { buildFourWeekPlan } from '../../programPlanner';
-import { buildProgramDaySession } from '../../buildProgramDaySession';
+import { programmeWeekProposal } from '../../programmeWeekProposal';
 
 const base: TrainingSetupDraft = {
   goals: { build_muscle: 4, build_strength: 4, lose_fat: 1, get_fitter: 1 },
@@ -20,14 +20,7 @@ const base: TrainingSetupDraft = {
 function confirmedProposal(draft: TrainingSetupDraft) {
   const { profile, snapshot, selectedWeekdaysJs } = prepareTrainingSetup(draft);
   const plan = buildFourWeekPlan(profile, selectedWeekdaysJs, new Date());
-  const day = plan.weeks[0].days[plan.selectedWeekdays[0]];
-  return buildProgramDaySession({
-    label: day.label,
-    intents: day.intents,
-    template_key: day.template,
-    weekIndex: 1,
-    allocation: day.allocation,
-  }, snapshot);
+  return programmeWeekProposal(plan, 1, snapshot).get(plan.selectedWeekdays[0])!;
 }
 
 describe('R02 setup decision contract', () => {

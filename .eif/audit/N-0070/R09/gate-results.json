@@ -1,0 +1,74 @@
+{
+  "date": "2026-10-16",
+  "scope": "R09 only",
+  "node": "N-0070",
+  "node_accepted": false,
+  "focused_independent": {
+    "files": 6,
+    "passed": 49,
+    "failed": 0
+  },
+  "reviewer_adversarial_api": {
+    "files": 2,
+    "passed": 10,
+    "failed": 0
+  },
+  "additional_context_focused": {
+    "files": 5,
+    "passed": 29,
+    "failed": 0
+  },
+  "additional_context_samples": {
+    "passed": 7,
+    "failed": 0,
+    "model_identity_attested": false
+  },
+  "typecheck_isolated_exit": 0,
+  "typecheck_mixed_exit": 0,
+  "dual_path": {
+    "passed": 31,
+    "failed": 0
+  },
+  "catalogue": {
+    "rows": 357,
+    "governance_issues": 0,
+    "cli_test_passed": true
+  },
+  "full_suite": {
+    "command": "npm test -- --reporter=verbose",
+    "checkout": "C:\\Reclaim\\.tmp\\R09-verify",
+    "completed": true,
+    "summary_lines": [
+      "Test Files  3 failed | 194 passed (197)",
+      "Tests  4 failed | 1326 passed (1330)",
+      "Start at  09:11:08",
+      "Duration  175.35s (transform 4.99s, setup 7.14s, collect 48.84s, tests 27.11s, environment 24ms, prepare 12.65s)"
+    ],
+    "failure_assertions": [
+      "\u00d7 src/lib/training/__tests__/routineVolumeMeasurement.test.ts > routine volume measurement harness > measures the two-pass TrainingScreen path across goals \u00d7 days \u00d7 equipment \u00d7 frequency 1188ms",
+      "\u00d7 src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > clamps a new session when a tighter cap is supplied 17ms",
+      "\u00d7 src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > leaves a started session snapshot frozen when a later build is capped 8ms",
+      "\u00d7 src/lib/training/__tests__/runSession.test.ts > run route migration > stores the training session link as text and keeps the link on the same user 19ms"
+    ],
+    "raw_log_sha256": "d912b29fc151241ff614cea29faa38e2785cc376f3e32ee31714530f191c3e88",
+    "raw_log_local_path": ".eif/audit/N-0070/R09/full-isolated.txt",
+    "source_matches_after": true,
+    "baseline_reference": ".eif/audit/N-0070/R08/full-suite-summary.json",
+    "gate_passed": false,
+    "exit": 1,
+    "failed": 4,
+    "passed": 1326,
+    "total": 1330,
+    "unexpected_assertion_failures": 0,
+    "baseline_failures_match": true
+  },
+  "public_wrapper": {
+    "exit": 1,
+    "passed": 1,
+    "failed": 2,
+    "reason": "LEASE_NOT_OWNER: R20261014R03",
+    "scope": "required tests; no ownership investigation or mutation"
+  },
+  "android": "UNABLE_TO_VERIFY; read-only adb devices on 2026-10-15 returned no device; R11 owns runtime acceptance",
+  "eif_evidence_id": null
+}

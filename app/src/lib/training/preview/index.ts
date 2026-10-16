@@ -5,6 +5,7 @@
 import { buildFourWeekPlan } from '../programPlanner';
 import { buildProgramDaySession } from '../buildProgramDaySession';
 import { prepareTrainingSetup, type TrainingSetupDraft } from '../setupDraft';
+import { programmeWeekProposal } from '../programmeWeekProposal';
 import type { SessionPlan, PlannedExercise, PlannedSet } from '../types';
 
 export type PreviewSettings = TrainingSetupDraft;
@@ -54,23 +55,14 @@ export function dryRunTrainingGeneration(
     const weekIndex = context?.weekIndex ?? 1;
 
     const weekPlan = plan.weeks[weekIndex - 1];
-    const dayPlan = weekPlan.days[targetWeekday];
+    const dayPlan = weekPlan?.days[targetWeekday];
 
     if (!dayPlan) {
       return null; // Day not in plan
     }
 
     // Same product wrapper as TrainingScreen. Preview does not write a session.
-    const sessionPlan = buildProgramDaySession(
-      {
-        label: dayPlan.label,
-        intents: dayPlan.intents,
-        template_key: dayPlan.template,
-        weekIndex,
-        allocation: dayPlan.allocation,
-      },
-      snapshot
-    );
+    const sessionPlan = programmeWeekProposal(plan, weekIndex, snapshot).get(targetWeekday) ?? null;
 
     return sessionPlan;
   } catch (error) {

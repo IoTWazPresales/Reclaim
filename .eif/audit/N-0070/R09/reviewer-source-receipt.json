@@ -1,0 +1,88 @@
+{
+  "baseline": "733749c3cd8b6d45fcfab3847bbd70ac3e07a8d8",
+  "checkout": "C:\\Reclaim\\.tmp\\R09-verify",
+  "count": 10,
+  "mismatches": 0,
+  "files": [
+    {
+      "path": "app/src/lib/api.ts",
+      "expected_sha256": "93c87dbab0661f865f7f3ea19199f7a2af101006174fd479f198c35200c27469",
+      "isolated_sha256": "93c87dbab0661f865f7f3ea19199f7a2af101006174fd479f198c35200c27469",
+      "live_sha256": "93c87dbab0661f865f7f3ea19199f7a2af101006174fd479f198c35200c27469",
+      "canonical_lf_sha256": "4918447ef45dc790b981565adddbd727eafd6893e379635b1cd9f5de86b77faa",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/buildProgramDaySession.ts",
+      "expected_sha256": "0a7ff84409799d212dd9210e7b943ff7e527fc7dcfdcfcf33e0e82421b7c533c",
+      "isolated_sha256": "0a7ff84409799d212dd9210e7b943ff7e527fc7dcfdcfcf33e0e82421b7c533c",
+      "live_sha256": "0a7ff84409799d212dd9210e7b943ff7e527fc7dcfdcfcf33e0e82421b7c533c",
+      "canonical_lf_sha256": "0a7ff84409799d212dd9210e7b943ff7e527fc7dcfdcfcf33e0e82421b7c533c",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/programPlanner.ts",
+      "expected_sha256": "fee7e95b691ff79b49e73797aecda7fa4e80c6d2bf3d5f8aa703014fc61510ce",
+      "isolated_sha256": "fee7e95b691ff79b49e73797aecda7fa4e80c6d2bf3d5f8aa703014fc61510ce",
+      "live_sha256": "fee7e95b691ff79b49e73797aecda7fa4e80c6d2bf3d5f8aa703014fc61510ce",
+      "canonical_lf_sha256": "fee7e95b691ff79b49e73797aecda7fa4e80c6d2bf3d5f8aa703014fc61510ce",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/preview/index.ts",
+      "expected_sha256": "c435488ac36d62b827ff3f3e0c631308f7b5c02eaca6a5ec53862304010a2be4",
+      "isolated_sha256": "c435488ac36d62b827ff3f3e0c631308f7b5c02eaca6a5ec53862304010a2be4",
+      "live_sha256": "c435488ac36d62b827ff3f3e0c631308f7b5c02eaca6a5ec53862304010a2be4",
+      "canonical_lf_sha256": "e62758accd4e894c857148d8e0e71215c69a43356201b9994695e87648dae715",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/preview/__tests__/setupContract.test.ts",
+      "expected_sha256": "9c88742a07caf6457975f0ca1d42db28b46bc34e3af9942cd8291666a8839d64",
+      "isolated_sha256": "9c88742a07caf6457975f0ca1d42db28b46bc34e3af9942cd8291666a8839d64",
+      "live_sha256": "9c88742a07caf6457975f0ca1d42db28b46bc34e3af9942cd8291666a8839d64",
+      "canonical_lf_sha256": "9c88742a07caf6457975f0ca1d42db28b46bc34e3af9942cd8291666a8839d64",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/programmeProjection.ts",
+      "expected_sha256": "a1d56c6a2eedd11ece111fb5c282c38626aa8f19617ce888d0a42a2827bf0d6e",
+      "isolated_sha256": "a1d56c6a2eedd11ece111fb5c282c38626aa8f19617ce888d0a42a2827bf0d6e",
+      "live_sha256": "a1d56c6a2eedd11ece111fb5c282c38626aa8f19617ce888d0a42a2827bf0d6e",
+      "canonical_lf_sha256": "383754f1259e6526fca46ac9b9cec9002a0b2dcf764a88d08337a2748505f045",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/programmeWeekProposal.ts",
+      "expected_sha256": "d0dc2065314734bc553ee01e4ecc70d781696cca701f5772df24b00ad83cce17",
+      "isolated_sha256": "d0dc2065314734bc553ee01e4ecc70d781696cca701f5772df24b00ad83cce17",
+      "live_sha256": "d0dc2065314734bc553ee01e4ecc70d781696cca701f5772df24b00ad83cce17",
+      "canonical_lf_sha256": "d0dc2065314734bc553ee01e4ecc70d781696cca701f5772df24b00ad83cce17",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/__tests__/programmePersistence.integration.test.ts",
+      "expected_sha256": "ec95d101fdd4672e7c5474c7d664f0c5b3202125e1f274283eeb000f3024a825",
+      "isolated_sha256": "ec95d101fdd4672e7c5474c7d664f0c5b3202125e1f274283eeb000f3024a825",
+      "live_sha256": "ec95d101fdd4672e7c5474c7d664f0c5b3202125e1f274283eeb000f3024a825",
+      "canonical_lf_sha256": "ec95d101fdd4672e7c5474c7d664f0c5b3202125e1f274283eeb000f3024a825",
+      "matches": true
+    },
+    {
+      "path": "app/src/screens/TrainingScreen.tsx",
+      "expected_sha256": "3be6763f6c1670ea04be86a377434efe5e3539250504897c8d2a92de7fab4d74",
+      "isolated_sha256": "3be6763f6c1670ea04be86a377434efe5e3539250504897c8d2a92de7fab4d74",
+      "live_sha256": "3be6763f6c1670ea04be86a377434efe5e3539250504897c8d2a92de7fab4d74",
+      "canonical_lf_sha256": "94132d1cb270126973b53e366db4386e25907a156e6bec255ee0d09bbeef0102",
+      "matches": true
+    },
+    {
+      "path": "app/src/screens/training/TrainingSetupScreen.tsx",
+      "expected_sha256": "8711dbf36fda024206ba2eebaa1c7aefd2ddf10a0ae1fc35f96d202c5dd0605f",
+      "isolated_sha256": "8711dbf36fda024206ba2eebaa1c7aefd2ddf10a0ae1fc35f96d202c5dd0605f",
+      "live_sha256": "8711dbf36fda024206ba2eebaa1c7aefd2ddf10a0ae1fc35f96d202c5dd0605f",
+      "canonical_lf_sha256": "6c94c510ac75860bacf2be0969df372708f3c2e926794b1930c1c5c524a85750",
+      "matches": true
+    }
+  ]
+}

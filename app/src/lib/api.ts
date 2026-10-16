@@ -2594,6 +2594,26 @@ export async function getRecentExercisePerformances(
   return completedPerformanceHistory(items, sessionsPerExercise);
 }
 
+/** Started snapshots for a mixed historical/future week; never regenerate their sets. */
+export async function getFrozenProgramDayItems(programDayIds: string[]): Promise<Record<string, TrainingSessionItemRow[]>> {
+  const user = await requireUser();
+  if (!programDayIds.length) return {};
+  const { data, error } = await supabase.from('training_sessions')
+    .select('id, program_day_id, started_at, created_at, decision_trace, training_session_items(*)')
+    .in('program_day_id', programDayIds)
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false });
+  if (error) throw new Error(error.message);
+  const grouped: Record<string, TrainingSessionItemRow[]> = {};
+  for (const row of data ?? []) {
+    const items = (row.training_session_items ?? []) as TrainingSessionItemRow[];
+    const guided = row.decision_trace?.notificationMode === 'guided' && items.length > 0;
+    if (!row.started_at && !guided) continue;
+    if (!(row.program_day_id in grouped)) grouped[row.program_day_id] = items;
+  }
+  return grouped;
+}
 
 /**
  * Get best performance metrics for an exercise (for PR detection)
