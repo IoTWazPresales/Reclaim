@@ -1,0 +1,14 @@
+{
+  "run": "R20261016EVIDRECOVERYA",
+  "utc": "2026-10-16T16:00:53.102267+00:00",
+  "command": [
+    "python",
+    "-B",
+    "scripts/eif_node.py",
+    "lease",
+    "N-0068"
+  ],
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": ""
+}

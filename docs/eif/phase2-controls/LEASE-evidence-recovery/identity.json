@@ -1,0 +1,20 @@
+{
+  "run": "R20261016EVIDRECOVERYA",
+  "head": "caed83b2501e43402a2f5044b5fc96ed87fde6e0",
+  "dirty_tracked": [
+    ".cursor/rules/eif-core.mdc",
+    ".cursor/rules/eif-project-adapter.mdc",
+    ".eif/CURRENT.md",
+    ".eif/PROGRAM.md",
+    ".eif/WORK_ITEM.md",
+    ".eif/program/PROGRAM.yaml",
+    ".eif/program/PROGRAM_LOG.ndjson",
+    "app/src/lib/training/engine/index.ts",
+    "app/supabase/.temp/cli-latest",
+    "app/supabase/migrations/20260930140000_run_routes.sql",
+    "docs/audits/insight-rules-audit.md",
+    "docs/release/play_human_outstanding_2026-07-29.md",
+    "docs/training/ROUTINE_VOLUME_BASELINE.md"
+  ],
+  "staged": []
+}

@@ -1,0 +1,14 @@
+{
+  "run": "R20261016EVIDRECOVERYA",
+  "utc": "2026-10-16T16:00:11.841649+00:00",
+  "command": [
+    "python",
+    "-B",
+    "scripts/eif_node.py",
+    "inspect",
+    "health"
+  ],
+  "exit_code": 2,
+  "stdout": "",
+  "stderr": "eif_node: program.py health failed (2):\nmode programme\nintegrity ok\ngates DEBT\nacknowledged_gate_debt 0\nunacknowledged_gate_debt 11\ngate_issues N-0002: recorded complete but gates invalid; N-0003: recorded complete but gates invalid; N-0005: recorded complete but gates invalid; N-0006: recorded complete but gates invalid; N-0012: recorded complete but gates invalid; N-0013: recorded complete but gates invalid; N-0014: recorded complete but gates invalid; N-0015: recorded complete but gates invalid; N-0036: recorded complete but gates invalid; N-0037: recorded complete but gates invalid; N-0038: recorded complete but gates invalid\nopen_decisions 0\nconservation_gaps []\nfrontier []\nexpired_leases ['N-0068', 'N-0070']\n"
+}

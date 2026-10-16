@@ -1,0 +1,9 @@
+﻿{
+    "utc":  "2026-10-16T16:05:18.4424009Z",
+    "queried_run_ids":  [
+                            "R20261013P2",
+                            "R20261014R03"
+                        ],
+    "matching_non_shell_processes":  0,
+    "limitation":  "Bounded local observation only; public CLI exposes no run-liveness report. No claim about remote or idle human sessions."
+}

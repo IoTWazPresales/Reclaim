@@ -1,0 +1,20 @@
+{
+  "run": "R20261016EVIDRECOVERYA",
+  "utc": "2026-10-16T16:05:14.949981+00:00",
+  "command": [
+    "python",
+    "-B",
+    "scripts/eif_node.py",
+    "evidence",
+    "N-0069",
+    "--commit",
+    "dcf4bf87b6d587f99451d88d3e58fbea68f6913a",
+    "--path",
+    ".eif/audit/N-0069/R05/recheck.md",
+    "--note",
+    "R05 historical scoped source evidence only; existing review and harness limitations retained. No scope acceptance, independent criterion review, Android/visible approval, science decision or completion asserted."
+  ],
+  "exit_code": 0,
+  "stdout": "EV-0062\n",
+  "stderr": ""
+}

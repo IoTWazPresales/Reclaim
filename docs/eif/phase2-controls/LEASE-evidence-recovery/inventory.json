@@ -1,0 +1,791 @@
+{
+  "run": "R20261016EVIDRECOVERYA",
+  "head": "caed83b2501e43402a2f5044b5fc96ed87fde6e0",
+  "remote_tip": "caed83b2501e43402a2f5044b5fc96ed87fde6e0",
+  "records": [
+    {
+      "node": "N-0068",
+      "task": "R01",
+      "artifact": "docs/eif/phase2-controls/R01-result.md",
+      "reviewed_commit": "c4863c401c5c71e4d379901b1534b700f213a0ad",
+      "artifact_commit": "caed83b2501e43402a2f5044b5fc96ed87fde6e0",
+      "artifact_last_commit": "5f29215b1276eb1c391ba8c9b1b8cd68ae54f331",
+      "original_working_sha256": "31b5ec9f77947255736411e126190afcd1ac8bece7ecb657061a9d608608ea30",
+      "committed_sha256": "6f76a0e95044fa308182d15d8ee804c580e349f37cf555127c394dc0d27671df",
+      "exact_bytes_before": false,
+      "canonical_lf_equal": true,
+      "exact_bytes_for_attachment": true,
+      "pushed": true,
+      "source_bindings": [
+        {
+          "path": "scripts/eif_node.py",
+          "reviewed_sha256": "15a143bc8fb58ee710a8788336c9fa6237d050e66f723ef53cd52a43df20dbff",
+          "committed_sha256": "68c48340bf1b1c3dfb110a81466cbe01374fd6f1afb7214395457bcc3f182517",
+          "matches": true
+        },
+        {
+          "path": "scripts/test_eif_recovery_controls.py",
+          "reviewed_sha256": "acb49626f9cdd1ff286575f3465910cf95e1d3c47818d43da489c6eac70a1ceb",
+          "committed_sha256": "acb49626f9cdd1ff286575f3465910cf95e1d3c47818d43da489c6eac70a1ceb",
+          "matches": true
+        },
+        {
+          "path": "scripts/test_eif_node_commands.py",
+          "reviewed_sha256": "66cf90c4188022615ad85774456cd1b8df3b91c80eabe95863582cbf963ce4bc",
+          "committed_sha256": "66cf90c4188022615ad85774456cd1b8df3b91c80eabe95863582cbf963ce4bc",
+          "matches": true
+        },
+        {
+          "path": "scripts/test_eif_node.py",
+          "reviewed_sha256": "4c1c2d79803be2fd6669717084704b2542e86d0668d2cc6bdbdeb5131cd85345",
+          "committed_sha256": "f0eb9cfb86f5aac472dc92b6fddb6bba230cdfcff6a570cbdc6a730ba5658066",
+          "matches": true
+        },
+        {
+          "path": "docs/eif/phase2-controls/registry.json",
+          "reviewed_sha256": "d923e53cab51de6f77c5aa7ec950d5b3ec64b2f1c84619de68b242daa0f06f92",
+          "committed_sha256": "d923e53cab51de6f77c5aa7ec950d5b3ec64b2f1c84619de68b242daa0f06f92",
+          "matches": true
+        },
+        {
+          "path": "docs/eif/phase2-controls/N0068-acceptance.txt",
+          "reviewed_sha256": "914aec7545540cf449a5f9fd680231c6bc63e9efa9b92987f40f2068d9e431c1",
+          "committed_sha256": "914aec7545540cf449a5f9fd680231c6bc63e9efa9b92987f40f2068d9e431c1",
+          "matches": true
+        }
+      ],
+      "supporting_artifacts": [
+        {
+          "path": "docs/eif/phase2-controls/R01-independent-review.md",
+          "working_sha256": "d290058a8db2bacc8eeb3733a27e64667aa1193871988b7dc97b40e6cdcae1f6",
+          "committed_sha256": "d290058a8db2bacc8eeb3733a27e64667aa1193871988b7dc97b40e6cdcae1f6",
+          "exact_bytes": true,
+          "canonical_lf_equal": true
+        }
+      ],
+      "blocked": null,
+      "evidence_id": "EV-0059"
+    },
+    {
+      "node": "N-0069",
+      "task": "R03",
+      "artifact": ".eif/audit/N-0069/R03/result.md",
+      "reviewed_commit": "db41b341ecfbfd230886d3762d4e38b5e6881764",
+      "artifact_commit": "caed83b2501e43402a2f5044b5fc96ed87fde6e0",
+      "artifact_last_commit": "59b6221958d30630c757c1ab055b6443b5777a08",
+      "original_working_sha256": "6f0c367ff0520ab52cc5488e1cb3f6ed1302d20342a824bf5bf8cd97754e0170",
+      "committed_sha256": "6f0c367ff0520ab52cc5488e1cb3f6ed1302d20342a824bf5bf8cd97754e0170",
+      "exact_bytes_before": true,
+      "canonical_lf_equal": true,
+      "exact_bytes_for_attachment": true,
+      "pushed": true,
+      "source_bindings": [
+        {
+          "path": "app/src/lib/training/exerciseEligibility.ts",
+          "committed_sha256": "8f7cb3ca7d2ca365b58b1852d8ac068841976a1fdc0406365e2a74c63c4de036",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/__tests__/exerciseEligibility.test.ts",
+          "committed_sha256": "75425573d6ee42225dc12c519b2a292543acde22f8bfa23d6f84e0d07d1f6055",
+          "matches": true
+        }
+      ],
+      "supporting_artifacts": [
+        {
+          "path": ".eif/audit/N-0069/R03/independent-review.md",
+          "working_sha256": "d2074c30555d49d29ed9f1eb7f61de692baa2b2745a00f53ce97f187f37a24f4",
+          "committed_sha256": "d2074c30555d49d29ed9f1eb7f61de692baa2b2745a00f53ce97f187f37a24f4",
+          "exact_bytes": true,
+          "canonical_lf_equal": true
+        }
+      ],
+      "blocked": null,
+      "evidence_id": "EV-0060"
+    },
+    {
+      "node": "N-0069",
+      "task": "R04",
+      "artifact": ".eif/audit/N-0069/R04/result.md",
+      "reviewed_commit": "b40fa80f32a2b035f830d3e563055b93c083137a",
+      "artifact_commit": "caed83b2501e43402a2f5044b5fc96ed87fde6e0",
+      "artifact_last_commit": "37118f59da8692875bb4c881cd9994697d91c60d",
+      "original_working_sha256": "55f7251c64b4063f2d79474756f1bf29e82a6ef73d82409eaecd301b8392b585",
+      "committed_sha256": "d55378c996948d1fa77317638917f93871f82f2bf79f4bcac1bb6d7218ceb905",
+      "exact_bytes_before": false,
+      "canonical_lf_equal": true,
+      "exact_bytes_for_attachment": false,
+      "pushed": true,
+      "source_bindings": [
+        {
+          "path": "app/src/lib/training/balancedHypertrophy.ts",
+          "committed_sha256": "ff18e2d81c50adc8fc7a0e7868951e7accfbe482671552e7593b44ae2126e35f",
+          "expected_sha256": "ff18e2d81c50adc8fc7a0e7868951e7accfbe482671552e7593b44ae2126e35f",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/weeklyProgramme.ts",
+          "committed_sha256": "ee108accd0e07fd7d8c8d07e9099b38597a8fd7dda32a59ff350377fdcf6c159",
+          "expected_sha256": "ee108accd0e07fd7d8c8d07e9099b38597a8fd7dda32a59ff350377fdcf6c159",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/weeklyProgrammePolicy.ts",
+          "committed_sha256": "ad94a32967777495e46e374a1b4ae6acace90f65e1b185ee7362b2246f6c6ef7",
+          "expected_sha256": "ad94a32967777495e46e374a1b4ae6acace90f65e1b185ee7362b2246f6c6ef7",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/weeklyProgrammeTypes.ts",
+          "committed_sha256": "26f34f5edbaaafa80d782cea7b19a2655f7c258791d599dfcbded565774d1d48",
+          "expected_sha256": "26f34f5edbaaafa80d782cea7b19a2655f7c258791d599dfcbded565774d1d48",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/allocatedProgramSession.ts",
+          "committed_sha256": "d8ec14692cca529713f12885eeb35279b3576bff5c8d11828ec95f6b01a0bbf3",
+          "expected_sha256": "d8ec14692cca529713f12885eeb35279b3576bff5c8d11828ec95f6b01a0bbf3",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/programPlanner.ts",
+          "committed_sha256": "65ad0331eb9a45c46914e15aca3569eb40e5ef06257e0c5307aca534fe96a8de",
+          "expected_sha256": "65ad0331eb9a45c46914e15aca3569eb40e5ef06257e0c5307aca534fe96a8de",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/buildProgramDaySession.ts",
+          "committed_sha256": "ab05b8b88fc4729e43bdd22516429eace786ba2d402da8fe72c157f804477430",
+          "expected_sha256": "ab05b8b88fc4729e43bdd22516429eace786ba2d402da8fe72c157f804477430",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/types.ts",
+          "committed_sha256": "887bcb82715afc9f28e8258d4f5bc06f329b95e2f10de28b64d5dafe6b39d280",
+          "expected_sha256": "887bcb82715afc9f28e8258d4f5bc06f329b95e2f10de28b64d5dafe6b39d280",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/engine/index.ts",
+          "committed_sha256": "996f13908dd7a97925183089e69181573ecff5639045c94056af76bd6583fff1",
+          "expected_sha256": "996f13908dd7a97925183089e69181573ecff5639045c94056af76bd6583fff1",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/preview/index.ts",
+          "committed_sha256": "1ba9888b9fbc543c1144deb17c29c15ca439eafaf0e8c210c3a4dacc2e821b83",
+          "expected_sha256": "1ba9888b9fbc543c1144deb17c29c15ca439eafaf0e8c210c3a4dacc2e821b83",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/preview/__tests__/preview.test.ts",
+          "committed_sha256": "d8aae83145899ee637fb4f7260800f7d8b8bb3904c00873dd13a12ea0be646dc",
+          "expected_sha256": "d8aae83145899ee637fb4f7260800f7d8b8bb3904c00873dd13a12ea0be646dc",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/preview/__tests__/setupContract.test.ts",
+          "committed_sha256": "5f94252869505d94c8313e29b1d8c2d66db77756ed8971deefd34b882289e606",
+          "expected_sha256": "5f94252869505d94c8313e29b1d8c2d66db77756ed8971deefd34b882289e606",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts",
+          "committed_sha256": "5f09795c32c85def0047e6ebc8dc713a89b0b1a2824e868b63ccd266494f2fd7",
+          "expected_sha256": "5f09795c32c85def0047e6ebc8dc713a89b0b1a2824e868b63ccd266494f2fd7",
+          "matches": true
+        }
+      ],
+      "supporting_artifacts": [
+        {
+          "path": ".eif/audit/N-0069/R04/independent-review.md",
+          "working_sha256": "95b49e304536d2858befed1ff3421a62500e452ce3802bffb24390b8fe791556",
+          "committed_sha256": "95b49e304536d2858befed1ff3421a62500e452ce3802bffb24390b8fe791556",
+          "exact_bytes": true,
+          "canonical_lf_equal": true
+        },
+        {
+          "path": ".eif/audit/N-0069/R04/source-manifest.json",
+          "working_sha256": "eca4d379d879f2bf896d3f6bef0efbcf7e949f5c22f7a47df4f8ab5180719fe8",
+          "committed_sha256": "a5de57a9bb58a011555b61e931fb534df83d1130fb9cd35cbec2c5d00060db73",
+          "exact_bytes": false,
+          "canonical_lf_equal": true
+        }
+      ],
+      "blocked": "Reviewer balancedHypertrophy hash 81d1982368d4ffdb6d043146fb81dd4e79dbd979a513b7239dc09f7854a08818 conflicts with manifest reviewed-filesystem b211622fd36931d4ad7fc6661ce9e0bdf70c44171ae728e10fa6808cd7730788. All 13 committed manifest hashes match; independent exact-candidate review provenance remains unresolved.",
+      "evidence_id": null
+    },
+    {
+      "node": "N-0069",
+      "task": "R05",
+      "artifact": ".eif/audit/N-0069/R05/result.md",
+      "reviewed_commit": "dcf4bf87b6d587f99451d88d3e58fbea68f6913a",
+      "artifact_commit": "caed83b2501e43402a2f5044b5fc96ed87fde6e0",
+      "artifact_last_commit": "3c0c14008b2c47cff33c15378ad6e37b97dcd76b",
+      "original_working_sha256": "579059b4cebe322fc87f51c47c402e6576e1f67cd85e4ce364f1f20a0313b0d9",
+      "committed_sha256": "579059b4cebe322fc87f51c47c402e6576e1f67cd85e4ce364f1f20a0313b0d9",
+      "exact_bytes_before": true,
+      "canonical_lf_equal": true,
+      "exact_bytes_for_attachment": true,
+      "pushed": true,
+      "source_bindings": [
+        {
+          "path": "app/src/lib/training/weeklyProgrammeValidator.ts",
+          "committed_sha256": "9439512c5f6af887a7e92fb92e1843fb7421abc2a34fbeff615eeccdbb523810",
+          "expected_sha256": "9439512c5f6af887a7e92fb92e1843fb7421abc2a34fbeff615eeccdbb523810",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/__tests__/weeklyProgrammeValidator.test.ts",
+          "committed_sha256": "1f14967a06d716a7c6e28dcb1229f2b8341b7e1b33559184f2ff990ac4a014d7",
+          "expected_sha256": "1f14967a06d716a7c6e28dcb1229f2b8341b7e1b33559184f2ff990ac4a014d7",
+          "matches": true
+        }
+      ],
+      "supporting_artifacts": [
+        {
+          "path": ".eif/audit/N-0069/R05/independent-review.md",
+          "working_sha256": "d6e2e804c731cfecfb2a491abed8b94d14ba07c29cdef224d0394c7be6256627",
+          "committed_sha256": "f2e0d5419b938510800c1f2987198d04ed44503a27465bcd2733a939887f5e04",
+          "exact_bytes": false,
+          "canonical_lf_equal": true
+        },
+        {
+          "path": ".eif/audit/N-0069/R05/source-manifest.json",
+          "working_sha256": "e1b8d5b215a80ce637da27faa7ec5db6efcde74864a4f544f54675ddf65bd51f",
+          "committed_sha256": "25ee486f3811c5bda0c1045551375434fec43f8ed8a2653660f52f90d26c2aee",
+          "exact_bytes": false,
+          "canonical_lf_equal": true
+        }
+      ],
+      "blocked": null,
+      "evidence_id": "EV-0061"
+    },
+    {
+      "node": "N-0069",
+      "task": "R05",
+      "artifact": ".eif/audit/N-0069/R05/recheck.md",
+      "reviewed_commit": "dcf4bf87b6d587f99451d88d3e58fbea68f6913a",
+      "artifact_commit": "caed83b2501e43402a2f5044b5fc96ed87fde6e0",
+      "artifact_last_commit": "3c0c14008b2c47cff33c15378ad6e37b97dcd76b",
+      "original_working_sha256": "cb06ff388fb23330ae88df7103ac920bb04be69b031f4cbec456bd372069bb9b",
+      "committed_sha256": "cb06ff388fb23330ae88df7103ac920bb04be69b031f4cbec456bd372069bb9b",
+      "exact_bytes_before": true,
+      "canonical_lf_equal": true,
+      "exact_bytes_for_attachment": true,
+      "pushed": true,
+      "source_bindings": [
+        {
+          "path": "app/src/lib/training/weeklyProgrammeValidator.ts",
+          "committed_sha256": "9439512c5f6af887a7e92fb92e1843fb7421abc2a34fbeff615eeccdbb523810",
+          "expected_sha256": "9439512c5f6af887a7e92fb92e1843fb7421abc2a34fbeff615eeccdbb523810",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/__tests__/weeklyProgrammeValidator.test.ts",
+          "committed_sha256": "1f14967a06d716a7c6e28dcb1229f2b8341b7e1b33559184f2ff990ac4a014d7",
+          "expected_sha256": "1f14967a06d716a7c6e28dcb1229f2b8341b7e1b33559184f2ff990ac4a014d7",
+          "matches": true
+        }
+      ],
+      "supporting_artifacts": [
+        {
+          "path": ".eif/audit/N-0069/R05/independent-review.md",
+          "working_sha256": "d6e2e804c731cfecfb2a491abed8b94d14ba07c29cdef224d0394c7be6256627",
+          "committed_sha256": "f2e0d5419b938510800c1f2987198d04ed44503a27465bcd2733a939887f5e04",
+          "exact_bytes": false,
+          "canonical_lf_equal": true
+        },
+        {
+          "path": ".eif/audit/N-0069/R05/source-manifest.json",
+          "working_sha256": "e1b8d5b215a80ce637da27faa7ec5db6efcde74864a4f544f54675ddf65bd51f",
+          "committed_sha256": "25ee486f3811c5bda0c1045551375434fec43f8ed8a2653660f52f90d26c2aee",
+          "exact_bytes": false,
+          "canonical_lf_equal": true
+        }
+      ],
+      "blocked": null,
+      "evidence_id": "EV-0062"
+    },
+    {
+      "node": "N-0070",
+      "task": "R02",
+      "artifact": ".eif/audit/N-0070/R02/fixture-and-review.md",
+      "reviewed_commit": "cda17e7c3326272325b2a6b67bb805cbc7481ae2",
+      "artifact_commit": "caed83b2501e43402a2f5044b5fc96ed87fde6e0",
+      "artifact_last_commit": "cda17e7c3326272325b2a6b67bb805cbc7481ae2",
+      "original_working_sha256": "9e3c69a465406b3de3405f42dd8403c8fbb017eeb3b8a5038a5e4b831274d78d",
+      "committed_sha256": "9e3c69a465406b3de3405f42dd8403c8fbb017eeb3b8a5038a5e4b831274d78d",
+      "exact_bytes_before": true,
+      "canonical_lf_equal": true,
+      "exact_bytes_for_attachment": false,
+      "pushed": true,
+      "source_bindings": [],
+      "supporting_artifacts": [
+        {
+          "path": ".eif/audit/N-0070/R02/fixture-and-review.md",
+          "working_sha256": "9e3c69a465406b3de3405f42dd8403c8fbb017eeb3b8a5038a5e4b831274d78d",
+          "committed_sha256": "9e3c69a465406b3de3405f42dd8403c8fbb017eeb3b8a5038a5e4b831274d78d",
+          "exact_bytes": true,
+          "canonical_lf_equal": true
+        }
+      ],
+      "blocked": "Narrative final-diff review exists, but no exact reviewed-source fingerprint/manifest binds it to cda17e7. Do not invent a reviewed-source receipt.",
+      "evidence_id": null
+    },
+    {
+      "node": "N-0070",
+      "task": "R06",
+      "artifact": ".eif/audit/N-0070/R06/result.md",
+      "reviewed_commit": "77726c6d3ae31f85212503c8c21dee3cc626bac8",
+      "artifact_commit": "caed83b2501e43402a2f5044b5fc96ed87fde6e0",
+      "artifact_last_commit": "5e8879d25fbee27028b09b052de2ceba7958f4fb",
+      "original_working_sha256": "1d1d567a6fe58a3addbf7c94d868d4226384b9e819efadbeeb066d5448bb0d20",
+      "committed_sha256": "6654a2c83e334baeed4de89b7f06e4c622b4f7cdd078234d64a37d8c55509599",
+      "exact_bytes_before": false,
+      "canonical_lf_equal": true,
+      "exact_bytes_for_attachment": true,
+      "pushed": true,
+      "source_bindings": [
+        {
+          "path": "app/src/lib/api.ts",
+          "committed_sha256": "d43fe27e8d1ae0e470b1ce7158a44863b98f2d740bcc708f90a2d38b1b66a82f",
+          "expected_sha256": "d43fe27e8d1ae0e470b1ce7158a44863b98f2d740bcc708f90a2d38b1b66a82f",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/types.ts",
+          "committed_sha256": "d0c467f0d7b4f8ecfd1233e6f2cda67b0cc989cffe9ffe877a7aa0b5ecb5d071",
+          "expected_sha256": "d0c467f0d7b4f8ecfd1233e6f2cda67b0cc989cffe9ffe877a7aa0b5ecb5d071",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/progression.ts",
+          "committed_sha256": "3746aadb8159b3b4b5d4cf97f3bfe8d5ed12fd338f13521c3eefdc91693333bf",
+          "expected_sha256": "3746aadb8159b3b4b5d4cf97f3bfe8d5ed12fd338f13521c3eefdc91693333bf",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/performanceHistory.ts",
+          "committed_sha256": "6bb9ad11222994cf603321d9f2799670130df614e8e1b05d1eb3cc2fe44996fb",
+          "expected_sha256": "6bb9ad11222994cf603321d9f2799670130df614e8e1b05d1eb3cc2fe44996fb",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/trainingProgramPerformanceSeed.ts",
+          "committed_sha256": "eafb3238bba2ff09140b1fcd33978416ed3b07ecc87879a83243f15fc01b52ab",
+          "expected_sha256": "eafb3238bba2ff09140b1fcd33978416ed3b07ecc87879a83243f15fc01b52ab",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/engine/index.ts",
+          "committed_sha256": "02edd73141a455f218d04c7efae5355c6ec96828eae002b8a79be73077861485",
+          "expected_sha256": "02edd73141a455f218d04c7efae5355c6ec96828eae002b8a79be73077861485",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/allocatedProgramSession.ts",
+          "committed_sha256": "169c15587ee6db7b96158b013baaa96723ed762e0150cabf3f37b39ffb140961",
+          "expected_sha256": "169c15587ee6db7b96158b013baaa96723ed762e0150cabf3f37b39ffb140961",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/balancedHypertrophy.ts",
+          "committed_sha256": "7918d30d831dfd37c5f1ee5a200dc0ae339a271198da1d701dd200a3c2f9c970",
+          "expected_sha256": "7918d30d831dfd37c5f1ee5a200dc0ae339a271198da1d701dd200a3c2f9c970",
+          "matches": true
+        },
+        {
+          "path": "app/src/screens/TrainingScreen.tsx",
+          "committed_sha256": "0a7a4dcbe8c2d7965a687d2352dd97ba239244e04f41af67ddb80d0ebdf54278",
+          "expected_sha256": "0a7a4dcbe8c2d7965a687d2352dd97ba239244e04f41af67ddb80d0ebdf54278",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/__tests__/progressionEvidence.test.ts",
+          "committed_sha256": "38b2cabd6ba5009c1490c0906be5ae296b0bba79945aeae1fcf7b534cccb8ee9",
+          "expected_sha256": "38b2cabd6ba5009c1490c0906be5ae296b0bba79945aeae1fcf7b534cccb8ee9",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/__tests__/performanceHistory.test.ts",
+          "committed_sha256": "ebf104450c1c9bda4d710db82ea967a3945278568c3c0937d5fb3df99424e6c1",
+          "expected_sha256": "ebf104450c1c9bda4d710db82ea967a3945278568c3c0937d5fb3df99424e6c1",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/__tests__/performanceHistoryApi.test.ts",
+          "committed_sha256": "39dbe09f64a26db5fd2358d1737539202ad9b30d5ec7c436b063c52b9afae1c6",
+          "expected_sha256": "39dbe09f64a26db5fd2358d1737539202ad9b30d5ec7c436b063c52b9afae1c6",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/__tests__/fixtures/performanceHistory.ts",
+          "committed_sha256": "a5809a6aa29d29e97c83ee55daa2b521bc1d1442687d851cc9bd8260f87d4f39",
+          "expected_sha256": "a5809a6aa29d29e97c83ee55daa2b521bc1d1442687d851cc9bd8260f87d4f39",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/__tests__/fourWeekProgression.test.ts",
+          "committed_sha256": "9a567b8fac4a78f05473fd08cd443166efd0b7873c878d7332b37ff24aec3a3f",
+          "expected_sha256": "9a567b8fac4a78f05473fd08cd443166efd0b7873c878d7332b37ff24aec3a3f",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/__tests__/experienceLevelLoads.test.ts",
+          "committed_sha256": "2c074de034f076548a28a3852dbba9c4e1bf6f45e248709baea512b72b9b518c",
+          "expected_sha256": "2c074de034f076548a28a3852dbba9c4e1bf6f45e248709baea512b72b9b518c",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/__tests__/programQualityGolden.test.ts",
+          "committed_sha256": "72f028bdc09434f0e62270ba29892948a7d65fd0bc7013df320524f0984170b3",
+          "expected_sha256": "72f028bdc09434f0e62270ba29892948a7d65fd0bc7013df320524f0984170b3",
+          "matches": true
+        }
+      ],
+      "supporting_artifacts": [
+        {
+          "path": ".eif/audit/N-0070/R06/review-receipt.json",
+          "working_sha256": "9eff44e11745c18bc57d8af422adf3cf15fceee8e7664a8a910fe01b5d19b3f5",
+          "committed_sha256": "9eff44e11745c18bc57d8af422adf3cf15fceee8e7664a8a910fe01b5d19b3f5",
+          "exact_bytes": true,
+          "canonical_lf_equal": true
+        },
+        {
+          "path": ".eif/audit/N-0070/R06/source-manifest.json",
+          "working_sha256": "99e92410bc7de0157eed691857400c755f25afc82427ce4f8e93f6861b1e9db9",
+          "committed_sha256": "99e92410bc7de0157eed691857400c755f25afc82427ce4f8e93f6861b1e9db9",
+          "exact_bytes": true,
+          "canonical_lf_equal": true
+        }
+      ],
+      "blocked": null,
+      "evidence_id": "EV-0063"
+    },
+    {
+      "node": "N-0070",
+      "task": "R07",
+      "artifact": ".eif/audit/N-0070/R07/result.md",
+      "reviewed_commit": "c46baa798f93c7b950ba936cc8b98ed4ad11ec75",
+      "artifact_commit": "caed83b2501e43402a2f5044b5fc96ed87fde6e0",
+      "artifact_last_commit": "9c3c179e1544ef5ceccff099b58dba1a2f5924c9",
+      "original_working_sha256": "c4faa9120427d6e70443b1dfeb3f3f9bf319689f68af67b4eefb02f9281a4fc3",
+      "committed_sha256": "270bb18d24217ea86fd4a15471bc36aa284386d9af67c81e62351083b5afc896",
+      "exact_bytes_before": false,
+      "canonical_lf_equal": true,
+      "exact_bytes_for_attachment": true,
+      "pushed": true,
+      "source_bindings": [
+        {
+          "path": "app/src/components/training/TrainingSessionView.tsx",
+          "committed_sha256": "7916fd8a5045d1939d0f1e7432bd877ba205565d4e263bcab65bb5769c420101",
+          "expected_sha256": "7916fd8a5045d1939d0f1e7432bd877ba205565d4e263bcab65bb5769c420101",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts",
+          "committed_sha256": "10b071bcf377a3393dc0dd1d92cce6e5ffe1f6a96b387920c57702cb9aca3d45",
+          "expected_sha256": "10b071bcf377a3393dc0dd1d92cce6e5ffe1f6a96b387920c57702cb9aca3d45",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/__tests__/autoregulationOverlay.test.ts",
+          "committed_sha256": "de8e065da3f866bc0eac68a16080c3c690c244d57dc720e975bdac8fdff4ed2e",
+          "expected_sha256": "de8e065da3f866bc0eac68a16080c3c690c244d57dc720e975bdac8fdff4ed2e",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/__tests__/scheduleGuidedTrainingNextSetFromDb.test.ts",
+          "committed_sha256": "b3c96191dec3bd695b5eea5e00813d79dca5e9ed6b39b5acab195a9fa0bb1bff",
+          "expected_sha256": "b3c96191dec3bd695b5eea5e00813d79dca5e9ed6b39b5acab195a9fa0bb1bff",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/__tests__/sessionAdjustment.test.ts",
+          "committed_sha256": "519ed87cc6f66e008fc70f41fafde01a0063d8704c980805660360afa2fed9ae",
+          "expected_sha256": "519ed87cc6f66e008fc70f41fafde01a0063d8704c980805660360afa2fed9ae",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/autoregulationOverlay.ts",
+          "committed_sha256": "d8f68612db1025c18a62ec65866f853132f0b2a9e652ac5edeae40f404009d90",
+          "expected_sha256": "d8f68612db1025c18a62ec65866f853132f0b2a9e652ac5edeae40f404009d90",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/sessionAdjustment.ts",
+          "committed_sha256": "6c9aec62bdaf62046cbe3289dc1d68c558f9e1a42c05cf62ac6f8230ba56c496",
+          "expected_sha256": "6c9aec62bdaf62046cbe3289dc1d68c558f9e1a42c05cf62ac6f8230ba56c496",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/sessionDerivedState.ts",
+          "committed_sha256": "4784b7b2746d0b1a55e5fd929e45d2f0d312326fbb0437bef253e353c72688fd",
+          "expected_sha256": "4784b7b2746d0b1a55e5fd929e45d2f0d312326fbb0437bef253e353c72688fd",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/trainingSessionProgression.ts",
+          "committed_sha256": "9f6eacf5d985ebe6db106ec4ea2dd1ecd9029b5547c294cbb245011f6beeb2e0",
+          "expected_sha256": "9f6eacf5d985ebe6db106ec4ea2dd1ecd9029b5547c294cbb245011f6beeb2e0",
+          "matches": true
+        }
+      ],
+      "supporting_artifacts": [
+        {
+          "path": ".eif/audit/N-0070/R07/review.md",
+          "working_sha256": "cdb5b2e0e822172744f08885bd0717523b2b91b1095580430068ef051453bea8",
+          "committed_sha256": "c1aaab4c9ad5506a124d4a920b7e26c1ab1bd40d91ca9891be20000c8f5768f3",
+          "exact_bytes": false,
+          "canonical_lf_equal": true
+        },
+        {
+          "path": ".eif/audit/N-0070/R07/source-manifest.json",
+          "working_sha256": "d71a4c71eaa93e3bb473aebd7880f31291bb2da25fe6317b69f473d5ecac23a5",
+          "committed_sha256": "deecd0528227005a70affd48f1088189b7f48da63f8fda44d1eb8f56385bc5f0",
+          "exact_bytes": false,
+          "canonical_lf_equal": true
+        }
+      ],
+      "blocked": null,
+      "evidence_id": "EV-0064"
+    },
+    {
+      "node": "N-0070",
+      "task": "R08",
+      "artifact": ".eif/audit/N-0070/R08/result.md",
+      "reviewed_commit": "3de2a5b8d5fcec9d9ce8cbf02ce18b303d9f067c",
+      "artifact_commit": "caed83b2501e43402a2f5044b5fc96ed87fde6e0",
+      "artifact_last_commit": "733749c3cd8b6d45fcfab3847bbd70ac3e07a8d8",
+      "original_working_sha256": "db61c9417b4c3dc12aa394712c3a8e86721d01200f53efad0e73b909fea4eac9",
+      "committed_sha256": "f7f8818d4a7205d2e84d82bf3c654f8e40b070369f1e18de8d8276a1b3b7ae3a",
+      "exact_bytes_before": false,
+      "canonical_lf_equal": true,
+      "exact_bytes_for_attachment": true,
+      "pushed": true,
+      "source_bindings": [
+        {
+          "path": "app/src/components/training/ExerciseCard.tsx",
+          "committed_sha256": "af32e0f6ee965175578c062531abebfc607e0f8b89581719aa21ce1f89bee577",
+          "expected_sha256": "af32e0f6ee965175578c062531abebfc607e0f8b89581719aa21ce1f89bee577",
+          "matches": true
+        },
+        {
+          "path": "app/src/components/training/ReplaceExerciseDialog.tsx",
+          "committed_sha256": "afb205df2da0ed766dd51ce86d3cb8d2dd144774aeb31e527493c208c6dc44f0",
+          "expected_sha256": "afb205df2da0ed766dd51ce86d3cb8d2dd144774aeb31e527493c208c6dc44f0",
+          "matches": true
+        },
+        {
+          "path": "app/src/components/training/TrainingSessionView.tsx",
+          "committed_sha256": "cf6d343ceb5b90486e331dc3acfde620bfad78e8b7ed70ce538f48bddfbb76c8",
+          "expected_sha256": "cf6d343ceb5b90486e331dc3acfde620bfad78e8b7ed70ce538f48bddfbb76c8",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/api.ts",
+          "committed_sha256": "6c8d9ae2a672713f9342902d46cb2b0a7e61fee22f8735bfa0a9dd52b65dbde4",
+          "expected_sha256": "6c8d9ae2a672713f9342902d46cb2b0a7e61fee22f8735bfa0a9dd52b65dbde4",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/__tests__/applySetCompletion.test.ts",
+          "committed_sha256": "f221e576c3e92426848657e1979d91ccb2f923e55d229ebfca634cd1b2f337aa",
+          "expected_sha256": "f221e576c3e92426848657e1979d91ccb2f923e55d229ebfca634cd1b2f337aa",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/__tests__/exerciseSubstitution.test.ts",
+          "committed_sha256": "c7a013ea3234315405b7641a76b08fe4fd67851e43027e4f7f886c010d6655bc",
+          "expected_sha256": "c7a013ea3234315405b7641a76b08fe4fd67851e43027e4f7f886c010d6655bc",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/__tests__/exerciseSubstitutionPersistence.test.ts",
+          "committed_sha256": "d732b952fb9acf9d558a79898913a99807ad152edabd2a5788626a09f54c2bfd",
+          "expected_sha256": "d732b952fb9acf9d558a79898913a99807ad152edabd2a5788626a09f54c2bfd",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/__tests__/substitutionCompletionIdentity.test.ts",
+          "committed_sha256": "4f402b7055df429cdfbd3eb5a6419d0f93f775038d7897ff10ffc1044f485bd4",
+          "expected_sha256": "4f402b7055df429cdfbd3eb5a6419d0f93f775038d7897ff10ffc1044f485bd4",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/applySetCompletion.ts",
+          "committed_sha256": "d706e36e633bb203a7613b47e7fa5f64f41416c9cc5a55d6f56ffd9c992d59e4",
+          "expected_sha256": "d706e36e633bb203a7613b47e7fa5f64f41416c9cc5a55d6f56ffd9c992d59e4",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/applySetEdit.ts",
+          "committed_sha256": "b6c0a38baead2f8ab106b0a084e388e7abf203a0250c254dd6689161165eea88",
+          "expected_sha256": "b6c0a38baead2f8ab106b0a084e388e7abf203a0250c254dd6689161165eea88",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/engine/index.ts",
+          "committed_sha256": "53eb52b6ffe540d0222b3ca294c6131495ae03d15d2d8f41122f630f9eae4f9c",
+          "expected_sha256": "53eb52b6ffe540d0222b3ca294c6131495ae03d15d2d8f41122f630f9eae4f9c",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/exerciseSubstitution.ts",
+          "committed_sha256": "8b6aee3cfb0679a376a5cd9e6da60838d9b2906892e99f83b2ff1f2155ede162",
+          "expected_sha256": "8b6aee3cfb0679a376a5cd9e6da60838d9b2906892e99f83b2ff1f2155ede162",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/offlineQueue.ts",
+          "committed_sha256": "23fbb13977a59f3d23042fbd69d62f5bb31a4054172ea101790737f3a37431b3",
+          "expected_sha256": "23fbb13977a59f3d23042fbd69d62f5bb31a4054172ea101790737f3a37431b3",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/offlineQueueSchema.ts",
+          "committed_sha256": "1b827e6c19157f55196ea6899b64918b32b2fa50c64ee29f60e64ba67d9b7ac6",
+          "expected_sha256": "1b827e6c19157f55196ea6899b64918b32b2fa50c64ee29f60e64ba67d9b7ac6",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/offlineSync.ts",
+          "committed_sha256": "c9775e74342567f5661677616c23948ecf0da0390ba4f008d9c49db0e670b0a8",
+          "expected_sha256": "c9775e74342567f5661677616c23948ecf0da0390ba4f008d9c49db0e670b0a8",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/runtime/payloadBuilder.ts",
+          "committed_sha256": "d6b4b2378bc21f1b2d8a5735010291f4b6acd6f5cb3cec3f2ce91245ea35da6b",
+          "expected_sha256": "d6b4b2378bc21f1b2d8a5735010291f4b6acd6f5cb3cec3f2ce91245ea35da6b",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/sessionItemMutationLock.ts",
+          "committed_sha256": "bb353fd75749507f0a5731ee8552627be1c2e07042de10f96648fb113333c587",
+          "expected_sha256": "bb353fd75749507f0a5731ee8552627be1c2e07042de10f96648fb113333c587",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/trainingSetCompletionPersistence.ts",
+          "committed_sha256": "ac70f05dece4aa2c349bfba1c547e2af02be2c710377273a9415735f457ecd66",
+          "expected_sha256": "ac70f05dece4aa2c349bfba1c547e2af02be2c710377273a9415735f457ecd66",
+          "matches": true
+        }
+      ],
+      "supporting_artifacts": [
+        {
+          "path": ".eif/audit/N-0070/R08/review.md",
+          "working_sha256": "8acd867df2030cefe81afb45074e00a17ded77e67d881de9041206d8105c8d7c",
+          "committed_sha256": "8acd867df2030cefe81afb45074e00a17ded77e67d881de9041206d8105c8d7c",
+          "exact_bytes": true,
+          "canonical_lf_equal": true
+        },
+        {
+          "path": ".eif/audit/N-0070/R08/source-manifest.json",
+          "working_sha256": "2eadd7098052ef80474c135c333fb559c8f2c16deecf0021b7bd9e694e994508",
+          "committed_sha256": "740bba37fb7233019cb574b5cf191e18ac85b0edf5584883224b8f6c8058fdce",
+          "exact_bytes": false,
+          "canonical_lf_equal": true
+        }
+      ],
+      "blocked": null,
+      "evidence_id": "EV-0065"
+    },
+    {
+      "node": "N-0070",
+      "task": "R09",
+      "artifact": ".eif/audit/N-0070/R09/result.md",
+      "reviewed_commit": "df38eba9dbd9636039d2c4b6bdb59085f11a42f4",
+      "artifact_commit": "caed83b2501e43402a2f5044b5fc96ed87fde6e0",
+      "artifact_last_commit": "1666ba535354c20535d980489801fcc424ac2f6f",
+      "original_working_sha256": "e77e38930d2964a47df76dc268450b4b0fefaf75b5c9f6d42d9c762e72a5e5ea",
+      "committed_sha256": "6093731b0c06a8e61a197666be7a77b1e5c307e7c5c2df6fbf1c63fc6c893e93",
+      "exact_bytes_before": false,
+      "canonical_lf_equal": true,
+      "exact_bytes_for_attachment": true,
+      "pushed": true,
+      "source_bindings": [
+        {
+          "path": "app/src/lib/api.ts",
+          "committed_sha256": "4918447ef45dc790b981565adddbd727eafd6893e379635b1cd9f5de86b77faa",
+          "expected_sha256": "4918447ef45dc790b981565adddbd727eafd6893e379635b1cd9f5de86b77faa",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/buildProgramDaySession.ts",
+          "committed_sha256": "0a7ff84409799d212dd9210e7b943ff7e527fc7dcfdcfcf33e0e82421b7c533c",
+          "expected_sha256": "0a7ff84409799d212dd9210e7b943ff7e527fc7dcfdcfcf33e0e82421b7c533c",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/programPlanner.ts",
+          "committed_sha256": "fee7e95b691ff79b49e73797aecda7fa4e80c6d2bf3d5f8aa703014fc61510ce",
+          "expected_sha256": "fee7e95b691ff79b49e73797aecda7fa4e80c6d2bf3d5f8aa703014fc61510ce",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/preview/index.ts",
+          "committed_sha256": "e62758accd4e894c857148d8e0e71215c69a43356201b9994695e87648dae715",
+          "expected_sha256": "e62758accd4e894c857148d8e0e71215c69a43356201b9994695e87648dae715",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/preview/__tests__/setupContract.test.ts",
+          "committed_sha256": "9c88742a07caf6457975f0ca1d42db28b46bc34e3af9942cd8291666a8839d64",
+          "expected_sha256": "9c88742a07caf6457975f0ca1d42db28b46bc34e3af9942cd8291666a8839d64",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/programmeProjection.ts",
+          "committed_sha256": "383754f1259e6526fca46ac9b9cec9002a0b2dcf764a88d08337a2748505f045",
+          "expected_sha256": "383754f1259e6526fca46ac9b9cec9002a0b2dcf764a88d08337a2748505f045",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/programmeWeekProposal.ts",
+          "committed_sha256": "d0dc2065314734bc553ee01e4ecc70d781696cca701f5772df24b00ad83cce17",
+          "expected_sha256": "d0dc2065314734bc553ee01e4ecc70d781696cca701f5772df24b00ad83cce17",
+          "matches": true
+        },
+        {
+          "path": "app/src/lib/training/__tests__/programmePersistence.integration.test.ts",
+          "committed_sha256": "ec95d101fdd4672e7c5474c7d664f0c5b3202125e1f274283eeb000f3024a825",
+          "expected_sha256": "ec95d101fdd4672e7c5474c7d664f0c5b3202125e1f274283eeb000f3024a825",
+          "matches": true
+        },
+        {
+          "path": "app/src/screens/TrainingScreen.tsx",
+          "committed_sha256": "94132d1cb270126973b53e366db4386e25907a156e6bec255ee0d09bbeef0102",
+          "expected_sha256": "94132d1cb270126973b53e366db4386e25907a156e6bec255ee0d09bbeef0102",
+          "matches": true
+        },
+        {
+          "path": "app/src/screens/training/TrainingSetupScreen.tsx",
+          "committed_sha256": "6c94c510ac75860bacf2be0969df372708f3c2e926794b1930c1c5c524a85750",
+          "expected_sha256": "6c94c510ac75860bacf2be0969df372708f3c2e926794b1930c1c5c524a85750",
+          "matches": true
+        }
+      ],
+      "supporting_artifacts": [
+        {
+          "path": ".eif/audit/N-0070/R09/review.md",
+          "working_sha256": "a644ecf83882d6bf15c90c07c80962aabbcc5784ff3b0edc95c3b45cd898144b",
+          "committed_sha256": "a644ecf83882d6bf15c90c07c80962aabbcc5784ff3b0edc95c3b45cd898144b",
+          "exact_bytes": true,
+          "canonical_lf_equal": true
+        },
+        {
+          "path": ".eif/audit/N-0070/R09/committed-source-receipt.json",
+          "working_sha256": "aee617f25cc2c8cb266cb84bf040cedca6e1642f6687e0fe7927481967612305",
+          "committed_sha256": "1a1e9120355930f576cc648ffd48416fd6c5f92aeadda7106ac32fc063752f02",
+          "exact_bytes": false,
+          "canonical_lf_equal": true
+        }
+      ],
+      "blocked": null,
+      "evidence_id": "EV-0066"
+    }
+  ]
+}

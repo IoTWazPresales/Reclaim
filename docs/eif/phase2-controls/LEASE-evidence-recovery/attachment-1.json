@@ -1,0 +1,20 @@
+{
+  "run": "R20261016EVIDRECOVERYA",
+  "utc": "2026-10-16T16:04:36.278449+00:00",
+  "command": [
+    "python",
+    "-B",
+    "scripts/eif_node.py",
+    "evidence",
+    "N-0068",
+    "--commit",
+    "c4863c401c5c71e4d379901b1534b700f213a0ad",
+    "--path",
+    "docs/eif/phase2-controls/R01-result.md",
+    "--note",
+    "R01 historical scoped source evidence only; existing review and harness limitations retained. No scope acceptance, independent criterion review, Android/visible approval, science decision or completion asserted. Historical working-source review mapped to committed source after line-ending normalization; final committed criterion packet/review still missing."
+  ],
+  "exit_code": 0,
+  "stdout": "EV-0059\n",
+  "stderr": ""
+}
