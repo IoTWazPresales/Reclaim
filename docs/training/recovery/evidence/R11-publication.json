@@ -1,0 +1,98 @@
+{
+  "task": "R11 only",
+  "utc": "2026-10-16T10:12:23.273933+00:00",
+  "branch": "fix/training-confident-ux",
+  "evidenceCommit": "a926e710ecc79bc0d25a409bf2a1327305db60a3",
+  "remote": "origin",
+  "remoteRef": "refs/heads/fix/training-confident-ux",
+  "remoteVerifiedSha": "a926e710ecc79bc0d25a409bf2a1327305db60a3",
+  "pushExit": 0,
+  "scope": "17 evidence/durability paths only; no application changes",
+  "runtime": "Current emulator recovered; retained Android setup/week/all27preview rows and historical summary compared with authenticated live reads",
+  "fullSuite": "1374 passed / same four R10 baseline assertions; no new assertion identity",
+  "independentReview": "Separate session, same model; bounded evidence verified with limitations; no scientific approval",
+  "unrelatedTrackedFilesPreservedBySha256": 11,
+  "trainingDataWrite": false,
+  "screenshotsPublished": 4,
+  "node": "N-0071 remains open",
+  "eifEvidenceId": null,
+  "humanCheckRegistered": false,
+  "governanceBlocker": "LEASE_NOT_OWNER: R20261014R03",
+  "r10PolicyFindings": [
+    "R10-P01",
+    "D-P2-01 through D-P2-06 as applicable"
+  ],
+  "remainingRuntime": "Expressly authorized disposable versioned save/start/frozen/effective Done and phone-notification/FGS/Wear delivery; UNABLE_TO_VERIFY",
+  "r12Started": false,
+  "releaseOrLiveDataChanges": false,
+  "committedArtifacts": {
+    "CONTEXT.md": {
+      "committedSha256": "4325010f7a5a880ac957e45722487f4d35ab1c3dad7cf9963ef1702b74ece089",
+      "workingMatchesCommittedAfterLfNormalization": true
+    },
+    "docs/eif/HUMAN_CHECKS.md": {
+      "committedSha256": "3adef274f8c0b81a390cbaef50a710c06a4493a8ad2434b6126452ca1d3b4d48",
+      "workingMatchesCommittedAfterLfNormalization": true
+    },
+    "docs/eif/PROGRESS.md": {
+      "committedSha256": "1fc1b46f25a6508100175f2df18b01e1437e42647d25a3bf27d4e3d82a522a34",
+      "workingMatchesCommittedAfterLfNormalization": true
+    },
+    "docs/training/recovery/evidence/R11-android-acceptance.md": {
+      "committedSha256": "5417d97b53c00bbbc3262e69156518edcb2dc4d87cf356fba1b651534a0139d9",
+      "workingMatchesCommittedAfterLfNormalization": true
+    },
+    "docs/training/recovery/evidence/R11-android-accessibility.json": {
+      "committedSha256": "4ec7cc5c688ce823415a4c6877b5c8c2f22b80f5100fbd13080cea597bf59d5c",
+      "workingMatchesCommittedAfterLfNormalization": true
+    },
+    "docs/training/recovery/evidence/R11-gates.json": {
+      "committedSha256": "007b36eaa5dff6b07a3a27aa47e7c58d29db614224cbc89aad6949a71d5321af",
+      "workingMatchesCommittedAfterLfNormalization": true
+    },
+    "docs/training/recovery/evidence/R11-history-detail.png": {
+      "committedSha256": "c71725be98955254627cc3b4bc15f0b90c757372c2a6f5fc139e434d674630fd",
+      "workingMatchesCommittedAfterLfNormalization": true
+    },
+    "docs/training/recovery/evidence/R11-human-verification.md": {
+      "committedSha256": "8a82037726b0240b46445e9b3332029e6025d81e4dac0abd8c92f37ec0513942",
+      "workingMatchesCommittedAfterLfNormalization": true
+    },
+    "docs/training/recovery/evidence/R11-independent-review.md": {
+      "committedSha256": "809a3ce0962fb09347160c7d3623c9892fa4cc62fe500335c619c336314ce520",
+      "workingMatchesCommittedAfterLfNormalization": true
+    },
+    "docs/training/recovery/evidence/R11-live-reconciliation.json": {
+      "committedSha256": "6439b906930d2db1d1a9760c05f3476b7f7f2f31c07780228192c1c6a599acfb",
+      "workingMatchesCommittedAfterLfNormalization": true
+    },
+    "docs/training/recovery/evidence/R11-preview-comparison.json": {
+      "committedSha256": "aa4a3f2e86b0c16351dffa31ae9a9a22548e482c2006e8587d2ac7078545c14a",
+      "workingMatchesCommittedAfterLfNormalization": true
+    },
+    "docs/training/recovery/evidence/R11-preview-summary.png": {
+      "committedSha256": "f261a50ddeeda10ac23ea117058aafe6a0ada3912ad166a69bda58f9236e416e",
+      "workingMatchesCommittedAfterLfNormalization": true
+    },
+    "docs/training/recovery/evidence/R11-reconcile-fixture.py": {
+      "committedSha256": "de48fd8f7500be1d967ea55b4f573f4862542d6e8d436c52d6202a4920a42784",
+      "workingMatchesCommittedAfterLfNormalization": true
+    },
+    "docs/training/recovery/evidence/R11-representative-five-day.json": {
+      "committedSha256": "ea007a5f155e0b523e32e3fe12e54e9ce5ab4707e46ec20d7ecc256aa16f574e",
+      "workingMatchesCommittedAfterLfNormalization": true
+    },
+    "docs/training/recovery/evidence/R11-runtime-observations.json": {
+      "committedSha256": "685213804421415483dc5600a526671c578b8c1d340eb16fb47c204937e2f279",
+      "workingMatchesCommittedAfterLfNormalization": true
+    },
+    "docs/training/recovery/evidence/R11-setup-baselines.png": {
+      "committedSha256": "c71b66a995c50ee067850498008575976a19c749821c47cf472046f4352de514",
+      "workingMatchesCommittedAfterLfNormalization": true
+    },
+    "docs/training/recovery/evidence/R11-training.png": {
+      "committedSha256": "55d70332347243ae84fcb1679393495fa17213186f4e5e4c09b8925419f12715",
+      "workingMatchesCommittedAfterLfNormalization": true
+    }
+  }
+}
