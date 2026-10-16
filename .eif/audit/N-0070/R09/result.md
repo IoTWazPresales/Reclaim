@@ -106,3 +106,13 @@ still throw during projection rather than render an infeasibility explanation.
 The reviewed typed snapshot/reference failure cases fail closed; this is not a
 claim of a comprehensive decoder for corrupted payloads. Such an exception does
 not produce a valid workout. See the independent model review for this limitation.
+
+## Publication
+
+Source/evidence checkpoint `df38eba9dbd9636039d2c4b6bdb59085f11a42f4` is pushed
+and remote-verified on `fix/training-confident-ux`. All ten committed source blobs
+match independently tested bytes after CRLF→LF normalization only; exact raw and
+canonical hashes are retained. See `committed-source-receipt.json` and
+`push-receipt.json`. The final receipt and resume note are an evidence-only
+follow-up commit. N-0070 remains open; this is not EIF attachment, acceptance or
+shipping approval. Stop after R09.

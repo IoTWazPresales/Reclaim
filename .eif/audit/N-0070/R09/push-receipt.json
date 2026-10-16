@@ -1,0 +1,17 @@
+{
+  "scope": "R09 only",
+  "source_commit": "df38eba9dbd9636039d2c4b6bdb59085f11a42f4",
+  "branch": "fix/training-confident-ux",
+  "remote_ref": "refs/heads/fix/training-confident-ux",
+  "remote_sha": "df38eba9dbd9636039d2c4b6bdb59085f11a42f4",
+  "remote_verified_at": "2026-10-16 07:25:36 UTC",
+  "push_exit": 0,
+  "matched_tested_source_files": 10,
+  "line_endings": "CRLF normalized to LF only",
+  "node": "N-0070",
+  "node_accepted": false,
+  "eif_evidence_id": null,
+  "restriction": "Existing LEASE_NOT_OWNER: R20261014R03; no ownership repair or bypass",
+  "runtime_acceptance": "UNABLE_TO_VERIFY; R11",
+  "publication": "Branch checkpoint only; final receipt is a separate evidence-only commit"
+}
