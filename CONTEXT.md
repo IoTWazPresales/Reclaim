@@ -1,3 +1,7 @@
+## 2026-10-16 — R10 verification checkpoint; N-0071 remains open
+
+R10 tests/evidence only against committed R03–R09 product source. Actual separate reviewer re-executed 48/48 cases; whole-week literal requirements, known-bad historical examples, constrained equipment, goals, history, substitutions and frozen/future work are covered. Lower-body same-pattern compound follow-ups conflict with older isolation-only prose; R10-P01 records clarification requirements without a product change. Science decisions remain pending. Required gate/publication receipts: docs/training/recovery/evidence/R10-gates.json and R10-publication.json. Existing EIF lease conflict untouched; no node acceptance. Unrelated changes preserved. Stop after R10; no R11 started.
+
 ## 2026-10-16 — R09 published; no acceptance; stop after R09
 
 Source/evidence checkpoint df38eba9dbd9636039d2c4b6bdb59085f11a42f4 is pushed and remote-verified on fix/training-confident-ux. All ten committed source files match independent frozen verification after CRLF to LF normalization. Final full suite: 1,326 passed / same four baseline failures. Receipt: .eif/audit/N-0070/R09/push-receipt.json. EIF ownership and R11 Android acceptance remain outstanding; N-0070 stays open. No R10 or other task started. Unrelated changes preserved.

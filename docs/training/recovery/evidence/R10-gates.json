@@ -1,0 +1,118 @@
+{
+  "baselineCommit": "1666ba535354c20535d980489801fcc424ac2f6f",
+  "isolatedCommittedAppFilesMatched": 996,
+  "committedComparisonNormalization": "CRLF to LF only",
+  "lineEndingsOnlyDifferences": [
+    "app/src/components/__tests__/__snapshots__/InsightCard.test.tsx.snap"
+  ],
+  "r10Inputs": {
+    "app/src/lib/training/__tests__/programmeAcceptance.test.ts": {
+      "rawSha256": "c5244634ffbb86fe41386117b2cb8001807ebde4930750d80ed1e5b32094db6a",
+      "lfSha256": "c5244634ffbb86fe41386117b2cb8001807ebde4930750d80ed1e5b32094db6a"
+    },
+    "app/src/lib/training/__tests__/R10-review-probes.test.ts": {
+      "rawSha256": "eec95f1592ca48155420b34f925fa37ae9b275661dca089a2e2499dfcf6b0a83",
+      "lfSha256": "eec95f1592ca48155420b34f925fa37ae9b275661dca089a2e2499dfcf6b0a83"
+    },
+    "docs/training/recovery/evidence/R10-requirements.json": {
+      "rawSha256": "c1e84bd7643547dd41516a91aa76c7066cae1d4116218a25cc0e81385edbb1a3",
+      "lfSha256": "c1e84bd7643547dd41516a91aa76c7066cae1d4116218a25cc0e81385edbb1a3"
+    },
+    "docs/training/recovery/evidence/R10-before-programmes.json": {
+      "rawSha256": "7c365a7ca6318f3c16a5422c056b63adbb1b62c61cdaa1eaf6d4844b0bf5a59c",
+      "lfSha256": "dce8c4e5d551ee46a7821ac4a983a282b12732c2d96b59d7389c7971175dbc96"
+    }
+  },
+  "focused": {
+    "tests": 42,
+    "passed": 42,
+    "command": "npx vitest run src/lib/training/__tests__/programmeAcceptance.test.ts --reporter=verbose"
+  },
+  "independentReview": {
+    "tests": 48,
+    "passed": 48,
+    "separateSession": true,
+    "sameModel": true
+  },
+  "typecheck": {
+    "exit": 0
+  },
+  "dualPath": {
+    "passed": 31,
+    "failed": 0,
+    "shell": "Git Bash"
+  },
+  "catalogue": {
+    "rows": 357,
+    "governanceIssues": 0,
+    "exit": 0
+  },
+  "fullSuite": {
+    "summary": [
+      "Test Files  3 failed | 196 passed (199)",
+      "Tests  4 failed | 1374 passed (1378)",
+      "Duration  222.97s (transform 5.03s, setup 9.94s, collect 61.90s, tests 33.60s, environment 27ms, prepare 16.45s)"
+    ],
+    "baselineFailuresMatch": true,
+    "unexpectedAssertionFailures": 0,
+    "failures": [
+      "src/lib/training/__tests__/routineVolumeMeasurement.test.ts > routine volume measurement harness > measures the two-pass TrainingScreen path across goals \u00d7 days \u00d7 equipment \u00d7 frequency",
+      "src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > clamps a new session when a tighter cap is supplied",
+      "src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > leaves a started session snapshot frozen when a later build is capped",
+      "src/lib/training/__tests__/runSession.test.ts > run route migration > stores the training session link as text and keeps the link on the same user"
+    ],
+    "exit": 1,
+    "gatePassed": false
+  },
+  "wrapper": {
+    "passed": 1,
+    "failed": 2,
+    "reason": "Established LEASE_NOT_OWNER: R20261014R03",
+    "exit": 1
+  },
+  "overall": "VERIFIED_WITH_LIMITATIONS; not full programme/scientific/EIF acceptance",
+  "node": "N-0071 remains open; no ownership bypass or evidence attachment",
+  "policyFollowUp": "R10-P01 lower-body follow-up role precedence unresolved",
+  "logs": {
+    "catalogue.txt": {
+      "sha256": "e9b93e8a5fae57c0f8ea639db7cd37204885fbe77afc0d6f3baabf0f34cacd5f",
+      "localPath": ".eif/audit/N-0071/R10/catalogue.txt"
+    },
+    "dual-path.txt": {
+      "sha256": "ae5bac5411ab21f28a666836141f0e90828e856fac7caaa458e8f55acaa3b271",
+      "localPath": ".eif/audit/N-0071/R10/dual-path.txt"
+    },
+    "focused-current.txt": {
+      "sha256": "8a602f861856eaa173048ccee4d1e85e1b8a0f0459f1b932c33e00e1d196c0a1",
+      "localPath": ".eif/audit/N-0071/R10/focused-current.txt"
+    },
+    "focused-final.txt": {
+      "sha256": "a5a30460e41b4f9a7621d6d592fccac52d3ac3b51fb5dee3a46b669276f32301",
+      "localPath": ".eif/audit/N-0071/R10/focused-final.txt"
+    },
+    "focused-initial.txt": {
+      "sha256": "4501a1681487efd3abf6b150047f6c623748f6678f900861180e1c2d4ffadf92",
+      "localPath": ".eif/audit/N-0071/R10/focused-initial.txt"
+    },
+    "full-vitest-superseded.txt": {
+      "sha256": "c82f51bd827609394d409cb273fe95d08515c648b41681e7729657da80d05abf",
+      "localPath": ".eif/audit/N-0071/R10/full-vitest-superseded.txt"
+    },
+    "full-vitest.txt": {
+      "sha256": "cff129911c98c8fcb8ce20543f34d2aa48a45986dc1647c67516315ebc04f8ef",
+      "localPath": ".eif/audit/N-0071/R10/full-vitest.txt"
+    },
+    "independent-review.txt": {
+      "sha256": "ca6768d6d6f3d6bd5667fa83cb16e5078c2fc11014f551447af2088c3fd830af",
+      "localPath": ".eif/audit/N-0071/R10/independent-review.txt"
+    },
+    "typecheck.txt": {
+      "sha256": "cd35ebdba9e12b61678eec835bf92424979bd88f78501689ba82b1dffbf391cc",
+      "localPath": ".eif/audit/N-0071/R10/typecheck.txt"
+    },
+    "wrapper.txt": {
+      "sha256": "e76658d9a7f8d35b0b748a7c97b30c534418f186d31e68f3950595563011a82f",
+      "localPath": ".eif/audit/N-0071/R10/wrapper.txt"
+    }
+  }
+}

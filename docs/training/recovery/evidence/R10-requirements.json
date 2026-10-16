@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Independent literal product-requirement oracle for R10, authored from accepted prose and recovery contracts before inspecting generated R10 plans. No generator policy imports or output snapshots define expected requirements.",
+  "scope": "Source acceptance of existing rules, not scientific or clinical validation",
+  "provenance": {
+    "balanced": "docs/training/ROUTINE_AUDIT.md#balanced-week-2026-10-09",
+    "prescription": "docs/training/ROUTINE_AUDIT.md#prescription-rules-2026-10-07",
+    "historicalRules": "docs/training/ROUTINE_AUDIT.md#small-muscle-volume-2026-10-07",
+    "running": "docs/training/RUNNING_DESIGN.md#rd-006--a-run-is-a-timed-session-2026-10-07",
+    "hybrid": "docs/training/RUNNING_DESIGN.md#rd-004--hybrid-interference",
+    "decisions": "docs/eif/phase2-controls/DECISIONS_PENDING.md",
+    "phase1": ".eif/audit/training-intelligence-20261012/PROJECT_AUDIT_REPORT.md",
+    "eligibility": "docs/training/recovery/R03-contract.md",
+    "validation": "docs/training/recovery/R05-validator-contract.md",
+    "adjustment": "docs/training/recovery/R07-adjustment-contract.md",
+    "substitution": "docs/training/recovery/R08-substitution-contract.md",
+    "persistence": "docs/training/recovery/R09-weekly-persistence-contract.md"
+  },
+  "precedence": "Balanced week 2026-10-09 supersedes older 16-set universal trained-target and multi-primary accounting prose for this balanced strategy. These are retained product rules, not proof that the associated scientific-policy decisions are approved.",
+  "balancedHalfMuscleHalfStrength": {
+    "goals": { "build_muscle": 0.5, "build_strength": 0.5, "lose_fat": 0, "get_fitter": 0 },
+    "dose": {
+      "heavy": { "sets": 4, "reps": 7, "restSeconds": 135 },
+      "follow": { "sets": 2, "reps": 12, "restSeconds": 55 },
+      "support": { "sets": 3, "reps": 12, "restSeconds": 55 }
+    },
+    "doseProvenance": "Balanced week explicitly states heavy 4 and follow 2 at 50/50, support 3. Reps/rest are the pre-existing 50/50 goal blends independently stated in the R05 literal two-day reviewed fixture; they are implementation-contract values, not new science constants.",
+    "majorOwners": ["pectorals", "lats", "quadriceps", "hamstrings"],
+    "schedulingRegionAliases": {
+      "pectorals": "pectorals", "upper_pectorals": "pectorals", "lower_pectorals": "pectorals",
+      "lats": "lats", "quadriceps": "quadriceps", "hamstrings": "hamstrings"
+    },
+    "regionAliasProvenance": "Balanced week specifies regional chest/back/quads/hamstrings totals. Upper/lower pectorals are chest aliases, not independent quotas. This is exclusive scheduling accounting; do not sum all primary catalogue tags or infer fractional stimulus.",
+    "weekly": {
+      "2": { "setsPerMajorOwner": 6, "exposuresPerMajorOwner": 1, "heavyExposures": 1, "followExposures": 1 },
+      "3": { "setsPerMajorOwner": 10, "exposuresPerMajorOwner": 2, "heavyExposures": 2, "followExposures": 1 },
+      "4": { "setsPerMajorOwner": 12, "exposuresPerMajorOwner": 2, "heavyExposures": 2, "followExposures": 2 },
+      "5": { "setsPerMajorOwner": 12, "exposuresPerMajorOwner": 2, "heavyExposures": 2, "followExposures": 2 },
+      "6": { "setsPerMajorOwner": 12, "exposuresPerMajorOwner": 2, "heavyExposures": 2, "followExposures": 2 }
+    },
+    "supportOwners": ["biceps", "triceps", "lateral_deltoids", "rear_deltoids", "calves"],
+    "supportRule": "Three sets per delivered support exposure, at most two exposures. Prose says twice when the week has room and once when it does not; exact support omission/placement at each frequency is not independently specified here. Do not invent per-frequency exact support quotas from generated output.",
+    "overheadPressRule": "One heavy exposure owns front delts; real hard constraints can reject it explicitly.",
+    "shrugRule": "One three-set exposure when the week has room; do not manufacture an exact low-frequency placement.",
+    "fiveDayPlacementNote": "Upper press/row, squat, push-with-no-pull, pull-with-no-press, deadlift order is prescribed literally in Small-muscle volume. Secondary slot placement is not exhaustively specified here; weekly owner totals remain independently mandatory.",
+    "requiredFirstOwnersByFiveDayOrdinal": ["pectorals", "quadriceps", "pectorals", "lats", "hamstrings"]
+  },
+  "invariants": {
+    "maxWorkingSetsPerSession": 24,
+    "maxEstimatedMinutesPerSession": 60,
+    "maxWorkingSetsPerExercise": 5,
+    "warmupReps": 5,
+    "warmupWorkingWeightFractions": [0.4, 0.6, 0.8],
+    "warmupsCountAsWorkingSets": false,
+    "weeks": [1, 2, 3, 4],
+    "sameInputsAbsentNewQualifiedHistory": "Same strength days, sets and loads across weeks; calendar passage alone cannot increase load.",
+    "ownership": "Exclusive scheduling ownership is not anatomical involvement or physiological stimulus. Bench does not count as direct arm/shoulder dose.",
+    "baseline": "Own-exercise ceiling; uncalibrated variation must not inherit baseline kg or per-dumbbell semantics.",
+    "eligibility": "Actual final catalogue IDs satisfy explicit ALL/ANY equipment, exact contraindications, forbidden movements, dislikes and slot-context skill opt-in. A missing candidate is explicit infeasibility, never successful empty work.",
+    "frozen": "Started/guided prescriptions and canonical performed work remain unchanged when future history or policy changes.",
+    "recovery": "No new rest-gap, fatigue, deload, RIR or progression constant is authorized. Check accepted caps, preserved explicit holds and mixed frozen/future behavior; do not claim measured recovery adequacy.",
+    "repetition": "Repeated exercises across days/weeks are not inherently defects. Five-day push cannot contain back pulling; each chest exposure keeps heavy plus follow dose without multiplying the weekly dose. Within-session duplicate exercise IDs or inappropriate duplicate compounds must be rejected according to accepted slot policy."
+  },
+  "requiredAdversarialVerdicts": {
+    "fiveDayFloorOnly": "Explicit infeasibility with missing capability; never five successful empty sessions",
+    "dumbbellPullWithoutBack": "Explicit missing back requirement or eligible back work; curls/rear-delts/shrugs alone cannot pass",
+    "hybridTwoOrThreeDays": "Explicit infeasibility pending D-P2-03; strength-only output cannot pass as delivered hybrid",
+    "labelRename": "No change in prescribed work for stable strategy and identical normalized input",
+    "rpeNineFrom100": { "effectiveNextKg": 95, "frozenOriginalKg": 100, "status": "Existing R07 rule behavior only; not science approval" },
+    "successful80WithBaselineCeiling": { "recommendedKg": 82.5, "appliedKg": 80, "requiresReason": "D-P2-01 pending baseline ceiling" },
+    "equipmentOrRestrictionChange": "Final selected and substituted exercises must satisfy current saved hard constraints or be refused explicitly",
+    "unavailableHistory": "Unavailable evidence cannot masquerade as known absence or qualified progression",
+    "partiallyCompletedWork": "Partial evidence cannot become full successful-session progression; replacement cannot relabel partial/completed work"
+  },
+  "pendingScientificPolicy": {
+    "D-P2-01": "Whether qualified performance supersedes baseline ceiling",
+    "D-P2-02": "RD-001 evidence-gated progression conflicts with RD-006 calendar 20/20/30/30 schedule; numeric compatibility can pass, scientific progression remains unresolved",
+    "D-P2-03": "Hybrid two/three-day schedule trade-off",
+    "D-P2-04": "Muscle stimulus, dose/population applicability and clinical boundaries",
+    "D-P2-05": "Automatic skip/fatigue capability; no silent skip or invented fatigue formula",
+    "D-P2-06": "Entered lift missing-rack exception remains diagnostic policy waiver, not proof of equipment"
+  }
+}
