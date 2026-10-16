@@ -1,0 +1,235 @@
+{
+  ".cursor/eif-runtime-manifest.json": {
+    "sha256": "cc18499c33bdb41cbbfd4f52423d508314d05700f830a68840c359c437f0e617",
+    "matches_reference": true
+  },
+  ".cursor/eif-runtime-policy.json": {
+    "sha256": "b3d1295e7b400c53a9f30f440d6728dd287bbedbaabe30b7b3ef34b994c4b67e",
+    "matches_reference": true
+  },
+  ".cursor/hooks.json.off": {
+    "sha256": "d7d7c183e44342e4674a83e969a1d79400b3af2763fa1a352239afc2f7a58167",
+    "matches_reference": true
+  },
+  ".cursor/hooks.off/eif_guard.cmd": {
+    "sha256": "0824e387321fb87d7400a4c77b1d5878b7a794648d34a2130fb47c411b05ff29",
+    "matches_reference": true
+  },
+  ".cursor/hooks.off/eif_guard.py": {
+    "sha256": "61680aefae4a1f0dab867b2bd46daacd2e9c6f4d3bf0784e46df30277d1d2c80",
+    "matches_reference": true
+  },
+  ".cursor/hooks.off/eif_guard.sh": {
+    "sha256": "228ed8d88af7362332b562f5a7f1c96d851d545b8ffc69195d83d99799f5df60",
+    "matches_reference": true
+  },
+  ".cursor/hooks.off/eif_guard_crash.json": {
+    "sha256": "00d7f2cdaee97215a9d7a6ccd3a12cf352cc34bd7418be4f2a1410e6e1099a4f",
+    "matches_reference": true
+  },
+  ".cursor/hooks.off/eif_guard_failclosed.json": {
+    "sha256": "b8a84d7b95a7da709f8f26449c96ef636d7796ff82bc7416af70d9b8bfe522f4",
+    "matches_reference": true
+  },
+  ".cursor/hooks.off/eif_integrity.py": {
+    "sha256": "1ba6629252eeef5df5d5fb89ab94fd588bed29a1f0e5ece0413bdb4b1ec9d877",
+    "matches_reference": true
+  },
+  ".cursor/hooks.off/eif_reason_codes.py": {
+    "sha256": "3917f0021a3b04b18729d3123bd30f160ee85857e795cf0e11cb50ba7b3607cb",
+    "matches_reference": true
+  },
+  ".cursor/hooks.off/eif_session.py": {
+    "sha256": "de8191204090ea024323201b2a03645685a0d0d9dfc435398138d5fa114c0370",
+    "matches_reference": true
+  },
+  ".cursor/hooks.off/eif_state.py": {
+    "sha256": "4b164c8107196571002341ebe56b0c81839c773427103bcda6b70c5c8bfa4b6a",
+    "matches_reference": true
+  },
+  ".eif/AUTONOMY_POLICY.md": {
+    "sha256": "1a96313e8d8df2b54e2eac98c10b00b2dd8c480447ab8488ff0eb5c34d426ac8",
+    "matches_reference": true
+  },
+  ".eif/CURRENT.md": {
+    "sha256": "8c7f3691feadd526c2b98ce4b980e9c4c2b757987678bc8384c70ea54fb1bba3",
+    "matches_reference": true
+  },
+  ".eif/ENVIRONMENT_POLICY.md": {
+    "sha256": "8202535e3b52d65e9e7209c07c5bf1ce64cbfa094fa89c8fa43f549108d2e815",
+    "matches_reference": true
+  },
+  ".eif/PROGRAM.md": {
+    "sha256": "5ae8833bb46cd2574ad08b35e6cdda2c8eea861fdac3d48fd00590f19d55ea5f",
+    "matches_reference": true
+  },
+  ".eif/PROJECT_MANIFEST.md": {
+    "sha256": "8255773665333613b82b8221ff842d6a9ce90504ddfd8eb893ccbd7512e4e87a",
+    "matches_reference": true
+  },
+  ".eif/RUNTIME_CAPABILITIES.md": {
+    "sha256": "758c854b4d277effefec1eb3449af1c011ff17f9feb164e8b8e27c109140da09",
+    "matches_reference": true
+  },
+  ".eif/WORK_ITEM.md": {
+    "sha256": "709390a26c397e279efbcf5b6505aace7d835a4699a1f0943f52794e12201593",
+    "matches_reference": true
+  },
+  ".eif/program/.lock": {
+    "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+    "matches_reference": true
+  },
+  ".eif/program/PROGRAM.yaml": {
+    "sha256": "3c170ab5a1ee9ef977003dac3c76e50bacde0389f1d4809ab16a62ae8a64a3b1",
+    "matches_reference": true
+  },
+  ".eif/program/PROGRAM_LOG.ndjson": {
+    "sha256": "bfd355375b8fe546d7e1caa2522b58111a36abe300d93224753c6986530da031",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_constants.py": {
+    "sha256": "d7182545053ed14702761302f64cef501508f0398a1039e777df96b5e4e66569",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_integrity.py": {
+    "sha256": "8261015e9fadddb26ffffcf5e72559fc8928a7dc5a25b0615fa3acd8767f0544",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_program/__init__.py": {
+    "sha256": "78b3417e3ff764955f7c9e0f378db7e712d7c6afcd22fab8b388efb888fe838a",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_program/cli.py": {
+    "sha256": "f3766e82999ca9df187a5cbafcee04febdb3845e940b9bc7657855f8d89c8f1b",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_program/clock.py": {
+    "sha256": "c0923ad5dfc5552283d3cfab98f9ed681dbcd257a8c3592f9c60d88bd427299f",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_program/design_artifacts.py": {
+    "sha256": "5779dabc17314178a4d456b8095246d31cd79cf61f9bb8a152b67642aff527d9",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_program/engine.py": {
+    "sha256": "52e6e2c106144d4bb871ce6d4a6a0252805cb048f598f9c3f05583018ef59766",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_program/errors.py": {
+    "sha256": "590f55e0db83dfc39aef2979b8d1f33304afdbc7e2563b78918ff9f686823a54",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_program/facet_map.yaml": {
+    "sha256": "ef6acf5252a10d2253525e537e9f33eea6ffff5efbd248a89b066a6d14dc0bd5",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_program/facets.py": {
+    "sha256": "02604a35b9fe3c8fe0c6bd91ccb8fad47eafa7b5b2ec2fb83bf91d0bcd82f676",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_program/findings.py": {
+    "sha256": "3ee82dc346bb0750d439000113b96d14e40f833dbb26fcebe77d685b6a0af4d9",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_program/independence.py": {
+    "sha256": "068389e94ef1b87b5027af6e948e83f70a99960317f88adbcbd6079f7762a17c",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_program/journeys.py": {
+    "sha256": "7c569f14f42545df994bab1fc90802b5545dd644db602d65c7f5c3c251d017bc",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_program/migrate.py": {
+    "sha256": "24b8ede9ca653023a922b8ff77c9a3323e47f3ee87a90fc51b0878ebc75f526b",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_program/retroactive.py": {
+    "sha256": "726b673eb62834501ada2edb65a7c5f10548018cf01292a812b8f44a6b95ce12",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_program/runtime_integrity.py": {
+    "sha256": "c58c24c26347d65e0d1a9d961a3c953e2c990326bd93577d6de495e8f9f6a9e6",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_program/runtime_paths.py": {
+    "sha256": "dc9655c787c10fc662cea29b6ee3f33daab2af2f9ec4511c4dcf7de713b0a530",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_program/store.py": {
+    "sha256": "249789a162994605eb8d938c342aea67fe9f856f03870663784af797a5e35a1d",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_program/views.py": {
+    "sha256": "cca9e53e1e100690ee5d8d3288fc765102817c6cdf3253d6e6cb41cfc666176e",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eif_reason_codes.py": {
+    "sha256": "2fa67f4df659a610944c0e2ba9ac9ac0acb7cb6ad3e71aa1e4e49f6702ee62c7",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/eiflib.py": {
+    "sha256": "80a8d18c1735f339b5db133fc962cba3799257ac864f18dd746a145f4c9b9dc9",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/manifest.json": {
+    "sha256": "65a24468ed926fcf9db5e8579cedc173cdc18897e004cfee795def0b05f336e1",
+    "matches_reference": true
+  },
+  ".eif/runtime/programme/program.py": {
+    "sha256": "4e414a1d6f188ed33f9dfb628096de7c50d044dd188d7e4248f20b7971604ee5",
+    "matches_reference": true
+  },
+  "app/src/lib/training/engine/index.ts": {
+    "sha256": "3ba8cb793eb9da34a5d21ac14fd4ed65e5117776eb63adc76e72496cdf82dc48",
+    "matches_reference": true
+  },
+  "app/supabase/.temp/cli-latest": {
+    "sha256": "2f99ec07bad208b0108748390c2fe80fb0a91b1784a8f7bf1d303efda7deeaee",
+    "matches_reference": true
+  },
+  "app/supabase/migrations/20260930140000_run_routes.sql": {
+    "sha256": "8184e6f9f1c4a2aa376f4fae66d63f83495c9355bcbb51b735dc8805cdd89bed",
+    "matches_reference": true
+  },
+  "docs/audits/insight-rules-audit.md": {
+    "sha256": "bf11d5d37b85187f6a5d4a246ad3551e77cd2241d7d1cc322c02a0f3456d8e8c",
+    "matches_reference": true
+  },
+  "docs/eif/AWAITING_APPROVAL.md": {
+    "sha256": "9dcc2c486e3def670e2ff9678937b31d9751db25ff849b517549d559212ce1b5",
+    "matches_reference": true
+  },
+  "docs/eif/HUMAN_CHECKS.md": {
+    "sha256": "ec96e28c1b81f16118ed15e95c8e2b182a823d083acc1c3feea7818f11931376",
+    "matches_reference": true
+  },
+  "docs/eif/LEDGER_PENDING.md": {
+    "sha256": "8ec545e53f40876cda3a95bf06c3e096977e383b7a37140aadb4bf820fde7e35",
+    "matches_reference": true
+  },
+  "docs/release/play_human_outstanding_2026-07-29.md": {
+    "sha256": "935651bf06ece7fadaaed2bd4520d72bf910a7782eeec39d608c2a4a1a98bf22",
+    "matches_reference": true
+  },
+  "docs/training/ROUTINE_VOLUME_BASELINE.md": {
+    "sha256": "35934d84f0874da53b395828a1ced0ebe9e3a8c6f3ebd5d0fb8bc6f5c996f4f1",
+    "matches_reference": true
+  },
+  "scripts/eif_node.py": {
+    "sha256": "15a143bc8fb58ee710a8788336c9fa6237d050e66f723ef53cd52a43df20dbff",
+    "matches_reference": true
+  },
+  "scripts/test_eif_node.py": {
+    "sha256": "4c1c2d79803be2fd6669717084704b2542e86d0668d2cc6bdbdeb5131cd85345",
+    "matches_reference": true
+  },
+  "scripts/test_eif_node_commands.py": {
+    "sha256": "66cf90c4188022615ad85774456cd1b8df3b91c80eabe95863582cbf963ce4bc",
+    "matches_reference": true
+  },
+  "scripts/test_eif_recovery_controls.py": {
+    "sha256": "acb49626f9cdd1ff286575f3465910cf95e1d3c47818d43da489c6eac70a1ceb",
+    "matches_reference": true
+  },
+  "active_hooks_absent": true
+}

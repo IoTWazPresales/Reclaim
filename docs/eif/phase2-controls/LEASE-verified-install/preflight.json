@@ -1,0 +1,91 @@
+{
+  "runtime_files": 23,
+  "all_match_prior_verified_baseline": true,
+  "journal": {
+    "copied": [
+      ".cursor/rules",
+      ".cursor/hooks",
+      ".agents/skills",
+      ".cursor/hooks.json",
+      ".cursor/eif-runtime-policy.json",
+      ".cursor/eif-runtime-manifest.json",
+      ".eif/.gitignore",
+      ".eif/runtime/programme",
+      ".eif/RUNTIME_CAPABILITIES.md"
+    ],
+    "created": [],
+    "finished_at": "2026-09-18T19:03:04Z",
+    "phase": "committed",
+    "pre": {
+      "action_classes": {
+        "artifact_write": true,
+        "control_plane_change": false,
+        "delete": false,
+        "destructive_data": false,
+        "force_vcs": false,
+        "identity_mutation": false,
+        "infrastructure_control": false,
+        "read": true,
+        "release": false,
+        "remote_push": true,
+        "write": true
+      },
+      "artifact_paths": [
+        ".eif/audit/**"
+      ],
+      "autonomy_status": "accepted",
+      "capabilities_status": "unverified",
+      "change_paths": [
+        "app/**",
+        "docs/**",
+        "scripts/**",
+        "CONTEXT.md",
+        "agents.md",
+        ".cursorignore"
+      ],
+      "derived_framework_version": "0.4.0-draft",
+      "derived_max_authority": "L3",
+      "digests": {
+        "autonomy": "1a96313e8d8df2b54e2eac98c10b00b2dd8c480447ab8488ff0eb5c34d426ac8",
+        "capabilities": "758c854b4d277effefec1eb3449af1c011ff17f9feb164e8b8e27c109140da09",
+        "environment": "8202535e3b52d65e9e7209c07c5bf1ce64cbfa094fa89c8fa43f549108d2e815",
+        "guard": "61680aefae4a1f0dab867b2bd46daacd2e9c6f4d3bf0784e46df30277d1d2c80",
+        "hooks_json": "d7d7c183e44342e4674a83e969a1d79400b3af2763fa1a352239afc2f7a58167",
+        "manifest": "8255773665333613b82b8221ff842d6a9ce90504ddfd8eb893ccbd7512e4e87a",
+        "runtime_policy": "b3d1295e7b400c53a9f30f440d6728dd287bbedbaabe30b7b3ef34b994c4b67e"
+      },
+      "identity": {
+        "additional_repositories": [],
+        "path_scopes": [
+          "**"
+        ],
+        "remotes": [
+          "https://github.com/IoTWazPresales/Reclaim"
+        ],
+        "root_commit": "f61a11f0ffd30f8449d69a2f6909f5063d524fde",
+        "vcs_root": "C:/Reclaim"
+      },
+      "manifest_status": "bootstrap",
+      "max_authority": "L3",
+      "mcp": {
+        "browser": "none",
+        "tools": []
+      },
+      "network": {
+        "classes": [
+          "loopback",
+          "public_read"
+        ]
+      },
+      "observation_paths": [
+        "**"
+      ],
+      "project_id": "reclaim",
+      "shell": {
+        "mode": "workspace"
+      }
+    },
+    "started_at": "2026-09-18T19:02:58Z",
+    "state_root": ".eif"
+  }
+}

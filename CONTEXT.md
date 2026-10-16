@@ -1,3 +1,7 @@
+## 2026-10-16 - Verified EIF repair installed; public history restored
+
+Installed exact shared-framework commit a0a0270531baddc083dab0ddcbf1bbe45340b713 through supported upgrade --preserve-disabled-hooks, without migration. Installation verification passes; public status and N-0068–N-0071 reads succeed with identical repeat replay at revision 541. Governance suite improves from 55 passed / 2 failed (271.27s) to 57 passed (257.10s). Programme integrity passes; overall verify retains 11 historical completion-gate debts. Ledger, accepted policies, identity, disabled hooks, approvals and node revisions/ownership remain unchanged. Hooks provide no runtime enforcement; capabilities remain unverified. Scoped evidence/report: docs/eif/phase2-controls/LEASE-verified-install.md. No live lease/evidence/acceptance/completion, training or data mutation; no R12. Stop after verification.
+
 ## 2026-10-16 - EIF repair installation stopped at governance preflight
 
 Pinned repair a9f39d5 is source-compatible, but its supported upgrade unconditionally activates hooks, conflicting with AGENTS.md section 5 (leave hooks off). No installer or recovery transaction started. Public verify/status and N-0068–N-0071 reads still fail on historical R03 release. Exact hashes, probes and governance results: docs/eif/phase2-controls/LEASE-install-preflight.json; report: LEASE-install-verification.md. No runtime, ledger, source, lease, evidence or acceptance mutation; no R12. Stop after installation verification.

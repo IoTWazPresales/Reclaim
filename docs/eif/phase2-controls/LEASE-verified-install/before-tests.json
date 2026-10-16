@@ -1,0 +1,16 @@
+{
+  "command": [
+    "C:\\Python314\\python.exe",
+    "-B",
+    "-m",
+    "pytest",
+    "scripts/test_eif_node.py",
+    "scripts/test_eif_node_commands.py",
+    "scripts/test_eif_recovery_controls.py",
+    "-q"
+  ],
+  "cwd": "C:\\Reclaim",
+  "exit": 1,
+  "stdout": "FF.......................................................                [100%]\n================================== FAILURES ===================================\n__________________________ test_status_reads_ledger ___________________________\n\n    def test_status_reads_ledger() -> None:\n        proc = _run(\"status\")\n>       assert proc.returncode == 0, proc.stdout + proc.stderr\nE       AssertionError: eif_node: program.py status failed (2):\nE         ERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03\nE         \nE       assert 2 == 0\nE        +  where 2 = CompletedProcess(args=['C:\\\\Python314\\\\python.exe', '-B', 'C:\\\\Reclaim\\\\scripts\\\\eif_node.py', 'status'], returncode=2, stdout='', stderr='eif_node: program.py status failed (2):\\nERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03\\n').returncode\n\nscripts\\test_eif_node.py:38: AssertionError\n____________________ test_dry_run_mutation_writes_nothing _____________________\n\n    def test_dry_run_mutation_writes_nothing() -> None:\n        before = PROGRESS.read_text(encoding=\"utf-8\")\n        proc = _run(\"--dry-run\", \"lease\", \"N-0016\")\n>       assert proc.returncode == 0, proc.stdout + proc.stderr\nE       AssertionError: eif_node: program.py status --node N-0016 failed (2):\nE         ERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03\nE         \nE       assert 2 == 0\nE        +  where 2 = CompletedProcess(args=['C:\\\\Python314\\\\python.exe', '-B', 'C:\\\\Reclaim\\\\scripts\\\\eif_node.py', '--dry-run', 'lease', '...stderr='eif_node: program.py status --node N-0016 failed (2):\\nERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03\\n').returncode\n\nscripts\\test_eif_node.py:46: AssertionError\n=========================== short test summary info ===========================\nFAILED scripts/test_eif_node.py::test_status_reads_ledger - AssertionError: e...\nFAILED scripts/test_eif_node.py::test_dry_run_mutation_writes_nothing - Asser...\n2 failed, 55 passed in 271.27s (0:04:31)\n",
+  "stderr": ""
+}

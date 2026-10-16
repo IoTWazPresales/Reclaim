@@ -1,0 +1,12 @@
+{
+  "command": [
+    "git",
+    "rev-list",
+    "--max-parents=0",
+    "HEAD"
+  ],
+  "cwd": "C:\\Reclaim",
+  "exit": 0,
+  "stdout": "f61a11f0ffd30f8449d69a2f6909f5063d524fde\n",
+  "stderr": ""
+}

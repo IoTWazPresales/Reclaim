@@ -1,0 +1,12 @@
+{
+  "command": [
+    "C:\\Python314\\python.exe",
+    "tools/verify_runtime_install.py",
+    "C:\\Reclaim",
+    "--allow-disabled-hooks"
+  ],
+  "cwd": "C:\\AI\\eif-disabled-hooks-repair",
+  "exit": 0,
+  "stdout": "{\n  \"ok\": true,\n  \"message\": \"programme runtime matches reviewed framework source; preserved hook artifacts match upgrade digests; hooks disabled; runtime protection unavailable\"\n}\n",
+  "stderr": ""
+}

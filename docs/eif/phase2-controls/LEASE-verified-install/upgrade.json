@@ -1,0 +1,13 @@
+{
+  "command": [
+    "C:\\Python314\\python.exe",
+    "tools/install_project.py",
+    "upgrade",
+    "C:\\Reclaim",
+    "--preserve-disabled-hooks"
+  ],
+  "cwd": "C:\\AI\\eif-disabled-hooks-repair",
+  "exit": 0,
+  "stdout": "EIF validation PASS: 66 active core specialists, 0 warning(s).\nCompiled 66 skills to C:\\AI\\eif-disabled-hooks-repair\\build\\cursor\nCore rule lines: 72\nC:\\Reclaim\\.cursor\\eif-runtime-policy.json\npolicy_source_hash: b3d1295e7b400c53a9f30f440d6728dd287bbedbaabe30b7b3ef34b994c4b67e\nauthority: L3 risk: R2 mode: local\nshell: workspace mcp: none browser: none writes: True artifact_write: True artifact_scopes: ['.eif/audit/**']\npre-upgrade framework/runtime state:\n{\n  \"artifact_paths\": [\n    \".eif/audit/**\"\n  ],\n  \"autonomy_status\": \"accepted\",\n  \"capabilities_status\": \"unverified\",\n  \"change_paths\": [\n    \"app/**\",\n    \"docs/**\",\n    \"scripts/**\",\n    \"CONTEXT.md\",\n    \"agents.md\",\n    \".cursorignore\"\n  ],\n  \"derived_framework_version\": \"0.4.0-draft\",\n  \"derived_max_authority\": \"L3\",\n  \"digests\": {\n    \"autonomy\": \"1a96313e8d8df2b54e2eac98c10b00b2dd8c480447ab8488ff0eb5c34d426ac8\",\n    \"capabilities\": \"758c854b4d277effefec1eb3449af1c011ff17f9feb164e8b8e27c109140da09\",\n    \"environment\": \"8202535e3b52d65e9e7209c07c5bf1ce64cbfa094fa89c8fa43f549108d2e815\",\n    \"guard\": null,\n    \"hooks_json\": null,\n    \"manifest\": \"8255773665333613b82b8221ff842d6a9ce90504ddfd8eb893ccbd7512e4e87a\",\n    \"runtime_policy\": \"b3d1295e7b400c53a9f30f440d6728dd287bbedbaabe30b7b3ef34b994c4b67e\"\n  },\n  \"max_authority\": \"L3\",\n  \"observation_paths\": [\n    \"**\"\n  ],\n  \"project_id\": \"reclaim\"\n}\nEIF upgrade complete\nhooks: disabled\nhooks remain disabled; runtime protection unavailable\nproduct: 0.7.0-draft\nproject: C:\\Reclaim\npreserved project_id: reclaim\npreserved max_authority: L3\npreserved observation_paths: ['**']\npreserved change_paths: ['app/**', 'docs/**', 'scripts/**', 'CONTEXT.md', 'agents.md', '.cursorignore']\npreserved artifact_paths: ['.eif/audit/**']\ncapabilities status: unverified\nderived framework_version: 0.4.0-draft\nruntime assets refreshed; derived policy recompiled from preserved autonomy/manifest\nmeasured runtime capability evidence is unverified until a same-mode probe is re-run\n",
+  "stderr": ""
+}

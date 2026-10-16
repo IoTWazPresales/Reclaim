@@ -1,0 +1,12 @@
+{
+  "command": [
+    "git",
+    "status",
+    "--short",
+    "--untracked-files=no"
+  ],
+  "cwd": "C:\\Reclaim",
+  "exit": 0,
+  "stdout": " M .eif/CURRENT.md\n M .eif/PROGRAM.md\n M .eif/WORK_ITEM.md\n M .eif/program/PROGRAM.yaml\n M .eif/program/PROGRAM_LOG.ndjson\n M app/src/lib/training/engine/index.ts\n M app/supabase/.temp/cli-latest\n M app/supabase/migrations/20260930140000_run_routes.sql\n M docs/audits/insight-rules-audit.md\n M docs/release/play_human_outstanding_2026-07-29.md\n M docs/training/ROUTINE_VOLUME_BASELINE.md\n",
+  "stderr": ""
+}

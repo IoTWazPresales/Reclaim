@@ -1,0 +1,12 @@
+{
+  "command": [
+    "git",
+    "diff",
+    "--cached",
+    "--name-only"
+  ],
+  "cwd": "C:\\Reclaim",
+  "exit": 0,
+  "stdout": "",
+  "stderr": ""
+}

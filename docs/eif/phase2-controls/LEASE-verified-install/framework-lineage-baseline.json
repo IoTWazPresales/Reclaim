@@ -1,0 +1,13 @@
+{
+  "command": [
+    "git",
+    "merge-base",
+    "--is-ancestor",
+    "9bde37921e286f9e4aa94ec3fa82685b9c350abe",
+    "HEAD"
+  ],
+  "cwd": "C:\\AI\\eif-disabled-hooks-repair",
+  "exit": 0,
+  "stdout": "",
+  "stderr": ""
+}

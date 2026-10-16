@@ -1,0 +1,267 @@
+{
+  "framework_commit": "a0a0270531baddc083dab0ddcbf1bbe45340b713",
+  "protected_paths_unchanged": [
+    ".cursor/hooks.json.off",
+    ".cursor/hooks.off/eif_guard.cmd",
+    ".cursor/hooks.off/eif_guard.py",
+    ".cursor/hooks.off/eif_guard.sh",
+    ".cursor/hooks.off/eif_guard_crash.json",
+    ".cursor/hooks.off/eif_guard_failclosed.json",
+    ".cursor/hooks.off/eif_integrity.py",
+    ".cursor/hooks.off/eif_reason_codes.py",
+    ".cursor/hooks.off/eif_session.py",
+    ".cursor/hooks.off/eif_state.py",
+    ".eif/AUTONOMY_POLICY.md",
+    ".eif/CURRENT.md",
+    ".eif/ENVIRONMENT_POLICY.md",
+    ".eif/PROGRAM.md",
+    ".eif/PROJECT_MANIFEST.md",
+    ".eif/WORK_ITEM.md",
+    ".eif/program/.lock",
+    ".eif/program/PROGRAM.yaml",
+    ".eif/program/PROGRAM_LOG.ndjson",
+    "docs/eif/AWAITING_APPROVAL.md",
+    "docs/eif/HUMAN_CHECKS.md",
+    "docs/eif/LEDGER_PENDING.md",
+    "scripts/eif_node.py",
+    "scripts/test_eif_node.py",
+    "scripts/test_eif_node_commands.py",
+    "scripts/test_eif_recovery_controls.py"
+  ],
+  "changed_paths": [
+    ".cursor/eif-runtime-manifest.json",
+    ".cursor/rules/eif-core.mdc",
+    ".cursor/rules/eif-project-adapter.mdc",
+    ".eif/audit/N-0071/R11/coldboot-local-out.txt",
+    ".eif/runtime/programme/eif_constants.py",
+    ".eif/runtime/programme/eif_integrity.py",
+    ".eif/runtime/programme/eif_program/cli.py",
+    ".eif/runtime/programme/eif_program/engine.py",
+    ".eif/runtime/programme/eif_program/errors.py",
+    ".eif/runtime/programme/eif_program/findings.py",
+    ".eif/runtime/programme/eif_program/independence.py",
+    ".eif/runtime/programme/eif_program/retroactive.py",
+    ".eif/runtime/programme/eif_program/runtime_integrity.py",
+    ".eif/runtime/programme/eif_program/runtime_paths.py",
+    ".eif/runtime/programme/eif_program/store.py",
+    ".eif/runtime/programme/eif_program/views.py",
+    ".eif/runtime/programme/eif_reason_codes.py",
+    ".eif/runtime/programme/eiflib.py",
+    ".eif/runtime/programme/manifest.json",
+    ".eif/runtime/programme/program.py",
+    ".eif/upgrade-work/journal.json",
+    "docs/eif/phase2-controls/verify_lease_install.py"
+  ],
+  "added_paths": [
+    ".eif/upgrade-history/1792164503150603000/journal.json"
+  ],
+  "repeat_public_reads_identical": {
+    "verify": true,
+    "status": true,
+    "N-0068": true,
+    "N-0069": true,
+    "N-0070": true,
+    "N-0071": true
+  },
+  "nodes_match_unchanged_snapshot": {
+    "N-0068": true,
+    "N-0069": true,
+    "N-0070": true,
+    "N-0071": true
+  },
+  "nodes": {
+    "N-0068": {
+      "revision": 6,
+      "status": "in_progress",
+      "lease": {
+        "run": "R20261013P2",
+        "acquired_at": "2026-10-14T11:15:07Z",
+        "heartbeat_at": "2026-10-14T11:15:07Z",
+        "expires_at": "2026-10-14T11:45:07Z"
+      },
+      "acceptance_state": "pending",
+      "scope_acceptance": null,
+      "evidence": [],
+      "quality": {},
+      "verification": {}
+    },
+    "N-0069": {
+      "revision": 3,
+      "status": "in_progress",
+      "lease": null,
+      "acceptance_state": "pending",
+      "scope_acceptance": null,
+      "evidence": [],
+      "quality": {},
+      "verification": {}
+    },
+    "N-0070": {
+      "revision": 3,
+      "status": "in_progress",
+      "lease": {
+        "run": "R20261013P2",
+        "acquired_at": "2026-10-13T13:17:18Z",
+        "heartbeat_at": "2026-10-13T13:17:18Z",
+        "expires_at": "2026-10-13T13:47:18Z"
+      },
+      "acceptance_state": "pending",
+      "scope_acceptance": null,
+      "evidence": [],
+      "quality": {
+        "ux": {
+          "required": true,
+          "state": "pending",
+          "evidence": null,
+          "rationale": null
+        },
+        "a11y": {
+          "required": true,
+          "state": "pending",
+          "evidence": null,
+          "rationale": null
+        },
+        "rendered": {
+          "required": true,
+          "state": "pending",
+          "evidence": null,
+          "rationale": null
+        },
+        "content": {
+          "required": true,
+          "state": "pending",
+          "evidence": null,
+          "rationale": null
+        }
+      },
+      "verification": {}
+    },
+    "N-0071": {
+      "revision": 1,
+      "status": "proposed",
+      "lease": null,
+      "acceptance_state": "pending",
+      "scope_acceptance": null,
+      "evidence": [],
+      "quality": {},
+      "verification": {}
+    }
+  },
+  "programme_verification": {
+    "ok": false,
+    "issues": [
+      "N-0002: recorded complete but gates invalid",
+      "N-0003: recorded complete but gates invalid",
+      "N-0005: recorded complete but gates invalid",
+      "N-0006: recorded complete but gates invalid",
+      "N-0012: recorded complete but gates invalid",
+      "N-0013: recorded complete but gates invalid",
+      "N-0014: recorded complete but gates invalid",
+      "N-0015: recorded complete but gates invalid",
+      "N-0036: recorded complete but gates invalid",
+      "N-0037: recorded complete but gates invalid",
+      "N-0038: recorded complete but gates invalid"
+    ],
+    "integrity_ok": true,
+    "integrity_issues": [],
+    "gates_ok": false,
+    "gate_issues": [
+      "N-0002: recorded complete but gates invalid",
+      "N-0003: recorded complete but gates invalid",
+      "N-0005: recorded complete but gates invalid",
+      "N-0006: recorded complete but gates invalid",
+      "N-0012: recorded complete but gates invalid",
+      "N-0013: recorded complete but gates invalid",
+      "N-0014: recorded complete but gates invalid",
+      "N-0015: recorded complete but gates invalid",
+      "N-0036: recorded complete but gates invalid",
+      "N-0037: recorded complete but gates invalid",
+      "N-0038: recorded complete but gates invalid"
+    ],
+    "gate_debt": [
+      {
+        "node": "N-0002",
+        "acknowledged": false,
+        "issues": [
+          "recorded complete but gates invalid"
+        ]
+      },
+      {
+        "node": "N-0003",
+        "acknowledged": false,
+        "issues": [
+          "recorded complete but gates invalid"
+        ]
+      },
+      {
+        "node": "N-0005",
+        "acknowledged": false,
+        "issues": [
+          "recorded complete but gates invalid"
+        ]
+      },
+      {
+        "node": "N-0006",
+        "acknowledged": false,
+        "issues": [
+          "recorded complete but gates invalid"
+        ]
+      },
+      {
+        "node": "N-0012",
+        "acknowledged": false,
+        "issues": [
+          "recorded complete but gates invalid"
+        ]
+      },
+      {
+        "node": "N-0013",
+        "acknowledged": false,
+        "issues": [
+          "recorded complete but gates invalid"
+        ]
+      },
+      {
+        "node": "N-0014",
+        "acknowledged": false,
+        "issues": [
+          "recorded complete but gates invalid"
+        ]
+      },
+      {
+        "node": "N-0015",
+        "acknowledged": false,
+        "issues": [
+          "recorded complete but gates invalid"
+        ]
+      },
+      {
+        "node": "N-0036",
+        "acknowledged": false,
+        "issues": [
+          "recorded complete but gates invalid"
+        ]
+      },
+      {
+        "node": "N-0037",
+        "acknowledged": false,
+        "issues": [
+          "recorded complete but gates invalid"
+        ]
+      },
+      {
+        "node": "N-0038",
+        "acknowledged": false,
+        "issues": [
+          "recorded complete but gates invalid"
+        ]
+      }
+    ],
+    "revision": 541
+  },
+  "disabled_hooks": {
+    ".cursor/hooks": false,
+    ".cursor/hooks.json": false
+  },
+  "runtime_enforcement": "unavailable",
+  "capabilities": "unverified"
+}

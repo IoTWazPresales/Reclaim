@@ -1,0 +1,14 @@
+{
+  "command": [
+    "C:\\Python314\\python.exe",
+    "-B",
+    "scripts/eif_node.py",
+    "status",
+    "--node",
+    "N-0070"
+  ],
+  "cwd": "C:\\Reclaim",
+  "exit": 2,
+  "stdout": "",
+  "stderr": "eif_node: program.py status --node N-0070 failed (2):\nERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03\n"
+}

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "git",
+    "diff",
+    "--exit-code",
+    "a0a0270531baddc083dab0ddcbf1bbe45340b713",
+    "--",
+    "tools",
+    "runtime",
+    "build/cursor"
+  ],
+  "cwd": "C:\\AI\\eif-disabled-hooks-repair",
+  "exit": 0,
+  "stdout": "",
+  "stderr": ""
+}

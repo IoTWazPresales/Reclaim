@@ -1,0 +1,11 @@
+{
+  "command": [
+    "git",
+    "branch",
+    "--show-current"
+  ],
+  "cwd": "C:\\AI\\eif-disabled-hooks-repair",
+  "exit": 0,
+  "stdout": "fix/preserve-disabled-hooks\n",
+  "stderr": ""
+}

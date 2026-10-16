@@ -1,0 +1,16 @@
+{
+  "command": [
+    "C:\\Python314\\python.exe",
+    "-B",
+    "-m",
+    "pytest",
+    "scripts/test_eif_node.py",
+    "scripts/test_eif_node_commands.py",
+    "scripts/test_eif_recovery_controls.py",
+    "-q"
+  ],
+  "cwd": "C:\\Reclaim",
+  "exit": 0,
+  "stdout": ".........................................................                [100%]\n57 passed in 257.10s (0:04:17)\n",
+  "stderr": ""
+}

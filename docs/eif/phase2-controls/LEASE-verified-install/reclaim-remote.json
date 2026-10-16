@@ -1,0 +1,12 @@
+{
+  "command": [
+    "git",
+    "remote",
+    "get-url",
+    "origin"
+  ],
+  "cwd": "C:\\Reclaim",
+  "exit": 0,
+  "stdout": "https://github.com/IoTWazPresales/Reclaim\n",
+  "stderr": ""
+}

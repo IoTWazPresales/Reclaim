@@ -1,0 +1,11 @@
+{
+  "command": [
+    "git",
+    "branch",
+    "--show-current"
+  ],
+  "cwd": "C:\\Reclaim",
+  "exit": 0,
+  "stdout": "fix/training-confident-ux\n",
+  "stderr": ""
+}

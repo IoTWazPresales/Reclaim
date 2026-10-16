@@ -1,0 +1,11 @@
+{
+  "command": [
+    "git",
+    "rev-parse",
+    "HEAD"
+  ],
+  "cwd": "C:\\Reclaim",
+  "exit": 0,
+  "stdout": "ea2cbce6a2b468373df782e4cb4b0abeaeba1d0c\n",
+  "stderr": ""
+}
