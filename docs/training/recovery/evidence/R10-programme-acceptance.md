@@ -99,6 +99,13 @@ lower-body follow-up policy conflict and bounded remaining work.
 
 ## Gates, governance and source integrity
 
+Final results: focused 42/42; actual reviewer combined run 48/48; typecheck exit
+0; Git Bash dual-path 31/31; catalogue 357 rows and zero issues. Full suite:
+199 files, 1,374 passing tests and the same four established baseline assertions
+(routine-volume measurement, two weekly-cap cases and run-route migration),
+zero new assertion failures. Required wrapper: one pass/two established owner
+failures. This is not a green full harness.
+
 Run details and SHA256 receipts are in `R10-gates.json`. Verbose logs are retained
 under `.eif/audit/N-0071/R10/`; required full-suite baseline failures are compared
 by assertion identity against R09. The full suite is not described as green.
@@ -118,3 +125,9 @@ framework mapping remains R12. C2 Android/live parity remains unverified. C3
 scientific/framework decisions remain separately queued. C4 branch publication
 is recorded in `R10-publication.json`; full node acceptance remains outstanding.
 No node completion is inferred from this checkpoint. Stop after R10.
+
+Published source/evidence commit `589d527e615cae85869835681499b0e4d28fed3f`
+is pushed and remote-verified. The four new test/fixture input blobs match tested
+LF hashes; all 996 archived committed app files match after CRLF→LF only.
+Receipt: `R10-publication.json`. This receipt/durability follow-up changes only
+documentation, not the tested code or fixtures.

@@ -1,0 +1,27 @@
+{
+  "task": "R10 only",
+  "branch": "fix/training-confident-ux",
+  "sourceEvidenceCommit": "589d527e615cae85869835681499b0e4d28fed3f",
+  "remote": "origin",
+  "remoteRef": "refs/heads/fix/training-confident-ux",
+  "remoteVerifiedSha": "589d527e615cae85869835681499b0e4d28fed3f",
+  "pushExit": 0,
+  "committedInputsMatchTestedLfHashes": true,
+  "committedProductBaselineFilesMatched": 996,
+  "normalization": "CRLF to LF only; snapshot test rewrote one isolated snapshot line ending",
+  "review": "42 primary + 6 independently authored probes; actual separate session, same model; 48/48 pass",
+  "fullSuite": "1374 passed / same four established R09 failures / zero new assertion failures",
+  "node": "N-0071 remains open",
+  "eifEvidenceId": null,
+  "leaseConflict": "Established LEASE_NOT_OWNER: R20261014R03; no repair, takeover or bypass",
+  "pending": [
+    "R10-P01 lower-body follow-up role precedence",
+    "D-P2-01 through D-P2-06 as applicable",
+    "Established repository baseline failures",
+    "Full N-0071 dependencies and acceptance criteria, including runtime parity"
+  ],
+  "productChanges": false,
+  "r11Started": false,
+  "releaseOrLiveDataChanges": false,
+  "status": "Published bounded verification checkpoint; full prescription/scientific/EIF acceptance remains open"
+}

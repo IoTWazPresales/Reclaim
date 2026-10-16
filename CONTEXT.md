@@ -1,3 +1,7 @@
+## 2026-10-16 — R10 published; stop after R10
+
+Source/evidence commit 589d527e615cae85869835681499b0e4d28fed3f is pushed and remote-verified. Independent 48/48 acceptance/probe cases pass; typecheck, dual-path 31/31 and catalogue 357/0 pass. Full suite 1,374 pass / same four baseline failures, no new assertion failures. All 996 committed app files and four new test/fixture inputs match isolated tested source after line-ending normalization. Receipt: docs/training/recovery/evidence/R10-publication.json. R10-P01 lower-body follow-up roles, pending scientific decisions, lease conflict and runtime/full criteria prevent acceptance; N-0071 remains open. No product change or R11 work.
+
 ## 2026-10-16 — R10 verification checkpoint; N-0071 remains open
 
 R10 tests/evidence only against committed R03–R09 product source. Actual separate reviewer re-executed 48/48 cases; whole-week literal requirements, known-bad historical examples, constrained equipment, goals, history, substitutions and frozen/future work are covered. Lower-body same-pattern compound follow-ups conflict with older isolation-only prose; R10-P01 records clarification requirements without a product change. Science decisions remain pending. Required gate/publication receipts: docs/training/recovery/evidence/R10-gates.json and R10-publication.json. Existing EIF lease conflict untouched; no node acceptance. Unrelated changes preserved. Stop after R10; no R11 started.
