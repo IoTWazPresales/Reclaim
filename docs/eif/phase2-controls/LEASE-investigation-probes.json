@@ -1,0 +1,76 @@
+{
+  "run": "R20261016LEASE",
+  "before": {
+    ".eif/program/PROGRAM.yaml": "3c170ab5a1ee9ef977003dac3c76e50bacde0389f1d4809ab16a62ae8a64a3b1",
+    ".eif/program/PROGRAM_LOG.ndjson": "bfd355375b8fe546d7e1caa2522b58111a36abe300d93224753c6986530da031",
+    ".eif/CURRENT.md": "8c7f3691feadd526c2b98ce4b980e9c4c2b757987678bc8384c70ea54fb1bba3",
+    ".eif/PROGRAM.md": "5ae8833bb46cd2574ad08b35e6cdda2c8eea861fdac3d48fd00590f19d55ea5f",
+    ".eif/WORK_ITEM.md": "709390a26c397e279efbcf5b6505aace7d835a4699a1f0943f52794e12201593",
+    "docs/eif/LEDGER_PENDING.md": "8ec545e53f40876cda3a95bf06c3e096977e383b7a37140aadb4bf820fde7e35"
+  },
+  "after": {
+    ".eif/program/PROGRAM.yaml": "3c170ab5a1ee9ef977003dac3c76e50bacde0389f1d4809ab16a62ae8a64a3b1",
+    ".eif/program/PROGRAM_LOG.ndjson": "bfd355375b8fe546d7e1caa2522b58111a36abe300d93224753c6986530da031",
+    ".eif/CURRENT.md": "8c7f3691feadd526c2b98ce4b980e9c4c2b757987678bc8384c70ea54fb1bba3",
+    ".eif/PROGRAM.md": "5ae8833bb46cd2574ad08b35e6cdda2c8eea861fdac3d48fd00590f19d55ea5f",
+    ".eif/WORK_ITEM.md": "709390a26c397e279efbcf5b6505aace7d835a4699a1f0943f52794e12201593",
+    "docs/eif/LEDGER_PENDING.md": "8ec545e53f40876cda3a95bf06c3e096977e383b7a37140aadb4bf820fde7e35"
+  },
+  "unchanged": true,
+  "public_probes": [
+    {
+      "args": [
+        "status",
+        "--node",
+        "N-0068"
+      ],
+      "exit_code": 2,
+      "output": "eif_node: program.py status --node N-0068 failed (2):\nERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03"
+    },
+    {
+      "args": [
+        "status",
+        "--node",
+        "N-0069"
+      ],
+      "exit_code": 2,
+      "output": "eif_node: program.py status --node N-0069 failed (2):\nERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03"
+    },
+    {
+      "args": [
+        "status",
+        "--node",
+        "N-0070"
+      ],
+      "exit_code": 2,
+      "output": "eif_node: program.py status --node N-0070 failed (2):\nERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03"
+    },
+    {
+      "args": [
+        "status",
+        "--node",
+        "N-0071"
+      ],
+      "exit_code": 2,
+      "output": "eif_node: program.py status --node N-0071 failed (2):\nERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03"
+    },
+    {
+      "args": [
+        "--dry-run",
+        "release",
+        "N-0069"
+      ],
+      "exit_code": 2,
+      "output": "eif_node: program.py status --node N-0069 failed (2):\nERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03"
+    },
+    {
+      "args": [
+        "--dry-run",
+        "lease",
+        "N-0069"
+      ],
+      "exit_code": 2,
+      "output": "eif_node: program.py status --node N-0069 failed (2):\nERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03"
+    }
+  ]
+}

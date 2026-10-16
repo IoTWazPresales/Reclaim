@@ -1,3 +1,7 @@
+## 2026-10-16 - Phase 2 lease governance diagnosis; approval needed
+
+Public EIF reads fail naming historical R03 release sequence 541. Last materialized owners: expired R20261013P2 leases on N-0068/N-0070, none on N-0069/N-0071. Public release/acquire cannot pass status; no authorized local transition performed. No local process matches either historical run ID, but session liveness cannot be conclusively established. Shared-framework replay consistency repair proposal requires operator approval; see docs/eif/phase2-controls/LEASE-investigation.md and probe hashes. No source, ledger, evidence history, acceptance or completion changes; no R12. Stop after governance task.
+
 ## 2026-10-16 — R11 evidence published; stop after R11
 
 Sanitized evidence checkpoint a926e710ecc79bc0d25a409bf2a1327305db60a3 pushed and remote-verified on fix/training-confident-ux. All17committed evidence/durability files match reviewed working bytes after LF normalization; publication hashes are in docs/training/recovery/evidence/R11-publication.json. Eleven unrelated tracked modifications retained unchanged. Full new-save/start/freeze/effective-guidance acceptance, R10 policy findings and EIF lease ownership remain unresolved. N-0071 is not accepted; no R12 or other task started.
