@@ -1,0 +1,110 @@
+{
+  "task": "R11 only",
+  "result": "PARTIAL_ANDROID_AND_LIVE_READ_PARITY; NEW_SAVE_START_FREEZE_GUIDANCE_UNABLE_TO_VERIFY",
+  "sourceHead": "fe8dd3c07220079999b789b7c8d061c37982ed38",
+  "runtimeSource": "Existing mixed working tree; pre-existing engine/index.ts edit retained. Not an exact committed R10 runtime.",
+  "apkSha256": "520767691b7894b0ffe220f17130559dc9ecfc9f426f15a73fed03ec86388064",
+  "records": [
+    {
+      "utc": "2026-10-16T10:07:43.421046+00:00",
+      "command": "adb devices -l",
+      "exit": 0,
+      "output": "List of devices attached\nemulator-5554          device product:sdk_gphone16k_x86_64 model:sdk_gphone16k_x86_64 device:emu64xa16k transport_id:3"
+    },
+    {
+      "utc": "2026-10-16T10:07:43.583609+00:00",
+      "command": "adb shell getprop sys.boot_completed",
+      "exit": 0,
+      "output": "1"
+    },
+    {
+      "utc": "2026-10-16T10:07:43.716780+00:00",
+      "command": "adb shell dumpsys package com.fissioncorporation.reclaim",
+      "exit": 0,
+      "output": "versionCode=15 minSdk=29 targetSdk=36\nversionName=1.0.5"
+    },
+    {
+      "utc": "2026-10-16T10:07:43.869877+00:00",
+      "command": "adb reverse --list",
+      "exit": 0,
+      "output": "host-16 tcp:8081 tcp:8081"
+    },
+    {
+      "utc": "2026-10-16T10:07:44.024260+00:00",
+      "command": "adb shell dumpsys activity activities",
+      "exit": 0,
+      "output": "topResumedActivity=ActivityRecord{145054789 u0 com.fissioncorporation.reclaim/.MainActivity t411}\nResumedActivity: ActivityRecord{145054789 u0 com.fissioncorporation.reclaim/.MainActivity t411}"
+    },
+    {
+      "utc": "2026-10-16T10:07:44.218088+00:00",
+      "command": "adb shell screencap -p /sdcard/r11-final.png",
+      "exit": 0,
+      "output": ""
+    },
+    {
+      "utc": "2026-10-16T10:07:44.990954+00:00",
+      "command": "adb pull /sdcard/r11-final.png C:\\Reclaim\\.eif\\audit\\N-0071\\R11\\final-local.png",
+      "exit": 0,
+      "output": "/sdcard/r11-final.png: 1 file pulled, 0 skipped. 5.8 MB/s (187978 bytes in 0.031s)"
+    },
+    {
+      "utc": "2026-10-16T10:07:45.176749+00:00",
+      "command": "adb shell uiautomator dump /sdcard/r11-final.xml",
+      "exit": 0,
+      "output": "UI hierchary dumped to: /sdcard/r11-final.xml"
+    },
+    {
+      "utc": "2026-10-16T10:07:47.826954+00:00",
+      "command": "adb pull /sdcard/r11-final.xml C:\\Reclaim\\.eif\\audit\\N-0071\\R11\\final-local.xml",
+      "exit": 0,
+      "output": "/sdcard/r11-final.xml: 1 file pulled, 0 skipped. 3.0 MB/s (56055 bytes in 0.018s)"
+    },
+    {
+      "utc": "2026-10-16T10:07:47.959561+00:00",
+      "command": "GET http://127.0.0.1:8081/status (5s timeout)",
+      "status": 200,
+      "output": "packager-status:running"
+    }
+  ],
+  "redaction": "Only package version and resumed activity selected from dumpsys. No auth/storage/logcat/DB content collected.",
+  "startupAttempts": [
+    {
+      "command": "adb devices -l",
+      "observation": "Initially no device; daemon started"
+    },
+    {
+      "command": "emulator -avd Medium_Phone_API_36.1 (Start-Process hidden)",
+      "observation": "Restored AVD, offline during boot, boot completed in 131478 ms"
+    },
+    {
+      "command": "npm run android (app/)",
+      "observation": "Native BUILD SUCCESSFUL 8m17s; Expo then exited1 because separate Metro occupied8081"
+    },
+    {
+      "command": "npm start (app/)",
+      "observation": "Canonical reverse/debug host prepared; first Metro Failed to construct transformer: Failed to start watch mode; status reads timed out"
+    },
+    {
+      "command": "adb shell am force-stop com.fissioncorporation.reclaim; localhost dev-client reopen",
+      "observation": "DevLauncherErrorActivity SocketTimeoutException, Play services/System UI ANR; bounded captures local"
+    },
+    {
+      "command": "adb emu kill; emulator -avd Medium_Phone_API_36.1 -no-snapshot-load",
+      "observation": "One cold boot, disk/account data retained"
+    },
+    {
+      "command": "npm run android -- --no-bundler (app/)",
+      "observation": "BUILD SUCCESSFUL 1m34s; current APK installed; localhost URL opened; exit0"
+    },
+    {
+      "command": "Stop failed Metro only; npm start; GET /status; reopen localhost dev-client",
+      "observation": "HTTP200 packager-status:running, main bundle3619 modules in99521ms; signed-in product rendered"
+    },
+    {
+      "command": "Read-only training setup, previews and History plus existing authenticated dev-runtime SELECTs",
+      "observation": "Actual runtime evidence; see live reconciliation, preview comparison and reviewed screenshots"
+    }
+  ],
+  "finalState": "Reclaim Training retained, emulator booted, Metro HTTP200. Last final command capture is current, not the earlier startup failure.",
+  "failedCaptureExclusion": "A later navigation capture sequence left the target surface. Those end captures and unrelated app/account text were excluded; Reclaim restored before final observations."
+}

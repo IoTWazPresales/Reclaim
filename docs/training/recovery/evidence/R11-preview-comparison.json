@@ -1,0 +1,172 @@
+[
+  {
+    "day": 1,
+    "matched": [
+      {
+        "id": "barbell_bench_press",
+        "androidText": "3 sets · 100kg · 7 reps · Total bar weight.",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "dumbbell_flyes",
+        "androidText": "1 sets · 13 reps · enter a weight",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "barbell_row",
+        "androidText": "3 sets · 62.5kg · 7 reps · Total bar weight.",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "lat_pulldown",
+        "androidText": "1 sets · 13 reps · enter a weight",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "lateral_raises",
+        "androidText": "3 sets · 16kg · 13 reps · Per dumbbell.",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "barbell_curl",
+        "androidText": "3 sets · 25kg · 13 reps · Total bar weight.",
+        "setsRepsWeightMatch": true
+      }
+    ],
+    "notCapturedInAccessibilitySample": [],
+    "limit": "All exercise rows captured in Android hierarchy; full pixel coverage and new started-session parity remain unverified."
+  },
+  {
+    "day": 2,
+    "matched": [
+      {
+        "id": "squat",
+        "androidText": "3 sets · 85kg · 7 reps · Total bar weight.",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "hack_squat",
+        "androidText": "1 sets · 13 reps · enter a weight",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "romanian_deadlift",
+        "androidText": "3 sets · 7 reps · enter a weight",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "calf_raises",
+        "androidText": "3 sets · 13 reps · enter a weight",
+        "setsRepsWeightMatch": true
+      }
+    ],
+    "notCapturedInAccessibilitySample": [],
+    "limit": "All exercise rows captured in Android hierarchy; full pixel coverage and new started-session parity remain unverified."
+  },
+  {
+    "day": 3,
+    "matched": [
+      {
+        "id": "barbell_bench_press",
+        "androidText": "3 sets · 100kg · 7 reps · Total bar weight.",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "cable_chest_flyes",
+        "androidText": "1 sets · 13 reps · enter a weight",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "overhead_press",
+        "androidText": "3 sets · 75kg · 7 reps · Total bar weight.",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "lateral_raises",
+        "androidText": "3 sets · 16kg · 13 reps · Per dumbbell.",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "tricep_pushdown",
+        "androidText": "3 sets · 40kg · 13 reps · Cable / stack weight.",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "face_pulls",
+        "androidText": "3 sets · 13 reps · enter a weight",
+        "setsRepsWeightMatch": true
+      }
+    ],
+    "notCapturedInAccessibilitySample": [],
+    "limit": "All exercise rows captured in Android hierarchy; full pixel coverage and new started-session parity remain unverified."
+  },
+  {
+    "day": 4,
+    "matched": [
+      {
+        "id": "pull_ups",
+        "androidText": "3 sets · Bodyweight · 7 reps",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "barbell_row",
+        "androidText": "1 sets · 60kg · 13 reps · Total bar weight.",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "dumbbell_curl",
+        "androidText": "3 sets · 15kg · 13 reps · Per dumbbell.",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "rear_delt_flyes",
+        "androidText": "3 sets · 13 reps · enter a weight",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "shrugs",
+        "androidText": "3 sets · 20kg · 13 reps · Per dumbbell.",
+        "setsRepsWeightMatch": true
+      }
+    ],
+    "notCapturedInAccessibilitySample": [],
+    "limit": "All exercise rows captured in Android hierarchy; full pixel coverage and new started-session parity remain unverified."
+  },
+  {
+    "day": 5,
+    "matched": [
+      {
+        "id": "deadlift",
+        "androidText": "3 sets · 95kg · 7 reps · Total bar weight.",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "romanian_deadlift",
+        "androidText": "1 sets · 13 reps · enter a weight",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "leg_press",
+        "androidText": "3 sets · 7 reps · enter a weight",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "lunges",
+        "androidText": "1 sets · 13 reps · enter a weight",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "calf_raises",
+        "androidText": "3 sets · 13 reps · enter a weight",
+        "setsRepsWeightMatch": true
+      },
+      {
+        "id": "overhead_tricep_extension",
+        "androidText": "3 sets · 40kg · 13 reps · Per dumbbell.",
+        "setsRepsWeightMatch": true
+      }
+    ],
+    "notCapturedInAccessibilitySample": [],
+    "limit": "All exercise rows captured in Android hierarchy; full pixel coverage and new started-session parity remain unverified."
+  }
+]

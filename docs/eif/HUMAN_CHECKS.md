@@ -1,5 +1,10 @@
 # Human checks — PRG-20260917T222550
 
+## R11 / N-0071 — PARTIAL runtime verified; remaining acceptance UNABLE_TO_VERIFY, unregistered (2026-10-16)
+
+Canonical emulator/Metro/current app recovered. Retained live profile and legacy saved days, all 27 preview exercise rows and existing historical summary were compared with actual Android evidence. Full new-version save/start/frozen/effective-guidance/Wear acceptance remains unverified: no current-programme frozen day or open session and no expressly authorized disposable write scope. [R11 result](../training/recovery/evidence/R11-android-acceptance.md); [exact remaining steps](../training/recovery/evidence/R11-human-verification.md). Actual public human-check exits2 with established LEASE_NOT_OWNER: R20261014R03 before registration. This manual queue entry is not an EIF event, approval or acceptance. R10-P01 and D-P2-01–06 remain open. No training data changed. Stop after R11; do not start R12 or another task.
+
+
 ## R09 / N-0070 - UNABLE_TO_VERIFY, unregistered (2026-10-16)
 
 R09 changes setup validation and weekly completed/frozen/provisional muscle-set copy. Read-only ADB on 2026-10-15 returned no devices; no renders or runtime acceptance are claimed. R11 follow-up: [R09 manual steps](../../.eif/audit/N-0070/R09/human-check.md). The known EIF owner conflict prevents formal attachment/queue registration. Required wrapper tests reproduce it; no ownership repair, bypass, node acceptance or shipping permission is asserted. Branch source/evidence checkpoint only. Stop after R09; do not start R10.

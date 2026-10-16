@@ -1,0 +1,810 @@
+{
+  "status": "COMMITTED_FIXTURE_RECONCILED_ONLY; ANDROID_AND_LIVE_PARITY_UNVERIFIED",
+  "sourceCommit": "589d527e615cae85869835681499b0e4d28fed3f",
+  "sourcePath": "docs/training/recovery/evidence/R10-after-programmes.json",
+  "sourceSha256": "5b90ba9c02b7264a812c20001f6b02ec3ee98eb900cf85551ace49c863a3320b",
+  "profileKind": "Synthetic representative; not an identified saved operator profile",
+  "fixtureDate": "2026-10-12",
+  "fixtureProfileRevision": "Not a database revision",
+  "policyVersion": "weekly-20261014-v2",
+  "goals": {
+    "build_muscle": 46,
+    "build_strength": 46,
+    "lose_fat": 8,
+    "get_fitter": 0
+  },
+  "baselineKg": {
+    "bench_press": 80,
+    "squat": 100,
+    "deadlift": 120,
+    "overhead_press": 50,
+    "row": 70
+  },
+  "baselineReps": {
+    "bench_press": 8,
+    "squat": 5,
+    "deadlift": 5,
+    "overhead_press": 8,
+    "row": 8
+  },
+  "experience": "advanced",
+  "mode": "strength",
+  "frequency": "twice",
+  "skillWork": false,
+  "constraints": [],
+  "daysJs": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "equipment": [
+    "barbell",
+    "dumbbells",
+    "bench",
+    "rack",
+    "floor",
+    "cable_machine",
+    "pull_up_bar",
+    "leg_press_machine",
+    "hack_squat_machine",
+    "chest_press_machine",
+    "t_bar_row_machine",
+    "dip_station",
+    "ez_bar"
+  ],
+  "weeksIdenticalAbsentNewHistory": true,
+  "weeklyExclusiveRegionSets": {
+    "pectorals": 10,
+    "lats": 10,
+    "lateral_deltoids": 6,
+    "biceps": 6,
+    "quadriceps": 10,
+    "hamstrings": 10,
+    "calves": 6,
+    "anterior_deltoids": 3,
+    "triceps": 6,
+    "rear_deltoids": 6,
+    "traps": 3
+  },
+  "days": [
+    {
+      "day": 1,
+      "template": "upper",
+      "estimatedMinutes": 43,
+      "workingSets": 16,
+      "exercises": [
+        {
+          "id": "barbell_bench_press",
+          "owner": "pectorals",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 82.5,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 82.5,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 82.5,
+              "restSeconds": 130
+            }
+          ],
+          "loadReason": "3 sets allocated from the week's pectorals heavy requirement."
+        },
+        {
+          "id": "dumbbell_flyes",
+          "owner": "pectorals",
+          "workingSets": 2,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ],
+          "loadReason": "Choose a load for this exercise; no load is inferred from another implement."
+        },
+        {
+          "id": "barbell_row",
+          "owner": "lats",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 72.5,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 72.5,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 72.5,
+              "restSeconds": 130
+            }
+          ],
+          "loadReason": "3 sets allocated from the week's lats heavy requirement."
+        },
+        {
+          "id": "lat_pulldown",
+          "owner": "lats",
+          "workingSets": 2,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ],
+          "loadReason": "Choose a load for this exercise; no load is inferred from another implement."
+        },
+        {
+          "id": "lateral_raises",
+          "owner": "lateral_deltoids",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 12,
+              "suggestedWeight": 16,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 12,
+              "suggestedWeight": 16,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 12,
+              "suggestedWeight": 16,
+              "restSeconds": 50
+            }
+          ],
+          "loadReason": "3 sets allocated from the week's lateral_deltoids support requirement."
+        },
+        {
+          "id": "barbell_curl",
+          "owner": "biceps",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 12,
+              "suggestedWeight": 25,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 12,
+              "suggestedWeight": 25,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 12,
+              "suggestedWeight": 25,
+              "restSeconds": 50
+            }
+          ],
+          "loadReason": "3 sets allocated from the week's biceps support requirement."
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "template": "lower",
+      "estimatedMinutes": 45,
+      "workingSets": 13,
+      "exercises": [
+        {
+          "id": "squat",
+          "owner": "quadriceps",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 95,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 95,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 95,
+              "restSeconds": 130
+            }
+          ],
+          "loadReason": "3 sets allocated from the week's quadriceps heavy requirement."
+        },
+        {
+          "id": "hack_squat",
+          "owner": "quadriceps",
+          "workingSets": 2,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ],
+          "loadReason": "Choose a load for this exercise; no load is inferred from another implement."
+        },
+        {
+          "id": "deadlift",
+          "owner": "hamstrings",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 115,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 115,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 115,
+              "restSeconds": 130
+            }
+          ],
+          "loadReason": "3 sets allocated from the week's hamstrings heavy requirement."
+        },
+        {
+          "id": "romanian_deadlift",
+          "owner": "hamstrings",
+          "workingSets": 2,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ],
+          "loadReason": "Choose a load for this exercise; no load is inferred from another implement."
+        },
+        {
+          "id": "calf_raises",
+          "owner": "calves",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ],
+          "loadReason": "Choose a load for this exercise; no load is inferred from another implement."
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "template": "push",
+      "estimatedMinutes": 38,
+      "workingSets": 17,
+      "exercises": [
+        {
+          "id": "barbell_bench_press",
+          "owner": "pectorals",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 82.5,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 82.5,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 82.5,
+              "restSeconds": 130
+            }
+          ],
+          "loadReason": "3 sets allocated from the week's pectorals heavy requirement."
+        },
+        {
+          "id": "cable_chest_flyes",
+          "owner": "pectorals",
+          "workingSets": 2,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ],
+          "loadReason": "Choose a load for this exercise; no load is inferred from another implement."
+        },
+        {
+          "id": "overhead_press",
+          "owner": "anterior_deltoids",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 52.5,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 52.5,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 52.5,
+              "restSeconds": 130
+            }
+          ],
+          "loadReason": "3 sets allocated from the week's anterior_deltoids heavy requirement."
+        },
+        {
+          "id": "lateral_raises",
+          "owner": "lateral_deltoids",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 12,
+              "suggestedWeight": 16,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 12,
+              "suggestedWeight": 16,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 12,
+              "suggestedWeight": 16,
+              "restSeconds": 50
+            }
+          ],
+          "loadReason": "3 sets allocated from the week's lateral_deltoids support requirement."
+        },
+        {
+          "id": "tricep_pushdown",
+          "owner": "triceps",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 12,
+              "suggestedWeight": 40,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 12,
+              "suggestedWeight": 40,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 12,
+              "suggestedWeight": 40,
+              "restSeconds": 50
+            }
+          ],
+          "loadReason": "3 sets allocated from the week's triceps support requirement."
+        },
+        {
+          "id": "face_pulls",
+          "owner": "rear_deltoids",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ],
+          "loadReason": "Choose a load for this exercise; no load is inferred from another implement."
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "template": "pull",
+      "estimatedMinutes": 35,
+      "workingSets": 14,
+      "exercises": [
+        {
+          "id": "pull_ups",
+          "owner": "lats",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 0,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 0,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 0,
+              "restSeconds": 130
+            }
+          ],
+          "loadReason": "3 sets allocated from the week's lats heavy requirement."
+        },
+        {
+          "id": "barbell_row",
+          "owner": "lats",
+          "workingSets": 2,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 12,
+              "suggestedWeight": 62.5,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 12,
+              "suggestedWeight": 62.5,
+              "restSeconds": 50
+            }
+          ],
+          "loadReason": "2 sets allocated from the week's lats follow requirement."
+        },
+        {
+          "id": "dumbbell_curl",
+          "owner": "biceps",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 12,
+              "suggestedWeight": 25,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 12,
+              "suggestedWeight": 25,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 12,
+              "suggestedWeight": 25,
+              "restSeconds": 50
+            }
+          ],
+          "loadReason": "3 sets allocated from the week's biceps support requirement."
+        },
+        {
+          "id": "rear_delt_flyes",
+          "owner": "rear_deltoids",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ],
+          "loadReason": "Choose a load for this exercise; no load is inferred from another implement."
+        },
+        {
+          "id": "shrugs",
+          "owner": "traps",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ],
+          "loadReason": "Choose a load for this exercise; no load is inferred from another implement."
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "template": "lower",
+      "estimatedMinutes": 48,
+      "workingSets": 16,
+      "exercises": [
+        {
+          "id": "deadlift",
+          "owner": "hamstrings",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 115,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 115,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 115,
+              "restSeconds": 130
+            }
+          ],
+          "loadReason": "3 sets allocated from the week's hamstrings heavy requirement."
+        },
+        {
+          "id": "romanian_deadlift",
+          "owner": "hamstrings",
+          "workingSets": 2,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ],
+          "loadReason": "Choose a load for this exercise; no load is inferred from another implement."
+        },
+        {
+          "id": "squat",
+          "owner": "quadriceps",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 95,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 95,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 95,
+              "restSeconds": 130
+            }
+          ],
+          "loadReason": "3 sets allocated from the week's quadriceps heavy requirement."
+        },
+        {
+          "id": "leg_press",
+          "owner": "quadriceps",
+          "workingSets": 2,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ],
+          "loadReason": "Choose a load for this exercise; no load is inferred from another implement."
+        },
+        {
+          "id": "calf_raises",
+          "owner": "calves",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 12,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ],
+          "loadReason": "Choose a load for this exercise; no load is inferred from another implement."
+        },
+        {
+          "id": "overhead_tricep_extension",
+          "owner": "triceps",
+          "workingSets": 3,
+          "prescription": [
+            {
+              "setIndex": 1,
+              "targetReps": 12,
+              "suggestedWeight": 40,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 12,
+              "suggestedWeight": 40,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 12,
+              "suggestedWeight": 40,
+              "restSeconds": 50
+            }
+          ],
+          "loadReason": "3 sets allocated from the week's triceps support requirement."
+        }
+      ]
+    }
+  ],
+  "unknownLiveFields": [
+    "profile revision",
+    "programme id/version",
+    "persisted day ids",
+    "started session snapshot",
+    "performed sets",
+    "effective guidance"
+  ],
+  "policyFindingsStillOpen": [
+    "R10-P01",
+    "D-P2-01",
+    "D-P2-02",
+    "D-P2-03",
+    "D-P2-04",
+    "D-P2-05",
+    "D-P2-06"
+  ]
+}

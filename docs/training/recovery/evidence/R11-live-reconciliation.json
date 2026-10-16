@@ -1,0 +1,2538 @@
+{
+  "task": "R11 only",
+  "verdict": "PARTIAL_ANDROID_AND_LIVE_READ_PARITY; NEW_BUILD_START_FREEZE_GUIDANCE_UNABLE_TO_VERIFY",
+  "utc": "2026-10-16T09:53:29.275Z",
+  "identity": "Retained operator profile, pseudonymized; not established disposable scope",
+  "method": "Read-only existing dev-runtime query cache, authenticated app APIs and user-scoped live SELECT. New build is in-memory only, never saved.",
+  "readApiCalls": [
+    "getTrainingProfile",
+    "getActiveProgramInstance",
+    "getProgramDays",
+    "getFrozenProgramDayItems",
+    "getTrainingSession",
+    "findOpenTrainingSession"
+  ],
+  "sessionListQuery": "Existing authenticated supabase client: training_sessions SELECT id,program_day_id,started_at,ended_at,created_at,decision_trace WHERE user_id=current-profile.user_id ORDER created_at DESC LIMIT 8; no INSERT/UPDATE/DELETE",
+  "profile": {
+    "goals": {
+      "lose_fat": 0,
+      "get_fitter": 0.07445461990916537,
+      "build_muscle": 0.4549177276450004,
+      "build_strength": 0.47062765244583427
+    },
+    "days_per_week": 5,
+    "equipment_access": [
+      "barbell",
+      "dumbbells",
+      "bench",
+      "rack",
+      "cable_machine",
+      "pull_up_bar",
+      "hack_squat_machine",
+      "t_bar_row_machine",
+      "leg_press_machine",
+      "chest_press_machine",
+      "dip_station",
+      "trap_bar",
+      "ez_bar",
+      "landmine",
+      "smith_machine",
+      "cardio"
+    ],
+    "baselines": {
+      "squat": 105,
+      "deadlift": 116.66666666666667,
+      "barbell_row": 87.5,
+      "overhead_press": 93.33333333333334,
+      "barbell_bench_press": 122.50000000000001
+    },
+    "updated_at": "2026-10-12T16:28:30.531276+00:00",
+    "created_at": "2026-10-12T16:28:30.531276+00:00",
+    "experience": "advanced",
+    "mode": "strength",
+    "preferences": {
+      "includeSkillWork": false,
+      "muscle_frequency_preference": "twice"
+    },
+    "injuriesCount": 0,
+    "forbiddenCount": 0
+  },
+  "snapshotMetadata": {
+    "goals": {
+      "lose_fat": 0,
+      "get_fitter": 0.07445461990916537,
+      "build_muscle": 0.4549177276450004,
+      "build_strength": 0.47062765244583427
+    },
+    "mode": "strength",
+    "experience": "advanced",
+    "weekdays": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "baselineInputs": null
+  },
+  "programme": {
+    "alias": "retained-active-programme",
+    "created_at": "2026-10-12T16:28:32.155916+00:00",
+    "updated_at": "2026-10-12T16:28:32.155916+00:00",
+    "start_date": "2026-10-12",
+    "status": "active",
+    "selected_weekdays": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "policyVersion": null,
+    "savedProgrammeMetadata": false,
+    "weekCount": 4,
+    "strategy": null,
+    "dayCount": 20,
+    "days": [
+      {
+        "alias": "day-1",
+        "date": "2026-10-12",
+        "week": 1,
+        "day": 1,
+        "label": "Upper (Chest/Back)",
+        "template": "upper",
+        "allocation": null
+      },
+      {
+        "alias": "day-2",
+        "date": "2026-10-13",
+        "week": 1,
+        "day": 2,
+        "label": "Lower (Squat)",
+        "template": "lower",
+        "allocation": null
+      },
+      {
+        "alias": "day-3",
+        "date": "2026-10-14",
+        "week": 1,
+        "day": 3,
+        "label": "Push (Chest/Shoulders)",
+        "template": "push",
+        "allocation": null
+      },
+      {
+        "alias": "day-4",
+        "date": "2026-10-15",
+        "week": 1,
+        "day": 4,
+        "label": "Pull (Back/Arms)",
+        "template": "pull",
+        "allocation": null
+      },
+      {
+        "alias": "day-5",
+        "date": "2026-10-16",
+        "week": 1,
+        "day": 5,
+        "label": "Lower (Deadlift)",
+        "template": "lower",
+        "allocation": null
+      },
+      {
+        "alias": "day-6",
+        "date": "2026-10-19",
+        "week": 2,
+        "day": 1,
+        "label": "Upper (Chest/Back)",
+        "template": "upper",
+        "allocation": null
+      },
+      {
+        "alias": "day-7",
+        "date": "2026-10-20",
+        "week": 2,
+        "day": 2,
+        "label": "Lower (Squat)",
+        "template": "lower",
+        "allocation": null
+      },
+      {
+        "alias": "day-8",
+        "date": "2026-10-21",
+        "week": 2,
+        "day": 3,
+        "label": "Push (Chest/Shoulders)",
+        "template": "push",
+        "allocation": null
+      },
+      {
+        "alias": "day-9",
+        "date": "2026-10-22",
+        "week": 2,
+        "day": 4,
+        "label": "Pull (Back/Arms)",
+        "template": "pull",
+        "allocation": null
+      },
+      {
+        "alias": "day-10",
+        "date": "2026-10-23",
+        "week": 2,
+        "day": 5,
+        "label": "Lower (Deadlift)",
+        "template": "lower",
+        "allocation": null
+      },
+      {
+        "alias": "day-11",
+        "date": "2026-10-26",
+        "week": 3,
+        "day": 1,
+        "label": "Upper (Chest/Back)",
+        "template": "upper",
+        "allocation": null
+      },
+      {
+        "alias": "day-12",
+        "date": "2026-10-27",
+        "week": 3,
+        "day": 2,
+        "label": "Lower (Squat)",
+        "template": "lower",
+        "allocation": null
+      },
+      {
+        "alias": "day-13",
+        "date": "2026-10-28",
+        "week": 3,
+        "day": 3,
+        "label": "Push (Chest/Shoulders)",
+        "template": "push",
+        "allocation": null
+      },
+      {
+        "alias": "day-14",
+        "date": "2026-10-29",
+        "week": 3,
+        "day": 4,
+        "label": "Pull (Back/Arms)",
+        "template": "pull",
+        "allocation": null
+      },
+      {
+        "alias": "day-15",
+        "date": "2026-10-30",
+        "week": 3,
+        "day": 5,
+        "label": "Lower (Deadlift)",
+        "template": "lower",
+        "allocation": null
+      },
+      {
+        "alias": "day-16",
+        "date": "2026-11-02",
+        "week": 4,
+        "day": 1,
+        "label": "Upper (Chest/Back)",
+        "template": "upper",
+        "allocation": null
+      },
+      {
+        "alias": "day-17",
+        "date": "2026-11-03",
+        "week": 4,
+        "day": 2,
+        "label": "Lower (Squat)",
+        "template": "lower",
+        "allocation": null
+      },
+      {
+        "alias": "day-18",
+        "date": "2026-11-04",
+        "week": 4,
+        "day": 3,
+        "label": "Push (Chest/Shoulders)",
+        "template": "push",
+        "allocation": null
+      },
+      {
+        "alias": "day-19",
+        "date": "2026-11-05",
+        "week": 4,
+        "day": 4,
+        "label": "Pull (Back/Arms)",
+        "template": "pull",
+        "allocation": null
+      },
+      {
+        "alias": "day-20",
+        "date": "2026-11-06",
+        "week": 4,
+        "day": 5,
+        "label": "Lower (Deadlift)",
+        "template": "lower",
+        "allocation": null
+      }
+    ]
+  },
+  "seed": {
+    "source": "training_session_items.performed.sets",
+    "status": "available",
+    "requestedExerciseCount": 137
+  },
+  "adaptiveTrainingEnabled": false,
+  "cacheStates": [
+    {
+      "name": "training:activeProgram",
+      "status": "success",
+      "dataUpdatedAt": 1792144079084
+    },
+    {
+      "name": "training:programDays:week",
+      "status": "success",
+      "dataUpdatedAt": 1792144103988
+    },
+    {
+      "name": "training:frozenWeek",
+      "status": "success",
+      "dataUpdatedAt": 1792144106767
+    },
+    {
+      "name": "training:perfSeed",
+      "status": "success",
+      "dataUpdatedAt": 1792144104827
+    }
+  ],
+  "savedWeekProjection": [
+    {
+      "day": 1,
+      "minutes": 43,
+      "validationStatus": "legacy",
+      "policyVersion": "legacy-balanced-v1",
+      "issues": [
+        {
+          "code": "weekly_context_missing",
+          "severity": "warning",
+          "message": "Historical saved-day prescription; rebuild to obtain versioned weekly requirements."
+        }
+      ],
+      "workingSets": 14,
+      "exercises": [
+        {
+          "id": "barbell_bench_press",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 100,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 100,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 100,
+              "restSeconds": 130
+            }
+          ]
+        },
+        {
+          "id": "dumbbell_flyes",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ]
+        },
+        {
+          "id": "barbell_row",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 62.5,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 62.5,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 62.5,
+              "restSeconds": 130
+            }
+          ]
+        },
+        {
+          "id": "lat_pulldown",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ]
+        },
+        {
+          "id": "lateral_raises",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 16,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 16,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 16,
+              "restSeconds": 50
+            }
+          ]
+        },
+        {
+          "id": "barbell_curl",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 25,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 25,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 25,
+              "restSeconds": 50
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "minutes": 37,
+      "validationStatus": "infeasible",
+      "policyVersion": "legacy-balanced-v1",
+      "issues": [
+        {
+          "code": "unavailable_slot",
+          "severity": "error",
+          "message": "No eligible historical candidate for hip_hinge."
+        },
+        {
+          "code": "weekly_context_missing",
+          "severity": "warning",
+          "message": "Historical saved-day prescription; rebuild to obtain versioned weekly requirements."
+        }
+      ],
+      "workingSets": 10,
+      "exercises": [
+        {
+          "id": "squat",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 85,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 85,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 85,
+              "restSeconds": 130
+            }
+          ]
+        },
+        {
+          "id": "hack_squat",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ]
+        },
+        {
+          "id": "romanian_deadlift",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 0,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 0,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 0,
+              "restSeconds": 130
+            }
+          ]
+        },
+        {
+          "id": "calf_raises",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "minutes": 38,
+      "validationStatus": "legacy",
+      "policyVersion": "legacy-balanced-v1",
+      "issues": [
+        {
+          "code": "weekly_context_missing",
+          "severity": "warning",
+          "message": "Historical saved-day prescription; rebuild to obtain versioned weekly requirements."
+        }
+      ],
+      "workingSets": 16,
+      "exercises": [
+        {
+          "id": "barbell_bench_press",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 100,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 100,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 100,
+              "restSeconds": 130
+            }
+          ]
+        },
+        {
+          "id": "cable_chest_flyes",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ]
+        },
+        {
+          "id": "overhead_press",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 75,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 75,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 75,
+              "restSeconds": 130
+            }
+          ]
+        },
+        {
+          "id": "lateral_raises",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 16,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 16,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 16,
+              "restSeconds": 50
+            }
+          ]
+        },
+        {
+          "id": "tricep_pushdown",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 40,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 40,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 40,
+              "restSeconds": 50
+            }
+          ]
+        },
+        {
+          "id": "face_pulls",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "minutes": 35,
+      "validationStatus": "legacy",
+      "policyVersion": "legacy-balanced-v1",
+      "issues": [
+        {
+          "code": "weekly_context_missing",
+          "severity": "warning",
+          "message": "Historical saved-day prescription; rebuild to obtain versioned weekly requirements."
+        }
+      ],
+      "workingSets": 13,
+      "exercises": [
+        {
+          "id": "pull_ups",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 0,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 0,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 0,
+              "restSeconds": 130
+            }
+          ]
+        },
+        {
+          "id": "barbell_row",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 60,
+              "restSeconds": 50
+            }
+          ]
+        },
+        {
+          "id": "dumbbell_curl",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 15,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 15,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 15,
+              "restSeconds": 50
+            }
+          ]
+        },
+        {
+          "id": "rear_delt_flyes",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ]
+        },
+        {
+          "id": "shrugs",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 20,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 20,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 20,
+              "restSeconds": 50
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "minutes": 48,
+      "validationStatus": "legacy",
+      "policyVersion": "legacy-balanced-v1",
+      "issues": [
+        {
+          "code": "weekly_context_missing",
+          "severity": "warning",
+          "message": "Historical saved-day prescription; rebuild to obtain versioned weekly requirements."
+        }
+      ],
+      "workingSets": 14,
+      "exercises": [
+        {
+          "id": "deadlift",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 95,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 95,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 95,
+              "restSeconds": 130
+            }
+          ]
+        },
+        {
+          "id": "romanian_deadlift",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ]
+        },
+        {
+          "id": "leg_press",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 0,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 0,
+              "restSeconds": 130
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 0,
+              "restSeconds": 130
+            }
+          ]
+        },
+        {
+          "id": "lunges",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ]
+        },
+        {
+          "id": "calf_raises",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 50
+            }
+          ]
+        },
+        {
+          "id": "overhead_tricep_extension",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 40,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 40,
+              "restSeconds": 50
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 40,
+              "restSeconds": 50
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "projectionLimit": "Current app-generated projection of saved legacy day metadata, NOT persisted session prescriptions. Uses cached canonical history and settings, and existing mixed worktree source.",
+  "weeklySummary": "Completed: 0 sets · Frozen planned: 0 sets · Provisional future: Chest 8 · Back 32 · Shoulders 28 · Arms 25 · Legs 19 · Programme needs review · Muscle sets by primary region",
+  "summaryLimit": "Infeasible Tuesday excluded. Display buckets count overlapping catalogue primary regions, unlike the R10 exclusive scheduling-owner oracle.",
+  "newBuildInMemoryOnly": {
+    "policyVersion": "weekly-20261014-v2",
+    "strategy": "balanced-v1:5",
+    "week1": [
+      {
+        "day": 1,
+        "minutes": 43,
+        "validationStatus": "infeasible",
+        "policyVersion": "weekly-20261014-v2",
+        "issues": [
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "dumbbell_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "lat_pulldown",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "lateral_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "barbell_curl",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "hack_squat",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "romanian_deadlift",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "calf_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "cable_chest_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "lateral_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "face_pulls",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "pull_ups",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "dumbbell_curl",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "rear_delt_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "shrugs",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "romanian_deadlift",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "invalid_load_evidence",
+            "severity": "error",
+            "message": "Exercise history has invalid numeric values or identity.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "leg_press",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "leg_press",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "calf_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          }
+        ],
+        "workingSets": 14,
+        "exercises": [
+          {
+            "id": "barbell_bench_press",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 7,
+                "suggestedWeight": 100,
+                "restSeconds": 130
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 7,
+                "suggestedWeight": 100,
+                "restSeconds": 130
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 7,
+                "suggestedWeight": 100,
+                "restSeconds": 130
+              }
+            ]
+          },
+          {
+            "id": "dumbbell_flyes",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 13,
+                "suggestedWeight": 0,
+                "restSeconds": 50
+              }
+            ]
+          },
+          {
+            "id": "barbell_row",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 7,
+                "suggestedWeight": 62.5,
+                "restSeconds": 130
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 7,
+                "suggestedWeight": 62.5,
+                "restSeconds": 130
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 7,
+                "suggestedWeight": 62.5,
+                "restSeconds": 130
+              }
+            ]
+          },
+          {
+            "id": "lat_pulldown",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 13,
+                "suggestedWeight": 0,
+                "restSeconds": 50
+              }
+            ]
+          },
+          {
+            "id": "lateral_raises",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 13,
+                "suggestedWeight": 16,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 13,
+                "suggestedWeight": 16,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 13,
+                "suggestedWeight": 16,
+                "restSeconds": 50
+              }
+            ]
+          },
+          {
+            "id": "barbell_curl",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 13,
+                "suggestedWeight": 25,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 13,
+                "suggestedWeight": 25,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 13,
+                "suggestedWeight": 25,
+                "restSeconds": 50
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "day": 2,
+        "minutes": 45,
+        "validationStatus": "infeasible",
+        "policyVersion": "weekly-20261014-v2",
+        "issues": [
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "dumbbell_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "lat_pulldown",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "lateral_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "barbell_curl",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "hack_squat",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "romanian_deadlift",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "calf_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "cable_chest_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "lateral_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "face_pulls",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "pull_ups",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "dumbbell_curl",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "rear_delt_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "shrugs",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "romanian_deadlift",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "invalid_load_evidence",
+            "severity": "error",
+            "message": "Exercise history has invalid numeric values or identity.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "leg_press",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "leg_press",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "calf_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          }
+        ],
+        "workingSets": 11,
+        "exercises": [
+          {
+            "id": "squat",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 7,
+                "suggestedWeight": 85,
+                "restSeconds": 130
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 7,
+                "suggestedWeight": 85,
+                "restSeconds": 130
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 7,
+                "suggestedWeight": 85,
+                "restSeconds": 130
+              }
+            ]
+          },
+          {
+            "id": "hack_squat",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 13,
+                "suggestedWeight": 0,
+                "restSeconds": 50
+              }
+            ]
+          },
+          {
+            "id": "deadlift",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 7,
+                "suggestedWeight": 95,
+                "restSeconds": 130
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 7,
+                "suggestedWeight": 95,
+                "restSeconds": 130
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 7,
+                "suggestedWeight": 95,
+                "restSeconds": 130
+              }
+            ]
+          },
+          {
+            "id": "romanian_deadlift",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 13,
+                "suggestedWeight": 0,
+                "restSeconds": 50
+              }
+            ]
+          },
+          {
+            "id": "calf_raises",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 13,
+                "suggestedWeight": 0,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 13,
+                "suggestedWeight": 0,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 13,
+                "suggestedWeight": 0,
+                "restSeconds": 50
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "day": 3,
+        "minutes": 38,
+        "validationStatus": "infeasible",
+        "policyVersion": "weekly-20261014-v2",
+        "issues": [
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "dumbbell_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "lat_pulldown",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "lateral_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "barbell_curl",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "hack_squat",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "romanian_deadlift",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "calf_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "cable_chest_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "lateral_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "face_pulls",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "pull_ups",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "dumbbell_curl",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "rear_delt_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "shrugs",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "romanian_deadlift",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "invalid_load_evidence",
+            "severity": "error",
+            "message": "Exercise history has invalid numeric values or identity.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "leg_press",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "leg_press",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "calf_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          }
+        ],
+        "workingSets": 16,
+        "exercises": [
+          {
+            "id": "barbell_bench_press",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 7,
+                "suggestedWeight": 100,
+                "restSeconds": 130
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 7,
+                "suggestedWeight": 100,
+                "restSeconds": 130
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 7,
+                "suggestedWeight": 100,
+                "restSeconds": 130
+              }
+            ]
+          },
+          {
+            "id": "cable_chest_flyes",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 13,
+                "suggestedWeight": 0,
+                "restSeconds": 50
+              }
+            ]
+          },
+          {
+            "id": "overhead_press",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 7,
+                "suggestedWeight": 75,
+                "restSeconds": 130
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 7,
+                "suggestedWeight": 75,
+                "restSeconds": 130
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 7,
+                "suggestedWeight": 75,
+                "restSeconds": 130
+              }
+            ]
+          },
+          {
+            "id": "lateral_raises",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 13,
+                "suggestedWeight": 16,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 13,
+                "suggestedWeight": 16,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 13,
+                "suggestedWeight": 16,
+                "restSeconds": 50
+              }
+            ]
+          },
+          {
+            "id": "tricep_pushdown",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 13,
+                "suggestedWeight": 40,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 13,
+                "suggestedWeight": 40,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 13,
+                "suggestedWeight": 40,
+                "restSeconds": 50
+              }
+            ]
+          },
+          {
+            "id": "face_pulls",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 13,
+                "suggestedWeight": 0,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 13,
+                "suggestedWeight": 0,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 13,
+                "suggestedWeight": 0,
+                "restSeconds": 50
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "day": 4,
+        "minutes": 35,
+        "validationStatus": "infeasible",
+        "policyVersion": "weekly-20261014-v2",
+        "issues": [
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "dumbbell_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "lat_pulldown",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "lateral_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "barbell_curl",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "hack_squat",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "romanian_deadlift",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "calf_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "cable_chest_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "lateral_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "face_pulls",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "pull_ups",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "dumbbell_curl",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "rear_delt_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "shrugs",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "romanian_deadlift",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "invalid_load_evidence",
+            "severity": "error",
+            "message": "Exercise history has invalid numeric values or identity.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "leg_press",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "leg_press",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "calf_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          }
+        ],
+        "workingSets": 13,
+        "exercises": [
+          {
+            "id": "pull_ups",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 7,
+                "suggestedWeight": 0,
+                "restSeconds": 130
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 7,
+                "suggestedWeight": 0,
+                "restSeconds": 130
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 7,
+                "suggestedWeight": 0,
+                "restSeconds": 130
+              }
+            ]
+          },
+          {
+            "id": "barbell_row",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 13,
+                "suggestedWeight": 60,
+                "restSeconds": 50
+              }
+            ]
+          },
+          {
+            "id": "dumbbell_curl",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 13,
+                "suggestedWeight": 15,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 13,
+                "suggestedWeight": 15,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 13,
+                "suggestedWeight": 15,
+                "restSeconds": 50
+              }
+            ]
+          },
+          {
+            "id": "rear_delt_flyes",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 13,
+                "suggestedWeight": 0,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 13,
+                "suggestedWeight": 0,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 13,
+                "suggestedWeight": 0,
+                "restSeconds": 50
+              }
+            ]
+          },
+          {
+            "id": "shrugs",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 13,
+                "suggestedWeight": 20,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 13,
+                "suggestedWeight": 20,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 13,
+                "suggestedWeight": 20,
+                "restSeconds": 50
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "day": 5,
+        "minutes": 48,
+        "validationStatus": "infeasible",
+        "policyVersion": "weekly-20261014-v2",
+        "issues": [
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "dumbbell_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "lat_pulldown",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "lateral_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "barbell_curl",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "hack_squat",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "romanian_deadlift",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "calf_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "cable_chest_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "lateral_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "face_pulls",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "pull_ups",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "dumbbell_curl",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "rear_delt_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "shrugs",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "romanian_deadlift",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "invalid_load_evidence",
+            "severity": "error",
+            "message": "Exercise history has invalid numeric values or identity.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "leg_press",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "leg_press",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "calf_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          }
+        ],
+        "workingSets": 14,
+        "exercises": [
+          {
+            "id": "deadlift",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 7,
+                "suggestedWeight": 95,
+                "restSeconds": 130
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 7,
+                "suggestedWeight": 95,
+                "restSeconds": 130
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 7,
+                "suggestedWeight": 95,
+                "restSeconds": 130
+              }
+            ]
+          },
+          {
+            "id": "romanian_deadlift",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 13,
+                "suggestedWeight": 0,
+                "restSeconds": 50
+              }
+            ]
+          },
+          {
+            "id": "squat",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 7,
+                "suggestedWeight": 85,
+                "restSeconds": 130
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 7,
+                "suggestedWeight": 85,
+                "restSeconds": 130
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 7,
+                "suggestedWeight": 85,
+                "restSeconds": 130
+              }
+            ]
+          },
+          {
+            "id": "leg_press",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 13,
+                "suggestedWeight": 0,
+                "restSeconds": 50
+              }
+            ]
+          },
+          {
+            "id": "calf_raises",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 13,
+                "suggestedWeight": 0,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 13,
+                "suggestedWeight": 0,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 13,
+                "suggestedWeight": 0,
+                "restSeconds": 50
+              }
+            ]
+          },
+          {
+            "id": "overhead_tricep_extension",
+            "sets": [
+              {
+                "setIndex": 1,
+                "targetReps": 13,
+                "suggestedWeight": 40,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 2,
+                "targetReps": 13,
+                "suggestedWeight": 40,
+                "restSeconds": 50
+              },
+              {
+                "setIndex": 3,
+                "targetReps": 13,
+                "suggestedWeight": 40,
+                "restSeconds": 50
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "currentWeekFrozenDays": 0,
+  "openSession": false,
+  "recentSavedSessions": [
+    {
+      "alias": "recent-session-1",
+      "started_at": "2026-10-06T19:04:27.341+00:00",
+      "ended_at": "2026-10-06T19:04:47.646+00:00",
+      "belongsToCurrentProgramme": false,
+      "items": 0,
+      "plannedSets": 0,
+      "completedSets": 0,
+      "completedExercises": 0,
+      "recordedVolumeKg": 0,
+      "sanitizedPlannedPerformedSnapshotSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "alias": "recent-session-2",
+      "started_at": "2026-10-05T19:34:26.154+00:00",
+      "ended_at": "2026-10-06T07:15:55.764+00:00",
+      "belongsToCurrentProgramme": false,
+      "items": 0,
+      "plannedSets": 0,
+      "completedSets": 0,
+      "completedExercises": 0,
+      "recordedVolumeKg": 0,
+      "sanitizedPlannedPerformedSnapshotSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "alias": "recent-session-3",
+      "started_at": "2026-10-05T19:33:00.698+00:00",
+      "ended_at": "2026-10-06T19:04:09.477+00:00",
+      "belongsToCurrentProgramme": false,
+      "items": 0,
+      "plannedSets": 0,
+      "completedSets": 0,
+      "completedExercises": 0,
+      "recordedVolumeKg": 0,
+      "sanitizedPlannedPerformedSnapshotSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "alias": "recent-session-4",
+      "started_at": "2026-10-01T16:25:26.29+00:00",
+      "ended_at": "2026-10-05T19:24:38.949+00:00",
+      "belongsToCurrentProgramme": false,
+      "items": 9,
+      "plannedSets": 22,
+      "completedSets": 20,
+      "completedExercises": 8,
+      "recordedVolumeKg": 5394,
+      "sanitizedPlannedPerformedSnapshotSha256": "2e3f3d802189e744103027cb2595ff88245cf2195cffa8f60def6ba06d0c2603"
+    },
+    {
+      "alias": "recent-session-5",
+      "started_at": "2026-09-30T16:29:21.679+00:00",
+      "ended_at": "2026-09-30T18:50:43.888+00:00",
+      "belongsToCurrentProgramme": false,
+      "items": 6,
+      "plannedSets": 15,
+      "completedSets": 0,
+      "completedExercises": 0,
+      "recordedVolumeKg": 0,
+      "sanitizedPlannedPerformedSnapshotSha256": "2085a35aa91c47e2ba06e3c02788b2b2bc94f6dbb66f7121fdb984ba01cd1736"
+    },
+    {
+      "alias": "recent-session-6",
+      "started_at": "2026-09-29T17:23:49.115+00:00",
+      "ended_at": "2026-09-29T18:22:15.864+00:00",
+      "belongsToCurrentProgramme": false,
+      "items": 8,
+      "plannedSets": 20,
+      "completedSets": 18,
+      "completedExercises": 7,
+      "recordedVolumeKg": 3963,
+      "sanitizedPlannedPerformedSnapshotSha256": "5b4e42bd8185881523e45225e9d5fe8d1d8f4801522b4052844a698e5a8a9d38"
+    }
+  ],
+  "historicalSample": {
+    "alias": "recent-session-4",
+    "separateFromCurrentProgramme": true,
+    "firstTwoExercises": [
+      {
+        "exercise": "dumbbell_shoulder_press",
+        "plannedSets": [
+          {
+            "setIndex": 1,
+            "targetReps": 7,
+            "restSeconds": 130,
+            "suggestedWeight": 70
+          },
+          {
+            "setIndex": 2,
+            "targetReps": 7,
+            "restSeconds": 130,
+            "suggestedWeight": 70
+          },
+          {
+            "setIndex": 3,
+            "targetReps": 7,
+            "restSeconds": 130,
+            "suggestedWeight": 70
+          }
+        ],
+        "performed": [
+          {
+            "setIndex": 1,
+            "weight": 70,
+            "reps": 7,
+            "completedAt": "2026-10-01T16:46:17.368Z"
+          },
+          {
+            "setIndex": 2,
+            "weight": 70,
+            "reps": 7,
+            "completedAt": "2026-10-01T16:53:22.227Z"
+          },
+          {
+            "setIndex": 3,
+            "weight": 70,
+            "reps": 7,
+            "completedAt": "2026-10-01T17:01:19.420Z"
+          }
+        ]
+      },
+      {
+        "exercise": "barbell_row",
+        "plannedSets": [
+          {
+            "setIndex": 1,
+            "targetReps": 7,
+            "restSeconds": 130,
+            "suggestedWeight": 70
+          },
+          {
+            "setIndex": 2,
+            "targetReps": 7,
+            "restSeconds": 130,
+            "suggestedWeight": 70
+          },
+          {
+            "setIndex": 3,
+            "targetReps": 7,
+            "restSeconds": 130,
+            "suggestedWeight": 70
+          }
+        ],
+        "performed": [
+          {
+            "setIndex": 1,
+            "weight": 70,
+            "reps": 7,
+            "completedAt": "2026-10-01T17:04:39.993Z"
+          },
+          {
+            "setIndex": 2,
+            "weight": 70,
+            "reps": 7,
+            "completedAt": "2026-10-01T17:07:05.345Z"
+          },
+          {
+            "setIndex": 3,
+            "weight": 70,
+            "reps": 7,
+            "completedAt": "2026-10-01T17:09:43.551Z"
+          }
+        ]
+      }
+    ],
+    "limit": "Existing completed snapshot observed live; no new start, Done, adjustment, completion, freeze transition or delivery test."
+  },
+  "unknown": [
+    "New-version programme save/reload",
+    "New disposable session start and frozen snapshot",
+    "R07 effective adjustment after actual Android Done",
+    "phone notification/Wear/FGS active delivery"
+  ],
+  "redaction": "No account IDs, session/day UUIDs, email, credentials, free-text notes, heart-rate or calorie values. Bounded training observations only; raw API/DB snapshots are not published.",
+  "preservationRecheck": {
+    "utc": "2026-10-16T10:02:09.341Z",
+    "profileRevisionUnchanged": true,
+    "programmeRevisionUnchanged": true,
+    "sixBoundedSessionSnapshotsUnchanged": true,
+    "weeklySummaryUnchanged": true,
+    "openSession": false,
+    "currentWeekFrozenDays": 0
+  }
+}

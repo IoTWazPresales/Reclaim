@@ -1,0 +1,149 @@
+{
+  "utc": "2026-10-16T10:09:18.831357+00:00",
+  "scope": "R11 evidence only. Source harness on unchanged existing isolated committed R10 snapshot; not Android acceptance.",
+  "baseHead": "fe8dd3c07220079999b789b7c8d061c37982ed38",
+  "typecheck": {
+    "command": "npm run typecheck",
+    "exit": 0
+  },
+  "focused": {
+    "command": "npx vitest run src/lib/training/__tests__/programmeAcceptance.test.ts src/lib/training/__tests__/R10-review-probes.test.ts --reporter=verbose",
+    "exit": 0,
+    "passed": 48
+  },
+  "fullSuiteInitial": {
+    "command": "npm test -- --reporter=verbose (cmd /c redirect)",
+    "exit": 1,
+    "status": "Interrupted after more than four minutes with no new log output after known volume assertion; not a completed suite"
+  },
+  "fullSuiteRetry": {
+    "command": "npm test -- --reporter=verbose (cmd /c redirect)",
+    "exit": 1,
+    "passed": 1374,
+    "failed": 4,
+    "files": 199,
+    "failures": [
+      "src/lib/training/__tests__/routineVolumeMeasurement.test.ts > routine volume measurement harness > measures the two-pass TrainingScreen path across goals \u00d7 days \u00d7 equipment \u00d7 frequency",
+      "src/lib/training/__tests__/runSession.test.ts > run route migration > stores the training session link as text and keeps the link on the same user",
+      "src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > clamps a new session when a tighter cap is supplied",
+      "src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > leaves a started session snapshot frozen when a later build is capped"
+    ],
+    "exactR10AssertionIdentityMatch": true,
+    "newAssertionFailures": 0,
+    "durationSeconds": 353.36,
+    "gatePassed": false
+  },
+  "dualPath": {
+    "command": "Git Bash: cd /c/Reclaim/.tmp/r10-committed/app && npm run audit:training-dual-paths",
+    "exit": 0,
+    "passed": 31,
+    "failed": 0,
+    "receipt": "Observed tool stdout; no raw log file published"
+  },
+  "catalogue": {
+    "command": "npm run med-catalog-qa",
+    "exit": 0,
+    "rows": 357,
+    "governanceIssues": 0
+  },
+  "wrapper": {
+    "command": "python -m pytest scripts/test_eif_node.py -q",
+    "exit": 1,
+    "passed": 1,
+    "failed": 2,
+    "reason": "Established LEASE_NOT_OWNER: R20261014R03",
+    "receipt": "Observed tool stdout; no raw log file published"
+  },
+  "publicEifAttempts": {
+    "run": "R20261016R11",
+    "commands": [
+      "status --node N-0071",
+      "lease N-0071",
+      "human-check N-0071 --steps docs/training/recovery/evidence/R11-human-verification.md"
+    ],
+    "eachExit": 2,
+    "error": "LEASE_NOT_OWNER: R20261014R03",
+    "registered": false,
+    "evidenceId": null,
+    "acceptance": false,
+    "bypass": false
+  },
+  "sampledSourceIntegrity": {
+    "app/src/lib/training/engine/index.ts": {
+      "committedLfSha256": "53eb52b6ffe540d0222b3ca294c6131495ae03d15d2d8f41122f630f9eae4f9c",
+      "isolatedMatchesCommitted": true,
+      "runtimeWorkingTreeMatchesCommitted": false
+    },
+    "app/src/lib/training/programPlanner.ts": {
+      "committedLfSha256": "fee7e95b691ff79b49e73797aecda7fa4e80c6d2bf3d5f8aa703014fc61510ce",
+      "isolatedMatchesCommitted": true,
+      "runtimeWorkingTreeMatchesCommitted": true
+    },
+    "app/src/lib/training/programmeWeekProposal.ts": {
+      "committedLfSha256": "d0dc2065314734bc553ee01e4ecc70d781696cca701f5772df24b00ad83cce17",
+      "isolatedMatchesCommitted": true,
+      "runtimeWorkingTreeMatchesCommitted": true
+    },
+    "app/src/lib/training/programmeProjection.ts": {
+      "committedLfSha256": "383754f1259e6526fca46ac9b9cec9002a0b2dcf764a88d08337a2748505f045",
+      "isolatedMatchesCommitted": true,
+      "runtimeWorkingTreeMatchesCommitted": true
+    },
+    "app/src/lib/training/setupDraft.ts": {
+      "committedLfSha256": "0ebd705a74e8221eff1f17da0076825a4b8dc17f56106542ea3c3d217eaa526c",
+      "isolatedMatchesCommitted": true,
+      "runtimeWorkingTreeMatchesCommitted": true
+    },
+    "app/src/screens/TrainingScreen.tsx": {
+      "committedLfSha256": "94132d1cb270126973b53e366db4386e25907a156e6bec255ee0d09bbeef0102",
+      "isolatedMatchesCommitted": true,
+      "runtimeWorkingTreeMatchesCommitted": true
+    },
+    "app/src/lib/training/__tests__/programmeAcceptance.test.ts": {
+      "committedLfSha256": "c5244634ffbb86fe41386117b2cb8001807ebde4930750d80ed1e5b32094db6a",
+      "isolatedMatchesCommitted": true,
+      "runtimeWorkingTreeMatchesCommitted": true
+    },
+    "app/src/lib/training/__tests__/R10-review-probes.test.ts": {
+      "committedLfSha256": "eec95f1592ca48155420b34f925fa37ae9b275661dca089a2e2499dfcf6b0a83",
+      "isolatedMatchesCommitted": true,
+      "runtimeWorkingTreeMatchesCommitted": true
+    }
+  },
+  "localLogHashes": {
+    "typecheck-local.txt": {
+      "localPath": ".eif/audit/N-0071/R11/typecheck-local.txt",
+      "sha256": "cd35ebdba9e12b61678eec835bf92424979bd88f78501689ba82b1dffbf391cc"
+    },
+    "focused-local.txt": {
+      "localPath": ".eif/audit/N-0071/R11/focused-local.txt",
+      "sha256": "4c063488f43c8ec0d0b2cad40c0293a06cb84f50bf78eabf0b2455769d200f59"
+    },
+    "full-vitest-local.txt": {
+      "localPath": ".eif/audit/N-0071/R11/full-vitest-local.txt",
+      "sha256": "008a89f319e6eed38988da2214f043829f8ab515da95d1923868e1f6c08b3d14"
+    },
+    "full-vitest-retry-local.txt": {
+      "localPath": ".eif/audit/N-0071/R11/full-vitest-retry-local.txt",
+      "sha256": "6faed61d0e3717729ae1f0c4954a645c04a910252f6f7cdd18e7c0d9413baa1f"
+    },
+    "catalogue-local.txt": {
+      "localPath": ".eif/audit/N-0071/R11/catalogue-local.txt",
+      "sha256": "46b5620f0fd40b66840b1f1fccb6cf0c81221256b4563fa02292a25a5c31e4fb"
+    }
+  },
+  "unrelatedPathsPreserved": [
+    ".eif/CURRENT.md",
+    ".eif/PROGRAM.md",
+    ".eif/WORK_ITEM.md",
+    ".eif/program/PROGRAM.yaml",
+    ".eif/program/PROGRAM_LOG.ndjson",
+    "app/src/lib/training/engine/index.ts",
+    "app/supabase/.temp/cli-latest",
+    "app/supabase/migrations/20260930140000_run_routes.sql",
+    "docs/audits/insight-rules-audit.md",
+    "docs/release/play_human_outstanding_2026-07-29.md",
+    "docs/training/ROUTINE_VOLUME_BASELINE.md"
+  ],
+  "notRun": "No disposable Android save/start/Done/adjustment/finish or physical Wear guidance; no production data write or source fix."
+}

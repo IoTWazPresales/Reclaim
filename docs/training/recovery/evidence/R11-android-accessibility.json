@@ -1,0 +1,5503 @@
+{
+  "scope": "Current Android UI hierarchy, including clipped/offscreen nodes. Bounds retained; actual pixels are independently limited to the four reviewed screenshots. Background History health data omitted.",
+  "screens": {
+    "setup-local.xml": [
+      {
+        "text": "",
+        "description": "Open navigation menu",
+        "bounds": "[0,95][95,200]",
+        "enabled": "true"
+      },
+      {
+        "text": "Training",
+        "description": "",
+        "bounds": "[121,111][318,182]",
+        "enabled": "true"
+      },
+      {
+        "text": "Training Goals",
+        "description": "",
+        "bounds": "[42,341][1038,410]",
+        "enabled": "true"
+      },
+      {
+        "text": "Training mode. Strength is used until you choose otherwise.",
+        "description": "",
+        "bounds": "[42,463][1038,514]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Strength",
+        "bounds": "[45,538][332,623]",
+        "enabled": "true"
+      },
+      {
+        "text": "Strength",
+        "description": "",
+        "bounds": "[135,553][290,606]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Running",
+        "bounds": "[358,538][586,623]",
+        "enabled": "true"
+      },
+      {
+        "text": "Running",
+        "description": "",
+        "bounds": "[400,553][544,606]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Hybrid",
+        "bounds": "[613,538][819,623]",
+        "enabled": "true"
+      },
+      {
+        "text": "Hybrid",
+        "description": "",
+        "bounds": "[655,553][777,606]",
+        "enabled": "true"
+      },
+      {
+        "text": "Select 2-3 goals and adjust their importance. Weights auto-adjust to add up to 100%.",
+        "description": "",
+        "bounds": "[42,666][1038,760]",
+        "enabled": "true"
+      },
+      {
+        "text": "Total: 100%",
+        "description": "",
+        "bounds": "[42,781][1038,829]",
+        "enabled": "true"
+      },
+      {
+        "text": "Build Muscle",
+        "description": "",
+        "bounds": "[42,872][300,941]",
+        "enabled": "true"
+      },
+      {
+        "text": "45%",
+        "description": "",
+        "bounds": "[963,872][1038,941]",
+        "enabled": "true"
+      },
+      {
+        "text": "0%",
+        "description": "",
+        "bounds": "[42,962][147,1013]",
+        "enabled": "true"
+      },
+      {
+        "text": "100%",
+        "description": "",
+        "bounds": "[933,962][1038,1013]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "-",
+        "bounds": "[45,1037][100,1143]",
+        "enabled": "true"
+      },
+      {
+        "text": "-",
+        "description": "",
+        "bounds": "[66,1063][79,1116]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "+",
+        "bounds": "[972,1037][1036,1143]",
+        "enabled": "true"
+      },
+      {
+        "text": "+",
+        "description": "",
+        "bounds": "[993,1063][1015,1116]",
+        "enabled": "true"
+      },
+      {
+        "text": "Build Strength",
+        "description": "",
+        "bounds": "[42,1187][327,1256]",
+        "enabled": "true"
+      },
+      {
+        "text": "47%",
+        "description": "",
+        "bounds": "[963,1187][1038,1256]",
+        "enabled": "true"
+      },
+      {
+        "text": "0%",
+        "description": "",
+        "bounds": "[42,1277][147,1328]",
+        "enabled": "true"
+      },
+      {
+        "text": "100%",
+        "description": "",
+        "bounds": "[933,1277][1038,1328]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "-",
+        "bounds": "[45,1352][100,1457]",
+        "enabled": "true"
+      },
+      {
+        "text": "-",
+        "description": "",
+        "bounds": "[66,1378][79,1431]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "+",
+        "bounds": "[972,1352][1036,1457]",
+        "enabled": "true"
+      },
+      {
+        "text": "+",
+        "description": "",
+        "bounds": "[993,1378][1015,1431]",
+        "enabled": "true"
+      },
+      {
+        "text": "Lose Fat",
+        "description": "",
+        "bounds": "[42,1501][212,1570]",
+        "enabled": "true"
+      },
+      {
+        "text": "0%",
+        "description": "",
+        "bounds": "[985,1501][1038,1570]",
+        "enabled": "true"
+      },
+      {
+        "text": "0%",
+        "description": "",
+        "bounds": "[42,1591][147,1642]",
+        "enabled": "true"
+      },
+      {
+        "text": "100%",
+        "description": "",
+        "bounds": "[933,1591][1038,1642]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "-",
+        "bounds": "[45,1666][100,1771]",
+        "enabled": "false"
+      },
+      {
+        "text": "-",
+        "description": "",
+        "bounds": "[66,1692][79,1745]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "+",
+        "bounds": "[972,1666][1036,1771]",
+        "enabled": "true"
+      },
+      {
+        "text": "+",
+        "description": "",
+        "bounds": "[993,1692][1015,1745]",
+        "enabled": "true"
+      },
+      {
+        "text": "Get Fitter",
+        "description": "",
+        "bounds": "[42,1816][238,1885]",
+        "enabled": "true"
+      },
+      {
+        "text": "7%",
+        "description": "",
+        "bounds": "[985,1816][1038,1885]",
+        "enabled": "true"
+      },
+      {
+        "text": "0%",
+        "description": "",
+        "bounds": "[42,1906][147,1957]",
+        "enabled": "true"
+      },
+      {
+        "text": "100%",
+        "description": "",
+        "bounds": "[933,1906][1038,1957]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "-",
+        "bounds": "[45,1981][100,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "-",
+        "description": "",
+        "bounds": "[66,2007][79,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "+",
+        "bounds": "[972,1981][1036,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "+",
+        "description": "",
+        "bounds": "[993,2007][1015,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "Outcome Preview",
+        "description": "",
+        "bounds": "[74,2204][1007,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "Split Style",
+        "description": "",
+        "bounds": "[74,2294][1007,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "Upper (Chest/Back)",
+        "description": "",
+        "bounds": "[74,2352][1007,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Back",
+        "bounds": "[45,2046][261,2151]",
+        "enabled": "false"
+      },
+      {
+        "text": "Back",
+        "description": "",
+        "bounds": "[108,2072][198,2125]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Exit",
+        "bounds": "[284,2048][415,2149]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exit",
+        "description": "",
+        "bounds": "[315,2071][383,2124]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Delete program",
+        "bounds": "[42,2175][391,2275]",
+        "enabled": "true"
+      },
+      {
+        "text": "Delete program",
+        "description": "",
+        "bounds": "[73,2198][359,2251]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Next",
+        "bounds": "[764,2106][1038,2212]",
+        "enabled": "true"
+      },
+      {
+        "text": "Next",
+        "description": "",
+        "bounds": "[858,2132][943,2185]",
+        "enabled": "true"
+      }
+    ],
+    "setup-days-local.xml": [
+      {
+        "text": "",
+        "description": "Open navigation menu",
+        "bounds": "[0,95][95,200]",
+        "enabled": "true"
+      },
+      {
+        "text": "Training",
+        "description": "",
+        "bounds": "[121,111][318,182]",
+        "enabled": "true"
+      },
+      {
+        "text": "Schedule Preferences",
+        "description": "",
+        "bounds": "[42,341][1038,410]",
+        "enabled": "true"
+      },
+      {
+        "text": "Which days of the week do you want to train?",
+        "description": "",
+        "bounds": "[42,463][1038,514]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Mon, selected",
+        "bounds": "[42,556][200,650]",
+        "enabled": "true"
+      },
+      {
+        "text": "Mon",
+        "description": "",
+        "bounds": "[85,579][156,626]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Tue, selected",
+        "bounds": "[221,556][378,650]",
+        "enabled": "true"
+      },
+      {
+        "text": "Tue",
+        "description": "",
+        "bounds": "[269,579][329,626]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Wed, selected",
+        "bounds": "[399,556][557,650]",
+        "enabled": "true"
+      },
+      {
+        "text": "Wed",
+        "description": "",
+        "bounds": "[442,579][512,626]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Thu, selected",
+        "bounds": "[578,556][735,650]",
+        "enabled": "true"
+      },
+      {
+        "text": "Thu",
+        "description": "",
+        "bounds": "[625,579][687,626]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Fri, selected",
+        "bounds": "[756,556][914,650]",
+        "enabled": "true"
+      },
+      {
+        "text": "Fri",
+        "description": "",
+        "bounds": "[814,579][855,626]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Sat",
+        "bounds": "[42,672][200,767]",
+        "enabled": "true"
+      },
+      {
+        "text": "Sat",
+        "description": "",
+        "bounds": "[95,695][146,742]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Sun",
+        "bounds": "[221,672][378,767]",
+        "enabled": "true"
+      },
+      {
+        "text": "Sun",
+        "description": "",
+        "bounds": "[270,695][329,742]",
+        "enabled": "true"
+      },
+      {
+        "text": "Selected: 5 days/week",
+        "description": "",
+        "bounds": "[42,829][1038,877]",
+        "enabled": "true"
+      },
+      {
+        "text": "Preferred training time? Saved for your profile; it does not change this plan.",
+        "description": "",
+        "bounds": "[42,919][1038,1013]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Morning",
+        "bounds": "[45,1037][356,1143]",
+        "enabled": "true"
+      },
+      {
+        "text": "Morning",
+        "description": "",
+        "bounds": "[125,1063][275,1116]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Evening",
+        "bounds": "[388,1037][699,1143]",
+        "enabled": "true"
+      },
+      {
+        "text": "Evening",
+        "description": "",
+        "bounds": "[473,1063][614,1116]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Flexible",
+        "bounds": "[727,1034][1038,1139]",
+        "enabled": "true"
+      },
+      {
+        "text": "Flexible",
+        "description": "",
+        "bounds": "[810,1060][954,1113]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Back",
+        "bounds": "[45,2046][261,2151]",
+        "enabled": "true"
+      },
+      {
+        "text": "Back",
+        "description": "",
+        "bounds": "[108,2072][198,2125]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Exit",
+        "bounds": "[284,2048][415,2149]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exit",
+        "description": "",
+        "bounds": "[315,2071][383,2124]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Delete program",
+        "bounds": "[42,2175][391,2275]",
+        "enabled": "true"
+      },
+      {
+        "text": "Delete program",
+        "description": "",
+        "bounds": "[73,2198][359,2251]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Next",
+        "bounds": "[764,2106][1038,2212]",
+        "enabled": "true"
+      },
+      {
+        "text": "Next",
+        "description": "",
+        "bounds": "[858,2132][943,2185]",
+        "enabled": "true"
+      }
+    ],
+    "setup-equip-local.xml": [
+      {
+        "text": "",
+        "description": "Open navigation menu",
+        "bounds": "[0,95][95,200]",
+        "enabled": "true"
+      },
+      {
+        "text": "Training",
+        "description": "",
+        "bounds": "[121,111][318,182]",
+        "enabled": "true"
+      },
+      {
+        "text": "Available Equipment",
+        "description": "",
+        "bounds": "[42,341][1038,410]",
+        "enabled": "true"
+      },
+      {
+        "text": "Select all equipment you have access to:",
+        "description": "",
+        "bounds": "[42,463][1038,514]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Barbell",
+        "bounds": "[45,559][309,644]",
+        "enabled": "true"
+      },
+      {
+        "text": "Barbell",
+        "description": "",
+        "bounds": "[135,574][267,627]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Squat rack",
+        "bounds": "[335,559][665,644]",
+        "enabled": "true"
+      },
+      {
+        "text": "Squat rack",
+        "description": "",
+        "bounds": "[425,574][623,627]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Bench",
+        "bounds": "[692,559][937,644]",
+        "enabled": "true"
+      },
+      {
+        "text": "Bench",
+        "description": "",
+        "bounds": "[782,574][895,627]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Dumbbells",
+        "bounds": "[45,670][371,755]",
+        "enabled": "true"
+      },
+      {
+        "text": "Dumbbells",
+        "description": "",
+        "bounds": "[135,685][329,738]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Cable machine",
+        "bounds": "[397,670][800,755]",
+        "enabled": "true"
+      },
+      {
+        "text": "Cable machine",
+        "description": "",
+        "bounds": "[487,685][758,738]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Pull-up bar",
+        "bounds": "[45,781][376,865]",
+        "enabled": "true"
+      },
+      {
+        "text": "Pull-up bar",
+        "description": "",
+        "bounds": "[135,796][334,849]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Kettlebells",
+        "bounds": "[402,781][683,865]",
+        "enabled": "true"
+      },
+      {
+        "text": "Kettlebells",
+        "description": "",
+        "bounds": "[444,796][641,849]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Floor / space",
+        "bounds": "[45,891][374,975]",
+        "enabled": "true"
+      },
+      {
+        "text": "Floor / space",
+        "description": "",
+        "bounds": "[87,906][332,959]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Leg press",
+        "bounds": "[400,891][706,975]",
+        "enabled": "true"
+      },
+      {
+        "text": "Leg press",
+        "description": "",
+        "bounds": "[490,906][664,959]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Hack squat",
+        "bounds": "[45,1002][382,1087]",
+        "enabled": "true"
+      },
+      {
+        "text": "Hack squat",
+        "description": "",
+        "bounds": "[135,1017][340,1070]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "T-bar row station",
+        "bounds": "[408,1002][854,1087]",
+        "enabled": "true"
+      },
+      {
+        "text": "T-bar row station",
+        "description": "",
+        "bounds": "[498,1017][812,1070]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Chest press machine",
+        "bounds": "[45,1113][557,1198]",
+        "enabled": "true"
+      },
+      {
+        "text": "Chest press machine",
+        "description": "",
+        "bounds": "[135,1128][515,1181]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Dip station",
+        "bounds": "[583,1113][910,1198]",
+        "enabled": "true"
+      },
+      {
+        "text": "Dip station",
+        "description": "",
+        "bounds": "[673,1128][868,1181]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Trap bar",
+        "bounds": "[45,1224][332,1308]",
+        "enabled": "true"
+      },
+      {
+        "text": "Trap bar",
+        "description": "",
+        "bounds": "[135,1239][290,1292]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "EZ bar",
+        "bounds": "[358,1224][611,1308]",
+        "enabled": "true"
+      },
+      {
+        "text": "EZ bar",
+        "description": "",
+        "bounds": "[448,1239][569,1292]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Landmine",
+        "bounds": "[638,1224][945,1308]",
+        "enabled": "true"
+      },
+      {
+        "text": "Landmine",
+        "description": "",
+        "bounds": "[728,1239][903,1292]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Smith machine",
+        "bounds": "[45,1334][443,1418]",
+        "enabled": "true"
+      },
+      {
+        "text": "Smith machine",
+        "description": "",
+        "bounds": "[135,1349][401,1402]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Cardio equipment",
+        "bounds": "[469,1334][926,1418]",
+        "enabled": "true"
+      },
+      {
+        "text": "Cardio equipment",
+        "description": "",
+        "bounds": "[559,1349][884,1402]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Back",
+        "bounds": "[45,2046][261,2151]",
+        "enabled": "true"
+      },
+      {
+        "text": "Back",
+        "description": "",
+        "bounds": "[108,2072][198,2125]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Exit",
+        "bounds": "[284,2048][415,2149]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exit",
+        "description": "",
+        "bounds": "[315,2071][383,2124]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Delete program",
+        "bounds": "[42,2175][391,2275]",
+        "enabled": "true"
+      },
+      {
+        "text": "Delete program",
+        "description": "",
+        "bounds": "[73,2198][359,2251]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Next",
+        "bounds": "[764,2106][1038,2212]",
+        "enabled": "true"
+      },
+      {
+        "text": "Next",
+        "description": "",
+        "bounds": "[858,2132][943,2185]",
+        "enabled": "true"
+      }
+    ],
+    "setup-constraints-local.xml": [
+      {
+        "text": "",
+        "description": "Open navigation menu",
+        "bounds": "[0,95][95,200]",
+        "enabled": "true"
+      },
+      {
+        "text": "Training",
+        "description": "",
+        "bounds": "[121,111][318,182]",
+        "enabled": "true"
+      },
+      {
+        "text": "Constraints & Injuries",
+        "description": "",
+        "bounds": "[42,341][1038,410]",
+        "enabled": "true"
+      },
+      {
+        "text": "Training experience sets starting loads. Beginner is used until you choose otherwise.",
+        "description": "",
+        "bounds": "[42,463][1038,557]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Beginner",
+        "bounds": "[45,581][290,666]",
+        "enabled": "true"
+      },
+      {
+        "text": "Beginner",
+        "description": "",
+        "bounds": "[87,596][248,649]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Intermediate",
+        "bounds": "[316,581][633,666]",
+        "enabled": "true"
+      },
+      {
+        "text": "Intermediate",
+        "description": "",
+        "bounds": "[358,596][591,649]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Advanced",
+        "bounds": "[660,581][974,666]",
+        "enabled": "true"
+      },
+      {
+        "text": "Advanced",
+        "description": "",
+        "bounds": "[750,596][932,649]",
+        "enabled": "true"
+      },
+      {
+        "text": "Select any constraints or injuries that apply:",
+        "description": "",
+        "bounds": "[42,709][1038,760]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "No Overhead Pressing",
+        "bounds": "[45,806][533,891]",
+        "enabled": "true"
+      },
+      {
+        "text": "No Overhead Pressing",
+        "description": "",
+        "bounds": "[87,821][491,874]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Knee Pain",
+        "bounds": "[559,806][822,891]",
+        "enabled": "true"
+      },
+      {
+        "text": "Knee Pain",
+        "description": "",
+        "bounds": "[601,821][780,874]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Back Sensitive",
+        "bounds": "[45,917][392,1001]",
+        "enabled": "true"
+      },
+      {
+        "text": "Back Sensitive",
+        "description": "",
+        "bounds": "[87,932][350,985]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Shoulder Issues",
+        "bounds": "[418,917][790,1001]",
+        "enabled": "true"
+      },
+      {
+        "text": "Shoulder Issues",
+        "description": "",
+        "bounds": "[460,932][748,985]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Wrist Issues",
+        "bounds": "[45,1028][350,1112]",
+        "enabled": "true"
+      },
+      {
+        "text": "Wrist Issues",
+        "description": "",
+        "bounds": "[87,1043][308,1096]",
+        "enabled": "true"
+      },
+      {
+        "text": "Include skill work",
+        "description": "",
+        "bounds": "[84,1198][843,1261]",
+        "enabled": "true"
+      },
+      {
+        "text": "Allow handstand-style skill movements in auto-generated sessions (off by default).",
+        "description": "",
+        "bounds": "[84,1271][843,1367]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Back",
+        "bounds": "[45,2046][261,2151]",
+        "enabled": "true"
+      },
+      {
+        "text": "Back",
+        "description": "",
+        "bounds": "[108,2072][198,2125]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Exit",
+        "bounds": "[284,2048][415,2149]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exit",
+        "description": "",
+        "bounds": "[315,2071][383,2124]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Delete program",
+        "bounds": "[42,2175][391,2275]",
+        "enabled": "true"
+      },
+      {
+        "text": "Delete program",
+        "description": "",
+        "bounds": "[73,2198][359,2251]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Next",
+        "bounds": "[764,2106][1038,2212]",
+        "enabled": "true"
+      },
+      {
+        "text": "Next",
+        "description": "",
+        "bounds": "[858,2132][943,2185]",
+        "enabled": "true"
+      }
+    ],
+    "setup-final-local.xml": [
+      {
+        "text": "",
+        "description": "Open navigation menu",
+        "bounds": "[0,95][95,200]",
+        "enabled": "true"
+      },
+      {
+        "text": "Training",
+        "description": "",
+        "bounds": "[121,111][318,182]",
+        "enabled": "true"
+      },
+      {
+        "text": "Strength Baselines (Optional)",
+        "description": "",
+        "bounds": "[42,341][1038,410]",
+        "enabled": "true"
+      },
+      {
+        "text": "Optional: Enter your typical working weight for these exercises. This helps us suggest better starting weights.",
+        "description": "",
+        "bounds": "[42,463][1038,557]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Skip baselines",
+        "bounds": "[42,599][1038,699]",
+        "enabled": "true"
+      },
+      {
+        "text": "Skip baselines",
+        "description": "",
+        "bounds": "[410,622][670,675]",
+        "enabled": "true"
+      },
+      {
+        "text": "Bench Press",
+        "description": "",
+        "bounds": "[42,741][1038,799]",
+        "enabled": "true"
+      },
+      {
+        "text": "105",
+        "description": "",
+        "bounds": "[42,820][575,979]",
+        "enabled": "true"
+      },
+      {
+        "text": "Reps",
+        "description": "",
+        "bounds": "[595,820][673,868]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "3",
+        "bounds": "[598,892][724,976]",
+        "enabled": "true"
+      },
+      {
+        "text": "3",
+        "description": "",
+        "bounds": "[640,907][662,960]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "5",
+        "bounds": "[740,892][894,976]",
+        "enabled": "true"
+      },
+      {
+        "text": "5",
+        "description": "",
+        "bounds": "[830,907][852,960]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "8",
+        "bounds": "[910,892][1036,976]",
+        "enabled": "true"
+      },
+      {
+        "text": "8",
+        "description": "",
+        "bounds": "[952,907][974,960]",
+        "enabled": "true"
+      },
+      {
+        "text": "Est. 1RM: 123kg",
+        "description": "",
+        "bounds": "[42,1010][1038,1058]",
+        "enabled": "true"
+      },
+      {
+        "text": "Squat",
+        "description": "",
+        "bounds": "[42,1101][1038,1159]",
+        "enabled": "true"
+      },
+      {
+        "text": "90",
+        "description": "",
+        "bounds": "[42,1180][575,1339]",
+        "enabled": "true"
+      },
+      {
+        "text": "Reps",
+        "description": "",
+        "bounds": "[595,1180][673,1228]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "3",
+        "bounds": "[598,1252][724,1336]",
+        "enabled": "true"
+      },
+      {
+        "text": "3",
+        "description": "",
+        "bounds": "[640,1267][662,1320]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "5",
+        "bounds": "[740,1252][894,1336]",
+        "enabled": "true"
+      },
+      {
+        "text": "5",
+        "description": "",
+        "bounds": "[830,1267][852,1320]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "8",
+        "bounds": "[910,1252][1036,1336]",
+        "enabled": "true"
+      },
+      {
+        "text": "8",
+        "description": "",
+        "bounds": "[952,1267][974,1320]",
+        "enabled": "true"
+      },
+      {
+        "text": "Est. 1RM: 105kg",
+        "description": "",
+        "bounds": "[42,1370][1038,1418]",
+        "enabled": "true"
+      },
+      {
+        "text": "Deadlift",
+        "description": "",
+        "bounds": "[42,1460][1038,1518]",
+        "enabled": "true"
+      },
+      {
+        "text": "100",
+        "description": "",
+        "bounds": "[42,1539][575,1699]",
+        "enabled": "true"
+      },
+      {
+        "text": "Reps",
+        "description": "",
+        "bounds": "[595,1539][673,1587]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "3",
+        "bounds": "[598,1611][724,1696]",
+        "enabled": "true"
+      },
+      {
+        "text": "3",
+        "description": "",
+        "bounds": "[640,1626][662,1679]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "5",
+        "bounds": "[740,1611][894,1696]",
+        "enabled": "true"
+      },
+      {
+        "text": "5",
+        "description": "",
+        "bounds": "[830,1626][852,1679]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "8",
+        "bounds": "[910,1611][1036,1696]",
+        "enabled": "true"
+      },
+      {
+        "text": "8",
+        "description": "",
+        "bounds": "[952,1626][974,1679]",
+        "enabled": "true"
+      },
+      {
+        "text": "Est. 1RM: 117kg",
+        "description": "",
+        "bounds": "[42,1729][1038,1777]",
+        "enabled": "true"
+      },
+      {
+        "text": "Overhead Press",
+        "description": "",
+        "bounds": "[42,1819][1038,1877]",
+        "enabled": "true"
+      },
+      {
+        "text": "80",
+        "description": "",
+        "bounds": "[42,1898][575,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "Reps",
+        "description": "",
+        "bounds": "[595,1898][673,1946]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "3",
+        "bounds": "[598,1970][724,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "3",
+        "description": "",
+        "bounds": "[640,1985][662,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "5",
+        "bounds": "[740,1970][894,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "5",
+        "description": "",
+        "bounds": "[830,1985][852,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "8",
+        "bounds": "[910,1970][1036,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "8",
+        "description": "",
+        "bounds": "[952,1985][974,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "Est. 1RM: 93kg",
+        "description": "",
+        "bounds": "[42,2088][1038,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "Barbell Row",
+        "description": "",
+        "bounds": "[42,2178][1038,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "75",
+        "description": "",
+        "bounds": "[42,2257][575,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "Reps",
+        "description": "",
+        "bounds": "[595,2257][673,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "3",
+        "bounds": "[598,2329][724,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "3",
+        "description": "",
+        "bounds": "[640,2344][662,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "5",
+        "bounds": "[740,2329][894,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "5",
+        "description": "",
+        "bounds": "[830,2344][852,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "8",
+        "bounds": "[910,2329][1036,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "8",
+        "description": "",
+        "bounds": "[952,2344][974,2010]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Back",
+        "bounds": "[45,2046][261,2151]",
+        "enabled": "true"
+      },
+      {
+        "text": "Back",
+        "description": "",
+        "bounds": "[108,2072][198,2125]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Exit",
+        "bounds": "[284,2048][415,2149]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exit",
+        "description": "",
+        "bounds": "[315,2071][383,2124]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Delete program",
+        "bounds": "[42,2175][391,2275]",
+        "enabled": "true"
+      },
+      {
+        "text": "Delete program",
+        "description": "",
+        "bounds": "[73,2198][359,2251]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Save",
+        "bounds": "[761,2106][1038,2212]",
+        "enabled": "true"
+      },
+      {
+        "text": "Save",
+        "description": "",
+        "bounds": "[855,2132][943,2185]",
+        "enabled": "true"
+      }
+    ],
+    "preview-mon-local.xml": [
+      {
+        "text": "",
+        "description": "Close modal",
+        "bounds": "[0,0][1080,2400]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session Preview",
+        "description": "",
+        "bounds": "[189,397][1038,460]",
+        "enabled": "true"
+      },
+      {
+        "text": "Review your workout plan before starting",
+        "description": "",
+        "bounds": "[42,539][1038,597]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session mode",
+        "description": "",
+        "bounds": "[84,671][996,734]",
+        "enabled": "true"
+      },
+      {
+        "text": "You drive; in-app rest timers.",
+        "description": "",
+        "bounds": "[84,744][996,792]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Normal",
+        "bounds": "[84,826][529,949]",
+        "enabled": "true"
+      },
+      {
+        "text": "Normal",
+        "description": "",
+        "bounds": "[244,861][368,914]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Guided",
+        "bounds": "[551,825][995,931]",
+        "enabled": "true"
+      },
+      {
+        "text": "Guided",
+        "description": "",
+        "bounds": "[721,851][825,904]",
+        "enabled": "true"
+      },
+      {
+        "text": "Template",
+        "description": "",
+        "bounds": "[84,1054][294,1102]",
+        "enabled": "true"
+      },
+      {
+        "text": "UPPER",
+        "description": "",
+        "bounds": "[315,1054][996,1102]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[84,1123][294,1171]",
+        "enabled": "true"
+      },
+      {
+        "text": "6",
+        "description": "",
+        "bounds": "[315,1123][996,1171]",
+        "enabled": "true"
+      },
+      {
+        "text": "Top lifts",
+        "description": "",
+        "bounds": "[84,1192][294,1240]",
+        "enabled": "true"
+      },
+      {
+        "text": "Barbell Bench Press, Barbell Row",
+        "description": "",
+        "bounds": "[315,1192][996,1240]",
+        "enabled": "true"
+      },
+      {
+        "text": "Duration",
+        "description": "",
+        "bounds": "[84,1261][294,1309]",
+        "enabled": "true"
+      },
+      {
+        "text": "~43 min",
+        "description": "",
+        "bounds": "[315,1261][996,1309]",
+        "enabled": "true"
+      },
+      {
+        "text": "Weekly sets",
+        "description": "",
+        "bounds": "[84,1330][996,1378]",
+        "enabled": "true"
+      },
+      {
+        "text": "Completed: 0 sets · Frozen planned: 0 sets · Provisional future: Chest 8 · Back 32 · Shoulders 28 · Arms 25 · Legs 19 · Programme needs review · Muscle sets by primary region",
+        "description": "",
+        "bounds": "[84,1388][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "Goals",
+        "description": "",
+        "bounds": "[84,1602][294,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "get fitter: 7%, build muscle: 45%, build strength: 47%",
+        "description": "",
+        "bounds": "[315,1602][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[42,1771][1038,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "1. Barbell Bench Press",
+        "description": "",
+        "bounds": "[84,1897][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 100kg · 7 reps · Total bar weight.",
+        "description": "",
+        "bounds": "[84,1965][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Barbell Bench Press",
+        "bounds": "[912,1897][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1912][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Push",
+        "description": "",
+        "bounds": "[84,2024][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "2. Dumbbell Flyes",
+        "description": "",
+        "bounds": "[84,2177][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,2245][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Dumbbell Flyes",
+        "bounds": "[912,2177][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,2192][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Push",
+        "description": "",
+        "bounds": "[84,2304][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Start session",
+        "bounds": "[42,1558][1038,1682]",
+        "enabled": "true"
+      },
+      {
+        "text": "Start session",
+        "description": "",
+        "bounds": "[432,1593][647,1646]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Cancel",
+        "bounds": "[43,1714][1037,1820]",
+        "enabled": "true"
+      },
+      {
+        "text": "Cancel",
+        "description": "",
+        "bounds": "[489,1740][591,1793]",
+        "enabled": "true"
+      }
+    ],
+    "mon-scroll-local.xml": [
+      {
+        "text": "",
+        "description": "Close modal",
+        "bounds": "[0,0][1080,2400]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session Preview",
+        "description": "",
+        "bounds": "[189,397][1038,460]",
+        "enabled": "true"
+      },
+      {
+        "text": "Review your workout plan before starting",
+        "description": "",
+        "bounds": "[42,539][1038,597]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session mode",
+        "description": "",
+        "bounds": "[84,671][996,734]",
+        "enabled": "true"
+      },
+      {
+        "text": "You drive; in-app rest timers.",
+        "description": "",
+        "bounds": "[84,744][996,792]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Normal",
+        "bounds": "[84,826][529,949]",
+        "enabled": "true"
+      },
+      {
+        "text": "Normal",
+        "description": "",
+        "bounds": "[244,861][368,914]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Guided",
+        "bounds": "[551,825][995,931]",
+        "enabled": "true"
+      },
+      {
+        "text": "Guided",
+        "description": "",
+        "bounds": "[721,851][825,904]",
+        "enabled": "true"
+      },
+      {
+        "text": "Template",
+        "description": "",
+        "bounds": "[84,1012][294,419]",
+        "enabled": "true"
+      },
+      {
+        "text": "UPPER",
+        "description": "",
+        "bounds": "[315,1012][996,419]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[84,1012][294,488]",
+        "enabled": "true"
+      },
+      {
+        "text": "6",
+        "description": "",
+        "bounds": "[315,1012][996,488]",
+        "enabled": "true"
+      },
+      {
+        "text": "Top lifts",
+        "description": "",
+        "bounds": "[84,1012][294,557]",
+        "enabled": "true"
+      },
+      {
+        "text": "Barbell Bench Press, Barbell Row",
+        "description": "",
+        "bounds": "[315,1012][996,557]",
+        "enabled": "true"
+      },
+      {
+        "text": "Duration",
+        "description": "",
+        "bounds": "[84,1012][294,626]",
+        "enabled": "true"
+      },
+      {
+        "text": "~43 min",
+        "description": "",
+        "bounds": "[315,1012][996,626]",
+        "enabled": "true"
+      },
+      {
+        "text": "Weekly sets",
+        "description": "",
+        "bounds": "[84,1012][996,695]",
+        "enabled": "true"
+      },
+      {
+        "text": "Completed: 0 sets · Frozen planned: 0 sets · Provisional future: Chest 8 · Back 32 · Shoulders 28 · Arms 25 · Legs 19 · Programme needs review · Muscle sets by primary region",
+        "description": "",
+        "bounds": "[84,1012][996,897]",
+        "enabled": "true"
+      },
+      {
+        "text": "Goals",
+        "description": "",
+        "bounds": "[84,1012][294,967]",
+        "enabled": "true"
+      },
+      {
+        "text": "get fitter: 7%, build muscle: 45%, build strength: 47%",
+        "description": "",
+        "bounds": "[315,1012][996,1015]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[42,1088][1038,1151]",
+        "enabled": "true"
+      },
+      {
+        "text": "1. Barbell Bench Press",
+        "description": "",
+        "bounds": "[84,1214][891,1272]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 100kg · 7 reps · Total bar weight.",
+        "description": "",
+        "bounds": "[84,1282][891,1330]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Barbell Bench Press",
+        "bounds": "[912,1214][996,1298]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1229][964,1282]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Push",
+        "description": "",
+        "bounds": "[84,1341][891,1389]",
+        "enabled": "true"
+      },
+      {
+        "text": "2. Dumbbell Flyes",
+        "description": "",
+        "bounds": "[84,1494][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,1562][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Dumbbell Flyes",
+        "bounds": "[912,1494][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1509][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Push",
+        "description": "",
+        "bounds": "[84,1621][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3. Barbell Row",
+        "description": "",
+        "bounds": "[84,1774][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 62.5kg · 7 reps · Total bar weight.",
+        "description": "",
+        "bounds": "[84,1842][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Barbell Row",
+        "bounds": "[912,1774][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1789][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Row",
+        "description": "",
+        "bounds": "[84,1901][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "4. Lat Pulldown",
+        "description": "",
+        "bounds": "[84,2054][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,2122][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Lat Pulldown",
+        "bounds": "[912,2054][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,2069][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "accessory • Pull",
+        "description": "",
+        "bounds": "[84,2181][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "5. Lateral Raises",
+        "description": "",
+        "bounds": "[84,2334][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Lateral Raises",
+        "bounds": "[912,2334][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,2349][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Start session",
+        "bounds": "[42,1558][1038,1682]",
+        "enabled": "true"
+      },
+      {
+        "text": "Start session",
+        "description": "",
+        "bounds": "[432,1593][647,1646]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Cancel",
+        "bounds": "[43,1714][1037,1820]",
+        "enabled": "true"
+      },
+      {
+        "text": "Cancel",
+        "description": "",
+        "bounds": "[489,1740][591,1793]",
+        "enabled": "true"
+      }
+    ],
+    "preview-fri-bottom-texts-local.json": [
+      {
+        "text": "",
+        "description": "Close modal",
+        "bounds": "[0,0][1080,2400]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session Preview",
+        "description": "",
+        "bounds": "[189,397][1038,460]",
+        "enabled": "true"
+      },
+      {
+        "text": "Review your workout plan before starting",
+        "description": "",
+        "bounds": "[42,539][1038,597]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session mode",
+        "description": "",
+        "bounds": "[84,671][996,734]",
+        "enabled": "true"
+      },
+      {
+        "text": "You drive; in-app rest timers.",
+        "description": "",
+        "bounds": "[84,744][996,792]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Normal",
+        "bounds": "[84,826][529,949]",
+        "enabled": "true"
+      },
+      {
+        "text": "Normal",
+        "description": "",
+        "bounds": "[244,861][368,914]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Guided",
+        "bounds": "[551,825][995,931]",
+        "enabled": "true"
+      },
+      {
+        "text": "Guided",
+        "description": "",
+        "bounds": "[721,851][825,904]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Hinge",
+        "description": "",
+        "bounds": "[84,1012][891,27]",
+        "enabled": "true"
+      },
+      {
+        "text": "2. Romanian Deadlift",
+        "description": "",
+        "bounds": "[84,1012][891,190]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,1012][891,248]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Romanian Deadlift",
+        "bounds": "[912,1012][996,216]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1012][964,200]",
+        "enabled": "true"
+      },
+      {
+        "text": "accessory • Hinge",
+        "description": "",
+        "bounds": "[84,1012][891,307]",
+        "enabled": "true"
+      },
+      {
+        "text": "3. Leg Press",
+        "description": "",
+        "bounds": "[84,1012][891,470]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 7 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,1012][891,528]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Leg Press",
+        "bounds": "[912,1012][996,496]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1012][964,480]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Squat",
+        "description": "",
+        "bounds": "[84,1012][891,587]",
+        "enabled": "true"
+      },
+      {
+        "text": "4. Walking Lunges",
+        "description": "",
+        "bounds": "[84,1012][891,750]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,1012][891,808]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Walking Lunges",
+        "bounds": "[912,1012][996,776]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1012][964,760]",
+        "enabled": "true"
+      },
+      {
+        "text": "accessory • Squat",
+        "description": "",
+        "bounds": "[84,1012][891,867]",
+        "enabled": "true"
+      },
+      {
+        "text": "5. Calf Raises",
+        "description": "",
+        "bounds": "[84,1012][891,1030]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,1040][891,1088]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Calf Raises",
+        "bounds": "[912,1012][996,1056]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1012][964,1040]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Squat",
+        "description": "",
+        "bounds": "[84,1099][891,1147]",
+        "enabled": "true"
+      },
+      {
+        "text": "6. Overhead Tricep Extension",
+        "description": "",
+        "bounds": "[84,1252][891,1310]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 40kg · 13 reps · Per dumbbell.",
+        "description": "",
+        "bounds": "[84,1320][891,1368]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Overhead Tricep Extension",
+        "bounds": "[912,1252][996,1336]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1267][964,1320]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Triceps",
+        "description": "",
+        "bounds": "[84,1379][891,1427]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Start session",
+        "bounds": "[42,1558][1038,1682]",
+        "enabled": "true"
+      },
+      {
+        "text": "Start session",
+        "description": "",
+        "bounds": "[432,1593][647,1646]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Cancel",
+        "bounds": "[43,1714][1037,1820]",
+        "enabled": "true"
+      },
+      {
+        "text": "Cancel",
+        "description": "",
+        "bounds": "[489,1740][591,1793]",
+        "enabled": "true"
+      }
+    ],
+    "preview-fri-confirm-texts-local.json": [
+      {
+        "text": "",
+        "description": "Close modal",
+        "bounds": "[0,0][1080,2400]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session Preview",
+        "description": "",
+        "bounds": "[189,397][1038,460]",
+        "enabled": "true"
+      },
+      {
+        "text": "Review your workout plan before starting",
+        "description": "",
+        "bounds": "[42,539][1038,597]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session mode",
+        "description": "",
+        "bounds": "[84,671][996,734]",
+        "enabled": "true"
+      },
+      {
+        "text": "You drive; in-app rest timers.",
+        "description": "",
+        "bounds": "[84,744][996,792]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Normal",
+        "bounds": "[84,826][529,949]",
+        "enabled": "true"
+      },
+      {
+        "text": "Normal",
+        "description": "",
+        "bounds": "[244,861][368,914]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Guided",
+        "bounds": "[551,825][995,931]",
+        "enabled": "true"
+      },
+      {
+        "text": "Guided",
+        "description": "",
+        "bounds": "[721,851][825,904]",
+        "enabled": "true"
+      },
+      {
+        "text": "Template",
+        "description": "",
+        "bounds": "[84,1054][294,1102]",
+        "enabled": "true"
+      },
+      {
+        "text": "LOWER",
+        "description": "",
+        "bounds": "[315,1054][996,1102]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[84,1123][294,1171]",
+        "enabled": "true"
+      },
+      {
+        "text": "6",
+        "description": "",
+        "bounds": "[315,1123][996,1171]",
+        "enabled": "true"
+      },
+      {
+        "text": "Top lifts",
+        "description": "",
+        "bounds": "[84,1192][294,1240]",
+        "enabled": "true"
+      },
+      {
+        "text": "Conventional Deadlift, Leg Press",
+        "description": "",
+        "bounds": "[315,1192][996,1240]",
+        "enabled": "true"
+      },
+      {
+        "text": "Duration",
+        "description": "",
+        "bounds": "[84,1261][294,1309]",
+        "enabled": "true"
+      },
+      {
+        "text": "~48 min",
+        "description": "",
+        "bounds": "[315,1261][996,1309]",
+        "enabled": "true"
+      },
+      {
+        "text": "Weekly sets",
+        "description": "",
+        "bounds": "[84,1330][996,1378]",
+        "enabled": "true"
+      },
+      {
+        "text": "Completed: 0 sets · Frozen planned: 0 sets · Provisional future: Chest 8 · Back 32 · Shoulders 28 · Arms 25 · Legs 19 · Programme needs review · Muscle sets by primary region",
+        "description": "",
+        "bounds": "[84,1388][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "Goals",
+        "description": "",
+        "bounds": "[84,1602][294,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "get fitter: 7%, build muscle: 45%, build strength: 47%",
+        "description": "",
+        "bounds": "[315,1602][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[42,1771][1038,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "1. Conventional Deadlift",
+        "description": "",
+        "bounds": "[84,1897][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 95kg · 7 reps · Total bar weight.",
+        "description": "",
+        "bounds": "[84,1965][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Conventional Deadlift",
+        "bounds": "[912,1897][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1912][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Hinge",
+        "description": "",
+        "bounds": "[84,2024][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "2. Romanian Deadlift",
+        "description": "",
+        "bounds": "[84,2177][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,2245][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Romanian Deadlift",
+        "bounds": "[912,2177][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,2192][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "accessory • Hinge",
+        "description": "",
+        "bounds": "[84,2304][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Start session",
+        "bounds": "[42,1558][1038,1682]",
+        "enabled": "true"
+      },
+      {
+        "text": "Start session",
+        "description": "",
+        "bounds": "[432,1593][647,1646]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Cancel",
+        "bounds": "[43,1714][1037,1820]",
+        "enabled": "true"
+      },
+      {
+        "text": "Cancel",
+        "description": "",
+        "bounds": "[489,1740][591,1793]",
+        "enabled": "true"
+      }
+    ],
+    "preview-fri-scroll-texts-local.json": [
+      {
+        "text": "",
+        "description": "Close modal",
+        "bounds": "[0,0][1080,2400]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session Preview",
+        "description": "",
+        "bounds": "[189,397][1038,460]",
+        "enabled": "true"
+      },
+      {
+        "text": "Review your workout plan before starting",
+        "description": "",
+        "bounds": "[42,539][1038,597]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session mode",
+        "description": "",
+        "bounds": "[84,671][996,734]",
+        "enabled": "true"
+      },
+      {
+        "text": "You drive; in-app rest timers.",
+        "description": "",
+        "bounds": "[84,744][996,792]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Normal",
+        "bounds": "[84,826][529,949]",
+        "enabled": "true"
+      },
+      {
+        "text": "Normal",
+        "description": "",
+        "bounds": "[244,861][368,914]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Guided",
+        "bounds": "[551,825][995,931]",
+        "enabled": "true"
+      },
+      {
+        "text": "Guided",
+        "description": "",
+        "bounds": "[721,851][825,904]",
+        "enabled": "true"
+      },
+      {
+        "text": "Template",
+        "description": "",
+        "bounds": "[84,1012][294,232]",
+        "enabled": "true"
+      },
+      {
+        "text": "LOWER",
+        "description": "",
+        "bounds": "[315,1012][996,232]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[84,1012][294,301]",
+        "enabled": "true"
+      },
+      {
+        "text": "6",
+        "description": "",
+        "bounds": "[315,1012][996,301]",
+        "enabled": "true"
+      },
+      {
+        "text": "Top lifts",
+        "description": "",
+        "bounds": "[84,1012][294,370]",
+        "enabled": "true"
+      },
+      {
+        "text": "Conventional Deadlift, Leg Press",
+        "description": "",
+        "bounds": "[315,1012][996,370]",
+        "enabled": "true"
+      },
+      {
+        "text": "Duration",
+        "description": "",
+        "bounds": "[84,1012][294,439]",
+        "enabled": "true"
+      },
+      {
+        "text": "~48 min",
+        "description": "",
+        "bounds": "[315,1012][996,439]",
+        "enabled": "true"
+      },
+      {
+        "text": "Weekly sets",
+        "description": "",
+        "bounds": "[84,1012][996,508]",
+        "enabled": "true"
+      },
+      {
+        "text": "Completed: 0 sets · Frozen planned: 0 sets · Provisional future: Chest 8 · Back 32 · Shoulders 28 · Arms 25 · Legs 19 · Programme needs review · Muscle sets by primary region",
+        "description": "",
+        "bounds": "[84,1012][996,710]",
+        "enabled": "true"
+      },
+      {
+        "text": "Goals",
+        "description": "",
+        "bounds": "[84,1012][294,780]",
+        "enabled": "true"
+      },
+      {
+        "text": "get fitter: 7%, build muscle: 45%, build strength: 47%",
+        "description": "",
+        "bounds": "[315,1012][996,828]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[42,1012][1038,964]",
+        "enabled": "true"
+      },
+      {
+        "text": "1. Conventional Deadlift",
+        "description": "",
+        "bounds": "[84,1027][891,1085]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 95kg · 7 reps · Total bar weight.",
+        "description": "",
+        "bounds": "[84,1095][891,1143]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Conventional Deadlift",
+        "bounds": "[912,1027][996,1111]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1042][964,1095]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Hinge",
+        "description": "",
+        "bounds": "[84,1154][891,1202]",
+        "enabled": "true"
+      },
+      {
+        "text": "2. Romanian Deadlift",
+        "description": "",
+        "bounds": "[84,1307][891,1365]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,1375][891,1423]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Romanian Deadlift",
+        "bounds": "[912,1307][996,1391]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1322][964,1375]",
+        "enabled": "true"
+      },
+      {
+        "text": "accessory • Hinge",
+        "description": "",
+        "bounds": "[84,1434][891,1482]",
+        "enabled": "true"
+      },
+      {
+        "text": "3. Leg Press",
+        "description": "",
+        "bounds": "[84,1587][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 7 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,1655][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Leg Press",
+        "bounds": "[912,1587][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1602][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Squat",
+        "description": "",
+        "bounds": "[84,1714][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "4. Walking Lunges",
+        "description": "",
+        "bounds": "[84,1867][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,1935][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Walking Lunges",
+        "bounds": "[912,1867][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1882][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "accessory • Squat",
+        "description": "",
+        "bounds": "[84,1994][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "5. Calf Raises",
+        "description": "",
+        "bounds": "[84,2147][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,2215][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Calf Raises",
+        "bounds": "[912,2147][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,2162][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Squat",
+        "description": "",
+        "bounds": "[84,2274][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Start session",
+        "bounds": "[42,1558][1038,1682]",
+        "enabled": "true"
+      },
+      {
+        "text": "Start session",
+        "description": "",
+        "bounds": "[432,1593][647,1646]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Cancel",
+        "bounds": "[43,1714][1037,1820]",
+        "enabled": "true"
+      },
+      {
+        "text": "Cancel",
+        "description": "",
+        "bounds": "[489,1740][591,1793]",
+        "enabled": "true"
+      }
+    ],
+    "preview-fri-texts-local.json": [
+      {
+        "text": "",
+        "description": "Close modal",
+        "bounds": "[0,0][1080,2400]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session Preview",
+        "description": "",
+        "bounds": "[189,397][1038,460]",
+        "enabled": "true"
+      },
+      {
+        "text": "Review your workout plan before starting",
+        "description": "",
+        "bounds": "[42,539][1038,597]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session mode",
+        "description": "",
+        "bounds": "[84,671][996,734]",
+        "enabled": "true"
+      },
+      {
+        "text": "You drive; in-app rest timers.",
+        "description": "",
+        "bounds": "[84,744][996,792]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Normal",
+        "bounds": "[84,826][529,949]",
+        "enabled": "true"
+      },
+      {
+        "text": "Normal",
+        "description": "",
+        "bounds": "[244,861][368,914]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Guided",
+        "bounds": "[551,825][995,931]",
+        "enabled": "true"
+      },
+      {
+        "text": "Guided",
+        "description": "",
+        "bounds": "[721,851][825,904]",
+        "enabled": "true"
+      },
+      {
+        "text": "Template",
+        "description": "",
+        "bounds": "[84,1054][294,1102]",
+        "enabled": "true"
+      },
+      {
+        "text": "LOWER",
+        "description": "",
+        "bounds": "[315,1054][996,1102]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[84,1123][294,1171]",
+        "enabled": "true"
+      },
+      {
+        "text": "6",
+        "description": "",
+        "bounds": "[315,1123][996,1171]",
+        "enabled": "true"
+      },
+      {
+        "text": "Top lifts",
+        "description": "",
+        "bounds": "[84,1192][294,1240]",
+        "enabled": "true"
+      },
+      {
+        "text": "Conventional Deadlift, Leg Press",
+        "description": "",
+        "bounds": "[315,1192][996,1240]",
+        "enabled": "true"
+      },
+      {
+        "text": "Duration",
+        "description": "",
+        "bounds": "[84,1261][294,1309]",
+        "enabled": "true"
+      },
+      {
+        "text": "~48 min",
+        "description": "",
+        "bounds": "[315,1261][996,1309]",
+        "enabled": "true"
+      },
+      {
+        "text": "Weekly sets",
+        "description": "",
+        "bounds": "[84,1330][996,1378]",
+        "enabled": "true"
+      },
+      {
+        "text": "Completed: 0 sets · Frozen planned: 0 sets · Provisional future: Chest 8 · Back 32 · Shoulders 28 · Arms 25 · Legs 19 · Programme needs review · Muscle sets by primary region",
+        "description": "",
+        "bounds": "[84,1388][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "Goals",
+        "description": "",
+        "bounds": "[84,1602][294,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "get fitter: 7%, build muscle: 45%, build strength: 47%",
+        "description": "",
+        "bounds": "[315,1602][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[42,1771][1038,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "1. Conventional Deadlift",
+        "description": "",
+        "bounds": "[84,1897][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 95kg · 7 reps · Total bar weight.",
+        "description": "",
+        "bounds": "[84,1965][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Conventional Deadlift",
+        "bounds": "[912,1897][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1912][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Hinge",
+        "description": "",
+        "bounds": "[84,2024][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "2. Romanian Deadlift",
+        "description": "",
+        "bounds": "[84,2177][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,2245][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Romanian Deadlift",
+        "bounds": "[912,2177][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,2192][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "accessory • Hinge",
+        "description": "",
+        "bounds": "[84,2304][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Start session",
+        "bounds": "[42,1558][1038,1682]",
+        "enabled": "true"
+      },
+      {
+        "text": "Start session",
+        "description": "",
+        "bounds": "[432,1593][647,1646]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Cancel",
+        "bounds": "[43,1714][1037,1820]",
+        "enabled": "true"
+      },
+      {
+        "text": "Cancel",
+        "description": "",
+        "bounds": "[489,1740][591,1793]",
+        "enabled": "true"
+      }
+    ],
+    "preview-mon-bottom-texts-local.json": [
+      {
+        "text": "",
+        "description": "Close modal",
+        "bounds": "[0,0][1080,2400]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session Preview",
+        "description": "",
+        "bounds": "[189,397][1038,460]",
+        "enabled": "true"
+      },
+      {
+        "text": "Review your workout plan before starting",
+        "description": "",
+        "bounds": "[42,539][1038,597]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session mode",
+        "description": "",
+        "bounds": "[84,671][996,734]",
+        "enabled": "true"
+      },
+      {
+        "text": "You drive; in-app rest timers.",
+        "description": "",
+        "bounds": "[84,744][996,792]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Normal",
+        "bounds": "[84,826][529,949]",
+        "enabled": "true"
+      },
+      {
+        "text": "Normal",
+        "description": "",
+        "bounds": "[244,861][368,914]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Guided",
+        "bounds": "[551,825][995,931]",
+        "enabled": "true"
+      },
+      {
+        "text": "Guided",
+        "description": "",
+        "bounds": "[721,851][825,904]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Push",
+        "description": "",
+        "bounds": "[84,1012][891,27]",
+        "enabled": "true"
+      },
+      {
+        "text": "2. Dumbbell Flyes",
+        "description": "",
+        "bounds": "[84,1012][891,190]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,1012][891,248]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Dumbbell Flyes",
+        "bounds": "[912,1012][996,216]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1012][964,200]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Push",
+        "description": "",
+        "bounds": "[84,1012][891,307]",
+        "enabled": "true"
+      },
+      {
+        "text": "3. Barbell Row",
+        "description": "",
+        "bounds": "[84,1012][891,470]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 62.5kg · 7 reps · Total bar weight.",
+        "description": "",
+        "bounds": "[84,1012][891,528]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Barbell Row",
+        "bounds": "[912,1012][996,496]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1012][964,480]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Row",
+        "description": "",
+        "bounds": "[84,1012][891,587]",
+        "enabled": "true"
+      },
+      {
+        "text": "4. Lat Pulldown",
+        "description": "",
+        "bounds": "[84,1012][891,750]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,1012][891,808]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Lat Pulldown",
+        "bounds": "[912,1012][996,776]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1012][964,760]",
+        "enabled": "true"
+      },
+      {
+        "text": "accessory • Pull",
+        "description": "",
+        "bounds": "[84,1012][891,867]",
+        "enabled": "true"
+      },
+      {
+        "text": "5. Lateral Raises",
+        "description": "",
+        "bounds": "[84,1012][891,1030]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 16kg · 13 reps · Per dumbbell.",
+        "description": "",
+        "bounds": "[84,1040][891,1088]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Lateral Raises",
+        "bounds": "[912,1012][996,1056]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1012][964,1040]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Shoulders",
+        "description": "",
+        "bounds": "[84,1099][891,1147]",
+        "enabled": "true"
+      },
+      {
+        "text": "6. Barbell Curl",
+        "description": "",
+        "bounds": "[84,1252][891,1310]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 25kg · 13 reps · Total bar weight.",
+        "description": "",
+        "bounds": "[84,1320][891,1368]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Barbell Curl",
+        "bounds": "[912,1252][996,1336]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1267][964,1320]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Biceps",
+        "description": "",
+        "bounds": "[84,1379][891,1427]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Start session",
+        "bounds": "[42,1558][1038,1682]",
+        "enabled": "true"
+      },
+      {
+        "text": "Start session",
+        "description": "",
+        "bounds": "[432,1593][647,1646]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Cancel",
+        "bounds": "[43,1714][1037,1820]",
+        "enabled": "true"
+      },
+      {
+        "text": "Cancel",
+        "description": "",
+        "bounds": "[489,1740][591,1793]",
+        "enabled": "true"
+      }
+    ],
+    "preview-mon-confirm-texts-local.json": [
+      {
+        "text": "",
+        "description": "Close modal",
+        "bounds": "[0,0][1080,2400]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session Preview",
+        "description": "",
+        "bounds": "[189,397][1038,460]",
+        "enabled": "true"
+      },
+      {
+        "text": "Review your workout plan before starting",
+        "description": "",
+        "bounds": "[42,539][1038,597]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session mode",
+        "description": "",
+        "bounds": "[84,671][996,734]",
+        "enabled": "true"
+      },
+      {
+        "text": "You drive; in-app rest timers.",
+        "description": "",
+        "bounds": "[84,744][996,792]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Normal",
+        "bounds": "[84,826][529,949]",
+        "enabled": "true"
+      },
+      {
+        "text": "Normal",
+        "description": "",
+        "bounds": "[244,861][368,914]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Guided",
+        "bounds": "[551,825][995,931]",
+        "enabled": "true"
+      },
+      {
+        "text": "Guided",
+        "description": "",
+        "bounds": "[721,851][825,904]",
+        "enabled": "true"
+      },
+      {
+        "text": "Template",
+        "description": "",
+        "bounds": "[84,1054][294,1102]",
+        "enabled": "true"
+      },
+      {
+        "text": "UPPER",
+        "description": "",
+        "bounds": "[315,1054][996,1102]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[84,1123][294,1171]",
+        "enabled": "true"
+      },
+      {
+        "text": "6",
+        "description": "",
+        "bounds": "[315,1123][996,1171]",
+        "enabled": "true"
+      },
+      {
+        "text": "Top lifts",
+        "description": "",
+        "bounds": "[84,1192][294,1240]",
+        "enabled": "true"
+      },
+      {
+        "text": "Barbell Bench Press, Barbell Row",
+        "description": "",
+        "bounds": "[315,1192][996,1240]",
+        "enabled": "true"
+      },
+      {
+        "text": "Duration",
+        "description": "",
+        "bounds": "[84,1261][294,1309]",
+        "enabled": "true"
+      },
+      {
+        "text": "~43 min",
+        "description": "",
+        "bounds": "[315,1261][996,1309]",
+        "enabled": "true"
+      },
+      {
+        "text": "Weekly sets",
+        "description": "",
+        "bounds": "[84,1330][996,1378]",
+        "enabled": "true"
+      },
+      {
+        "text": "Completed: 0 sets · Frozen planned: 0 sets · Provisional future: Chest 8 · Back 32 · Shoulders 28 · Arms 25 · Legs 19 · Programme needs review · Muscle sets by primary region",
+        "description": "",
+        "bounds": "[84,1388][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "Goals",
+        "description": "",
+        "bounds": "[84,1602][294,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "get fitter: 7%, build muscle: 45%, build strength: 47%",
+        "description": "",
+        "bounds": "[315,1602][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[42,1771][1038,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "1. Barbell Bench Press",
+        "description": "",
+        "bounds": "[84,1897][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 100kg · 7 reps · Total bar weight.",
+        "description": "",
+        "bounds": "[84,1965][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Barbell Bench Press",
+        "bounds": "[912,1897][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1912][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Push",
+        "description": "",
+        "bounds": "[84,2024][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "2. Dumbbell Flyes",
+        "description": "",
+        "bounds": "[84,2177][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,2245][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Dumbbell Flyes",
+        "bounds": "[912,2177][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,2192][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Push",
+        "description": "",
+        "bounds": "[84,2304][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Start session",
+        "bounds": "[42,1558][1038,1682]",
+        "enabled": "true"
+      },
+      {
+        "text": "Start session",
+        "description": "",
+        "bounds": "[432,1593][647,1646]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Cancel",
+        "bounds": "[43,1714][1037,1820]",
+        "enabled": "true"
+      },
+      {
+        "text": "Cancel",
+        "description": "",
+        "bounds": "[489,1740][591,1793]",
+        "enabled": "true"
+      }
+    ],
+    "preview-thu-scroll-texts-local.json": [
+      {
+        "text": "",
+        "description": "Close modal",
+        "bounds": "[0,0][1080,2400]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session Preview",
+        "description": "",
+        "bounds": "[189,397][1038,460]",
+        "enabled": "true"
+      },
+      {
+        "text": "Review your workout plan before starting",
+        "description": "",
+        "bounds": "[42,539][1038,597]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session mode",
+        "description": "",
+        "bounds": "[84,671][996,734]",
+        "enabled": "true"
+      },
+      {
+        "text": "You drive; in-app rest timers.",
+        "description": "",
+        "bounds": "[84,744][996,792]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Normal",
+        "bounds": "[84,826][529,949]",
+        "enabled": "true"
+      },
+      {
+        "text": "Normal",
+        "description": "",
+        "bounds": "[244,861][368,914]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Guided",
+        "bounds": "[551,825][995,931]",
+        "enabled": "true"
+      },
+      {
+        "text": "Guided",
+        "description": "",
+        "bounds": "[721,851][825,904]",
+        "enabled": "true"
+      },
+      {
+        "text": "Template",
+        "description": "",
+        "bounds": "[84,1012][294,214]",
+        "enabled": "true"
+      },
+      {
+        "text": "PULL",
+        "description": "",
+        "bounds": "[315,1012][996,214]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[84,1012][294,283]",
+        "enabled": "true"
+      },
+      {
+        "text": "5",
+        "description": "",
+        "bounds": "[315,1012][996,283]",
+        "enabled": "true"
+      },
+      {
+        "text": "Top lifts",
+        "description": "",
+        "bounds": "[84,1012][294,352]",
+        "enabled": "true"
+      },
+      {
+        "text": "Pull-ups",
+        "description": "",
+        "bounds": "[315,1012][996,352]",
+        "enabled": "true"
+      },
+      {
+        "text": "Duration",
+        "description": "",
+        "bounds": "[84,1012][294,421]",
+        "enabled": "true"
+      },
+      {
+        "text": "~35 min",
+        "description": "",
+        "bounds": "[315,1012][996,421]",
+        "enabled": "true"
+      },
+      {
+        "text": "Weekly sets",
+        "description": "",
+        "bounds": "[84,1012][996,490]",
+        "enabled": "true"
+      },
+      {
+        "text": "Completed: 0 sets · Frozen planned: 0 sets · Provisional future: Chest 8 · Back 32 · Shoulders 28 · Arms 25 · Legs 19 · Programme needs review · Muscle sets by primary region",
+        "description": "",
+        "bounds": "[84,1012][996,692]",
+        "enabled": "true"
+      },
+      {
+        "text": "Goals",
+        "description": "",
+        "bounds": "[84,1012][294,762]",
+        "enabled": "true"
+      },
+      {
+        "text": "get fitter: 7%, build muscle: 45%, build strength: 47%",
+        "description": "",
+        "bounds": "[315,1012][996,810]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[42,1012][1038,946]",
+        "enabled": "true"
+      },
+      {
+        "text": "1. Pull-ups",
+        "description": "",
+        "bounds": "[84,1012][891,1067]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · Bodyweight · 7 reps",
+        "description": "",
+        "bounds": "[84,1077][891,1125]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Pull-ups",
+        "bounds": "[912,1012][996,1093]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1024][964,1077]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Pull",
+        "description": "",
+        "bounds": "[84,1136][891,1184]",
+        "enabled": "true"
+      },
+      {
+        "text": "2. Barbell Row",
+        "description": "",
+        "bounds": "[84,1289][891,1347]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 60kg · 13 reps · Total bar weight.",
+        "description": "",
+        "bounds": "[84,1357][891,1405]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Barbell Row",
+        "bounds": "[912,1289][996,1373]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1304][964,1357]",
+        "enabled": "true"
+      },
+      {
+        "text": "accessory • Row",
+        "description": "",
+        "bounds": "[84,1416][891,1464]",
+        "enabled": "true"
+      },
+      {
+        "text": "3. Dumbbell Curl",
+        "description": "",
+        "bounds": "[84,1569][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 15kg · 13 reps · Per dumbbell.",
+        "description": "",
+        "bounds": "[84,1637][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Dumbbell Curl",
+        "bounds": "[912,1569][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1584][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Biceps",
+        "description": "",
+        "bounds": "[84,1696][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "4. Rear Delt Flyes",
+        "description": "",
+        "bounds": "[84,1849][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,1917][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Rear Delt Flyes",
+        "bounds": "[912,1849][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1864][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Row, Shoulders",
+        "description": "",
+        "bounds": "[84,1976][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "5. Shrugs",
+        "description": "",
+        "bounds": "[84,2129][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 20kg · 13 reps · Per dumbbell.",
+        "description": "",
+        "bounds": "[84,2197][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Shrugs",
+        "bounds": "[912,2129][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,2144][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Pull",
+        "description": "",
+        "bounds": "[84,2256][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Start session",
+        "bounds": "[42,1558][1038,1682]",
+        "enabled": "true"
+      },
+      {
+        "text": "Start session",
+        "description": "",
+        "bounds": "[432,1593][647,1646]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Cancel",
+        "bounds": "[43,1714][1037,1820]",
+        "enabled": "true"
+      },
+      {
+        "text": "Cancel",
+        "description": "",
+        "bounds": "[489,1740][591,1793]",
+        "enabled": "true"
+      }
+    ],
+    "preview-thu-texts-local.json": [
+      {
+        "text": "",
+        "description": "Close modal",
+        "bounds": "[0,0][1080,2400]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session Preview",
+        "description": "",
+        "bounds": "[189,397][1038,460]",
+        "enabled": "true"
+      },
+      {
+        "text": "Review your workout plan before starting",
+        "description": "",
+        "bounds": "[42,539][1038,597]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session mode",
+        "description": "",
+        "bounds": "[84,671][996,734]",
+        "enabled": "true"
+      },
+      {
+        "text": "You drive; in-app rest timers.",
+        "description": "",
+        "bounds": "[84,744][996,792]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Normal",
+        "bounds": "[84,826][529,949]",
+        "enabled": "true"
+      },
+      {
+        "text": "Normal",
+        "description": "",
+        "bounds": "[244,861][368,914]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Guided",
+        "bounds": "[551,825][995,931]",
+        "enabled": "true"
+      },
+      {
+        "text": "Guided",
+        "description": "",
+        "bounds": "[721,851][825,904]",
+        "enabled": "true"
+      },
+      {
+        "text": "Template",
+        "description": "",
+        "bounds": "[84,1054][294,1102]",
+        "enabled": "true"
+      },
+      {
+        "text": "PULL",
+        "description": "",
+        "bounds": "[315,1054][996,1102]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[84,1123][294,1171]",
+        "enabled": "true"
+      },
+      {
+        "text": "5",
+        "description": "",
+        "bounds": "[315,1123][996,1171]",
+        "enabled": "true"
+      },
+      {
+        "text": "Top lifts",
+        "description": "",
+        "bounds": "[84,1192][294,1240]",
+        "enabled": "true"
+      },
+      {
+        "text": "Pull-ups",
+        "description": "",
+        "bounds": "[315,1192][996,1240]",
+        "enabled": "true"
+      },
+      {
+        "text": "Duration",
+        "description": "",
+        "bounds": "[84,1261][294,1309]",
+        "enabled": "true"
+      },
+      {
+        "text": "~35 min",
+        "description": "",
+        "bounds": "[315,1261][996,1309]",
+        "enabled": "true"
+      },
+      {
+        "text": "Weekly sets",
+        "description": "",
+        "bounds": "[84,1330][996,1378]",
+        "enabled": "true"
+      },
+      {
+        "text": "Completed: 0 sets · Frozen planned: 0 sets · Provisional future: Chest 8 · Back 32 · Shoulders 28 · Arms 25 · Legs 19 · Programme needs review · Muscle sets by primary region",
+        "description": "",
+        "bounds": "[84,1388][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "Goals",
+        "description": "",
+        "bounds": "[84,1602][294,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "get fitter: 7%, build muscle: 45%, build strength: 47%",
+        "description": "",
+        "bounds": "[315,1602][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[42,1771][1038,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "1. Pull-ups",
+        "description": "",
+        "bounds": "[84,1897][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · Bodyweight · 7 reps",
+        "description": "",
+        "bounds": "[84,1965][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Pull-ups",
+        "bounds": "[912,1897][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1912][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Pull",
+        "description": "",
+        "bounds": "[84,2024][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "2. Barbell Row",
+        "description": "",
+        "bounds": "[84,2177][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 60kg · 13 reps · Total bar weight.",
+        "description": "",
+        "bounds": "[84,2245][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Barbell Row",
+        "bounds": "[912,2177][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,2192][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "accessory • Row",
+        "description": "",
+        "bounds": "[84,2304][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Start session",
+        "bounds": "[42,1558][1038,1682]",
+        "enabled": "true"
+      },
+      {
+        "text": "Start session",
+        "description": "",
+        "bounds": "[432,1593][647,1646]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Cancel",
+        "bounds": "[43,1714][1037,1820]",
+        "enabled": "true"
+      },
+      {
+        "text": "Cancel",
+        "description": "",
+        "bounds": "[489,1740][591,1793]",
+        "enabled": "true"
+      }
+    ],
+    "preview-tue-scroll-texts-local.json": [
+      {
+        "text": "",
+        "description": "Close modal",
+        "bounds": "[0,0][1080,2400]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session Preview",
+        "description": "",
+        "bounds": "[189,397][1038,460]",
+        "enabled": "true"
+      },
+      {
+        "text": "Review your workout plan before starting",
+        "description": "",
+        "bounds": "[42,539][1038,597]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session mode",
+        "description": "",
+        "bounds": "[84,671][996,734]",
+        "enabled": "true"
+      },
+      {
+        "text": "You drive; in-app rest timers.",
+        "description": "",
+        "bounds": "[84,744][996,792]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Normal",
+        "bounds": "[84,826][529,949]",
+        "enabled": "true"
+      },
+      {
+        "text": "Normal",
+        "description": "",
+        "bounds": "[244,861][368,914]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Guided",
+        "bounds": "[551,825][995,931]",
+        "enabled": "true"
+      },
+      {
+        "text": "Guided",
+        "description": "",
+        "bounds": "[721,851][825,904]",
+        "enabled": "true"
+      },
+      {
+        "text": "Template",
+        "description": "",
+        "bounds": "[84,1012][294,210]",
+        "enabled": "true"
+      },
+      {
+        "text": "LOWER",
+        "description": "",
+        "bounds": "[315,1012][996,210]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[84,1012][294,279]",
+        "enabled": "true"
+      },
+      {
+        "text": "4",
+        "description": "",
+        "bounds": "[315,1012][996,279]",
+        "enabled": "true"
+      },
+      {
+        "text": "Top lifts",
+        "description": "",
+        "bounds": "[84,1012][294,348]",
+        "enabled": "true"
+      },
+      {
+        "text": "Barbell Back Squat, Romanian Deadlift",
+        "description": "",
+        "bounds": "[315,1012][996,348]",
+        "enabled": "true"
+      },
+      {
+        "text": "Duration",
+        "description": "",
+        "bounds": "[84,1012][294,417]",
+        "enabled": "true"
+      },
+      {
+        "text": "~37 min",
+        "description": "",
+        "bounds": "[315,1012][996,417]",
+        "enabled": "true"
+      },
+      {
+        "text": "Weekly sets",
+        "description": "",
+        "bounds": "[84,1012][996,486]",
+        "enabled": "true"
+      },
+      {
+        "text": "Completed: 0 sets · Frozen planned: 0 sets · Provisional future: Chest 8 · Back 32 · Shoulders 28 · Arms 25 · Legs 19 · Programme needs review · Muscle sets by primary region",
+        "description": "",
+        "bounds": "[84,1012][996,688]",
+        "enabled": "true"
+      },
+      {
+        "text": "Goals",
+        "description": "",
+        "bounds": "[84,1012][294,758]",
+        "enabled": "true"
+      },
+      {
+        "text": "get fitter: 7%, build muscle: 45%, build strength: 47%",
+        "description": "",
+        "bounds": "[315,1012][996,806]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[42,1012][1038,942]",
+        "enabled": "true"
+      },
+      {
+        "text": "1. Barbell Back Squat",
+        "description": "",
+        "bounds": "[84,1012][891,1063]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 85kg · 7 reps · Total bar weight.",
+        "description": "",
+        "bounds": "[84,1073][891,1121]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Barbell Back Squat",
+        "bounds": "[912,1012][996,1089]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1020][964,1073]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Squat",
+        "description": "",
+        "bounds": "[84,1132][891,1180]",
+        "enabled": "true"
+      },
+      {
+        "text": "2. Hack Squat",
+        "description": "",
+        "bounds": "[84,1285][891,1343]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,1353][891,1401]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Hack Squat",
+        "bounds": "[912,1285][996,1369]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1300][964,1353]",
+        "enabled": "true"
+      },
+      {
+        "text": "accessory • Squat",
+        "description": "",
+        "bounds": "[84,1412][891,1460]",
+        "enabled": "true"
+      },
+      {
+        "text": "3. Romanian Deadlift",
+        "description": "",
+        "bounds": "[84,1565][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 7 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,1633][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Romanian Deadlift",
+        "bounds": "[912,1565][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1580][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Hinge",
+        "description": "",
+        "bounds": "[84,1692][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "4. Calf Raises",
+        "description": "",
+        "bounds": "[84,1845][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,1913][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Calf Raises",
+        "bounds": "[912,1845][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1860][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Squat",
+        "description": "",
+        "bounds": "[84,1972][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Start session",
+        "bounds": "[42,1558][1038,1682]",
+        "enabled": "true"
+      },
+      {
+        "text": "Start session",
+        "description": "",
+        "bounds": "[432,1593][647,1646]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Cancel",
+        "bounds": "[43,1714][1037,1820]",
+        "enabled": "true"
+      },
+      {
+        "text": "Cancel",
+        "description": "",
+        "bounds": "[489,1740][591,1793]",
+        "enabled": "true"
+      }
+    ],
+    "preview-tue-texts-local.json": [
+      {
+        "text": "",
+        "description": "Close modal",
+        "bounds": "[0,0][1080,2400]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session Preview",
+        "description": "",
+        "bounds": "[189,397][1038,460]",
+        "enabled": "true"
+      },
+      {
+        "text": "Review your workout plan before starting",
+        "description": "",
+        "bounds": "[42,539][1038,597]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session mode",
+        "description": "",
+        "bounds": "[84,671][996,734]",
+        "enabled": "true"
+      },
+      {
+        "text": "You drive; in-app rest timers.",
+        "description": "",
+        "bounds": "[84,744][996,792]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Normal",
+        "bounds": "[84,826][529,949]",
+        "enabled": "true"
+      },
+      {
+        "text": "Normal",
+        "description": "",
+        "bounds": "[244,861][368,914]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Guided",
+        "bounds": "[551,825][995,931]",
+        "enabled": "true"
+      },
+      {
+        "text": "Guided",
+        "description": "",
+        "bounds": "[721,851][825,904]",
+        "enabled": "true"
+      },
+      {
+        "text": "Template",
+        "description": "",
+        "bounds": "[84,1054][294,1102]",
+        "enabled": "true"
+      },
+      {
+        "text": "LOWER",
+        "description": "",
+        "bounds": "[315,1054][996,1102]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[84,1123][294,1171]",
+        "enabled": "true"
+      },
+      {
+        "text": "4",
+        "description": "",
+        "bounds": "[315,1123][996,1171]",
+        "enabled": "true"
+      },
+      {
+        "text": "Top lifts",
+        "description": "",
+        "bounds": "[84,1192][294,1240]",
+        "enabled": "true"
+      },
+      {
+        "text": "Barbell Back Squat, Romanian Deadlift",
+        "description": "",
+        "bounds": "[315,1192][996,1240]",
+        "enabled": "true"
+      },
+      {
+        "text": "Duration",
+        "description": "",
+        "bounds": "[84,1261][294,1309]",
+        "enabled": "true"
+      },
+      {
+        "text": "~37 min",
+        "description": "",
+        "bounds": "[315,1261][996,1309]",
+        "enabled": "true"
+      },
+      {
+        "text": "Weekly sets",
+        "description": "",
+        "bounds": "[84,1330][996,1378]",
+        "enabled": "true"
+      },
+      {
+        "text": "Completed: 0 sets · Frozen planned: 0 sets · Provisional future: Chest 8 · Back 32 · Shoulders 28 · Arms 25 · Legs 19 · Programme needs review · Muscle sets by primary region",
+        "description": "",
+        "bounds": "[84,1388][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "Goals",
+        "description": "",
+        "bounds": "[84,1602][294,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "get fitter: 7%, build muscle: 45%, build strength: 47%",
+        "description": "",
+        "bounds": "[315,1602][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[42,1771][1038,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "1. Barbell Back Squat",
+        "description": "",
+        "bounds": "[84,1897][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 85kg · 7 reps · Total bar weight.",
+        "description": "",
+        "bounds": "[84,1965][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Barbell Back Squat",
+        "bounds": "[912,1897][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1912][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Squat",
+        "description": "",
+        "bounds": "[84,2024][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "2. Hack Squat",
+        "description": "",
+        "bounds": "[84,2177][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,2245][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Hack Squat",
+        "bounds": "[912,2177][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,2192][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "accessory • Squat",
+        "description": "",
+        "bounds": "[84,2304][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Start session",
+        "bounds": "[42,1558][1038,1682]",
+        "enabled": "true"
+      },
+      {
+        "text": "Start session",
+        "description": "",
+        "bounds": "[432,1593][647,1646]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Cancel",
+        "bounds": "[43,1714][1037,1820]",
+        "enabled": "true"
+      },
+      {
+        "text": "Cancel",
+        "description": "",
+        "bounds": "[489,1740][591,1793]",
+        "enabled": "true"
+      }
+    ],
+    "preview-wed-bottom-texts-local.json": [
+      {
+        "text": "",
+        "description": "Close modal",
+        "bounds": "[0,0][1080,2400]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session Preview",
+        "description": "",
+        "bounds": "[189,397][1038,460]",
+        "enabled": "true"
+      },
+      {
+        "text": "Review your workout plan before starting",
+        "description": "",
+        "bounds": "[42,539][1038,597]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session mode",
+        "description": "",
+        "bounds": "[84,671][996,734]",
+        "enabled": "true"
+      },
+      {
+        "text": "You drive; in-app rest timers.",
+        "description": "",
+        "bounds": "[84,744][996,792]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Normal",
+        "bounds": "[84,826][529,949]",
+        "enabled": "true"
+      },
+      {
+        "text": "Normal",
+        "description": "",
+        "bounds": "[244,861][368,914]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Guided",
+        "bounds": "[551,825][995,931]",
+        "enabled": "true"
+      },
+      {
+        "text": "Guided",
+        "description": "",
+        "bounds": "[721,851][825,904]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Push",
+        "description": "",
+        "bounds": "[84,1012][891,27]",
+        "enabled": "true"
+      },
+      {
+        "text": "2. Cable Chest Flyes",
+        "description": "",
+        "bounds": "[84,1012][891,190]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,1012][891,248]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Cable Chest Flyes",
+        "bounds": "[912,1012][996,216]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1012][964,200]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Push",
+        "description": "",
+        "bounds": "[84,1012][891,307]",
+        "enabled": "true"
+      },
+      {
+        "text": "3. Overhead Press",
+        "description": "",
+        "bounds": "[84,1012][891,470]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 75kg · 7 reps · Total bar weight.",
+        "description": "",
+        "bounds": "[84,1012][891,528]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Overhead Press",
+        "bounds": "[912,1012][996,496]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1012][964,480]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Overhead",
+        "description": "",
+        "bounds": "[84,1012][891,587]",
+        "enabled": "true"
+      },
+      {
+        "text": "4. Lateral Raises",
+        "description": "",
+        "bounds": "[84,1012][891,750]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 16kg · 13 reps · Per dumbbell.",
+        "description": "",
+        "bounds": "[84,1012][891,808]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Lateral Raises",
+        "bounds": "[912,1012][996,776]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1012][964,760]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Shoulders",
+        "description": "",
+        "bounds": "[84,1012][891,867]",
+        "enabled": "true"
+      },
+      {
+        "text": "5. Tricep Pushdown",
+        "description": "",
+        "bounds": "[84,1012][891,1030]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 40kg · 13 reps · Cable / stack weight.",
+        "description": "",
+        "bounds": "[84,1040][891,1088]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Tricep Pushdown",
+        "bounds": "[912,1012][996,1056]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1012][964,1040]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Triceps",
+        "description": "",
+        "bounds": "[84,1099][891,1147]",
+        "enabled": "true"
+      },
+      {
+        "text": "6. Face Pulls",
+        "description": "",
+        "bounds": "[84,1252][891,1310]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,1320][891,1368]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Face Pulls",
+        "bounds": "[912,1252][996,1336]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1267][964,1320]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Row, Shoulders",
+        "description": "",
+        "bounds": "[84,1379][891,1427]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Start session",
+        "bounds": "[42,1558][1038,1682]",
+        "enabled": "true"
+      },
+      {
+        "text": "Start session",
+        "description": "",
+        "bounds": "[432,1593][647,1646]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Cancel",
+        "bounds": "[43,1714][1037,1820]",
+        "enabled": "true"
+      },
+      {
+        "text": "Cancel",
+        "description": "",
+        "bounds": "[489,1740][591,1793]",
+        "enabled": "true"
+      }
+    ],
+    "preview-wed-confirm-texts-local.json": [
+      {
+        "text": "",
+        "description": "Close modal",
+        "bounds": "[0,0][1080,2400]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session Preview",
+        "description": "",
+        "bounds": "[189,397][1038,460]",
+        "enabled": "true"
+      },
+      {
+        "text": "Review your workout plan before starting",
+        "description": "",
+        "bounds": "[42,539][1038,597]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session mode",
+        "description": "",
+        "bounds": "[84,671][996,734]",
+        "enabled": "true"
+      },
+      {
+        "text": "You drive; in-app rest timers.",
+        "description": "",
+        "bounds": "[84,744][996,792]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Normal",
+        "bounds": "[84,826][529,949]",
+        "enabled": "true"
+      },
+      {
+        "text": "Normal",
+        "description": "",
+        "bounds": "[244,861][368,914]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Guided",
+        "bounds": "[551,825][995,931]",
+        "enabled": "true"
+      },
+      {
+        "text": "Guided",
+        "description": "",
+        "bounds": "[721,851][825,904]",
+        "enabled": "true"
+      },
+      {
+        "text": "Template",
+        "description": "",
+        "bounds": "[84,1054][294,1102]",
+        "enabled": "true"
+      },
+      {
+        "text": "PUSH",
+        "description": "",
+        "bounds": "[315,1054][996,1102]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[84,1123][294,1171]",
+        "enabled": "true"
+      },
+      {
+        "text": "6",
+        "description": "",
+        "bounds": "[315,1123][996,1171]",
+        "enabled": "true"
+      },
+      {
+        "text": "Top lifts",
+        "description": "",
+        "bounds": "[84,1192][294,1240]",
+        "enabled": "true"
+      },
+      {
+        "text": "Barbell Bench Press, Overhead Press",
+        "description": "",
+        "bounds": "[315,1192][996,1240]",
+        "enabled": "true"
+      },
+      {
+        "text": "Duration",
+        "description": "",
+        "bounds": "[84,1261][294,1309]",
+        "enabled": "true"
+      },
+      {
+        "text": "~38 min",
+        "description": "",
+        "bounds": "[315,1261][996,1309]",
+        "enabled": "true"
+      },
+      {
+        "text": "Weekly sets",
+        "description": "",
+        "bounds": "[84,1330][996,1378]",
+        "enabled": "true"
+      },
+      {
+        "text": "Completed: 0 sets · Frozen planned: 0 sets · Provisional future: Chest 8 · Back 32 · Shoulders 28 · Arms 25 · Legs 19 · Programme needs review · Muscle sets by primary region",
+        "description": "",
+        "bounds": "[84,1388][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "Goals",
+        "description": "",
+        "bounds": "[84,1602][294,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "get fitter: 7%, build muscle: 45%, build strength: 47%",
+        "description": "",
+        "bounds": "[315,1602][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[42,1771][1038,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "1. Barbell Bench Press",
+        "description": "",
+        "bounds": "[84,1897][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 100kg · 7 reps · Total bar weight.",
+        "description": "",
+        "bounds": "[84,1965][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Barbell Bench Press",
+        "bounds": "[912,1897][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1912][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Push",
+        "description": "",
+        "bounds": "[84,2024][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "2. Cable Chest Flyes",
+        "description": "",
+        "bounds": "[84,2177][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,2245][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Cable Chest Flyes",
+        "bounds": "[912,2177][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,2192][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Push",
+        "description": "",
+        "bounds": "[84,2304][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Start session",
+        "bounds": "[42,1558][1038,1682]",
+        "enabled": "true"
+      },
+      {
+        "text": "Start session",
+        "description": "",
+        "bounds": "[432,1593][647,1646]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Cancel",
+        "bounds": "[43,1714][1037,1820]",
+        "enabled": "true"
+      },
+      {
+        "text": "Cancel",
+        "description": "",
+        "bounds": "[489,1740][591,1793]",
+        "enabled": "true"
+      }
+    ],
+    "preview-wed-scroll-texts-local.json": [
+      {
+        "text": "",
+        "description": "Close modal",
+        "bounds": "[0,0][1080,2400]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session Preview",
+        "description": "",
+        "bounds": "[189,397][1038,460]",
+        "enabled": "true"
+      },
+      {
+        "text": "Review your workout plan before starting",
+        "description": "",
+        "bounds": "[42,539][1038,597]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session mode",
+        "description": "",
+        "bounds": "[84,671][996,734]",
+        "enabled": "true"
+      },
+      {
+        "text": "You drive; in-app rest timers.",
+        "description": "",
+        "bounds": "[84,744][996,792]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Normal",
+        "bounds": "[84,826][529,949]",
+        "enabled": "true"
+      },
+      {
+        "text": "Normal",
+        "description": "",
+        "bounds": "[244,861][368,914]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Guided",
+        "bounds": "[551,825][995,931]",
+        "enabled": "true"
+      },
+      {
+        "text": "Guided",
+        "description": "",
+        "bounds": "[721,851][825,904]",
+        "enabled": "true"
+      },
+      {
+        "text": "Template",
+        "description": "",
+        "bounds": "[84,1012][294,216]",
+        "enabled": "true"
+      },
+      {
+        "text": "PUSH",
+        "description": "",
+        "bounds": "[315,1012][996,216]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[84,1012][294,285]",
+        "enabled": "true"
+      },
+      {
+        "text": "6",
+        "description": "",
+        "bounds": "[315,1012][996,285]",
+        "enabled": "true"
+      },
+      {
+        "text": "Top lifts",
+        "description": "",
+        "bounds": "[84,1012][294,354]",
+        "enabled": "true"
+      },
+      {
+        "text": "Barbell Bench Press, Overhead Press",
+        "description": "",
+        "bounds": "[315,1012][996,354]",
+        "enabled": "true"
+      },
+      {
+        "text": "Duration",
+        "description": "",
+        "bounds": "[84,1012][294,423]",
+        "enabled": "true"
+      },
+      {
+        "text": "~38 min",
+        "description": "",
+        "bounds": "[315,1012][996,423]",
+        "enabled": "true"
+      },
+      {
+        "text": "Weekly sets",
+        "description": "",
+        "bounds": "[84,1012][996,492]",
+        "enabled": "true"
+      },
+      {
+        "text": "Completed: 0 sets · Frozen planned: 0 sets · Provisional future: Chest 8 · Back 32 · Shoulders 28 · Arms 25 · Legs 19 · Programme needs review · Muscle sets by primary region",
+        "description": "",
+        "bounds": "[84,1012][996,694]",
+        "enabled": "true"
+      },
+      {
+        "text": "Goals",
+        "description": "",
+        "bounds": "[84,1012][294,764]",
+        "enabled": "true"
+      },
+      {
+        "text": "get fitter: 7%, build muscle: 45%, build strength: 47%",
+        "description": "",
+        "bounds": "[315,1012][996,812]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[42,1012][1038,948]",
+        "enabled": "true"
+      },
+      {
+        "text": "1. Barbell Bench Press",
+        "description": "",
+        "bounds": "[84,1012][891,1069]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 100kg · 7 reps · Total bar weight.",
+        "description": "",
+        "bounds": "[84,1079][891,1127]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Barbell Bench Press",
+        "bounds": "[912,1012][996,1095]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1026][964,1079]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Push",
+        "description": "",
+        "bounds": "[84,1138][891,1186]",
+        "enabled": "true"
+      },
+      {
+        "text": "2. Cable Chest Flyes",
+        "description": "",
+        "bounds": "[84,1291][891,1349]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,1359][891,1407]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Cable Chest Flyes",
+        "bounds": "[912,1291][996,1375]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1306][964,1359]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Push",
+        "description": "",
+        "bounds": "[84,1418][891,1466]",
+        "enabled": "true"
+      },
+      {
+        "text": "3. Overhead Press",
+        "description": "",
+        "bounds": "[84,1571][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 75kg · 7 reps · Total bar weight.",
+        "description": "",
+        "bounds": "[84,1639][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Overhead Press",
+        "bounds": "[912,1571][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1586][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Overhead",
+        "description": "",
+        "bounds": "[84,1698][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "4. Lateral Raises",
+        "description": "",
+        "bounds": "[84,1851][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 16kg · 13 reps · Per dumbbell.",
+        "description": "",
+        "bounds": "[84,1919][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Lateral Raises",
+        "bounds": "[912,1851][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1866][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Shoulders",
+        "description": "",
+        "bounds": "[84,1978][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "5. Tricep Pushdown",
+        "description": "",
+        "bounds": "[84,2131][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 40kg · 13 reps · Cable / stack weight.",
+        "description": "",
+        "bounds": "[84,2199][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Tricep Pushdown",
+        "bounds": "[912,2131][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,2146][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Triceps",
+        "description": "",
+        "bounds": "[84,2258][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Start session",
+        "bounds": "[42,1558][1038,1682]",
+        "enabled": "true"
+      },
+      {
+        "text": "Start session",
+        "description": "",
+        "bounds": "[432,1593][647,1646]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Cancel",
+        "bounds": "[43,1714][1037,1820]",
+        "enabled": "true"
+      },
+      {
+        "text": "Cancel",
+        "description": "",
+        "bounds": "[489,1740][591,1793]",
+        "enabled": "true"
+      }
+    ],
+    "preview-wed-texts-local.json": [
+      {
+        "text": "",
+        "description": "Close modal",
+        "bounds": "[0,0][1080,2400]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session Preview",
+        "description": "",
+        "bounds": "[189,397][1038,460]",
+        "enabled": "true"
+      },
+      {
+        "text": "Review your workout plan before starting",
+        "description": "",
+        "bounds": "[42,539][1038,597]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session mode",
+        "description": "",
+        "bounds": "[84,671][996,734]",
+        "enabled": "true"
+      },
+      {
+        "text": "You drive; in-app rest timers.",
+        "description": "",
+        "bounds": "[84,744][996,792]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Normal",
+        "bounds": "[84,826][529,949]",
+        "enabled": "true"
+      },
+      {
+        "text": "Normal",
+        "description": "",
+        "bounds": "[244,861][368,914]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Guided",
+        "bounds": "[551,825][995,931]",
+        "enabled": "true"
+      },
+      {
+        "text": "Guided",
+        "description": "",
+        "bounds": "[721,851][825,904]",
+        "enabled": "true"
+      },
+      {
+        "text": "Template",
+        "description": "",
+        "bounds": "[84,1054][294,1102]",
+        "enabled": "true"
+      },
+      {
+        "text": "PUSH",
+        "description": "",
+        "bounds": "[315,1054][996,1102]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[84,1123][294,1171]",
+        "enabled": "true"
+      },
+      {
+        "text": "6",
+        "description": "",
+        "bounds": "[315,1123][996,1171]",
+        "enabled": "true"
+      },
+      {
+        "text": "Top lifts",
+        "description": "",
+        "bounds": "[84,1192][294,1240]",
+        "enabled": "true"
+      },
+      {
+        "text": "Barbell Bench Press, Overhead Press",
+        "description": "",
+        "bounds": "[315,1192][996,1240]",
+        "enabled": "true"
+      },
+      {
+        "text": "Duration",
+        "description": "",
+        "bounds": "[84,1261][294,1309]",
+        "enabled": "true"
+      },
+      {
+        "text": "~38 min",
+        "description": "",
+        "bounds": "[315,1261][996,1309]",
+        "enabled": "true"
+      },
+      {
+        "text": "Weekly sets",
+        "description": "",
+        "bounds": "[84,1330][996,1378]",
+        "enabled": "true"
+      },
+      {
+        "text": "Completed: 0 sets · Frozen planned: 0 sets · Provisional future: Chest 8 · Back 32 · Shoulders 28 · Arms 25 · Legs 19 · Programme needs review · Muscle sets by primary region",
+        "description": "",
+        "bounds": "[84,1388][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "Goals",
+        "description": "",
+        "bounds": "[84,1602][294,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "get fitter: 7%, build muscle: 45%, build strength: 47%",
+        "description": "",
+        "bounds": "[315,1602][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[42,1771][1038,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "1. Barbell Bench Press",
+        "description": "",
+        "bounds": "[84,1897][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "3 sets · 100kg · 7 reps · Total bar weight.",
+        "description": "",
+        "bounds": "[84,1965][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Barbell Bench Press",
+        "bounds": "[912,1897][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,1912][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "primary • Push",
+        "description": "",
+        "bounds": "[84,2024][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "2. Cable Chest Flyes",
+        "description": "",
+        "bounds": "[84,2177][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "1 sets · 13 reps · enter a weight",
+        "description": "",
+        "bounds": "[84,2245][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "How to do Cable Chest Flyes",
+        "bounds": "[912,2177][996,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "?",
+        "description": "",
+        "bounds": "[944,2192][964,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "isolation • Push",
+        "description": "",
+        "bounds": "[84,2304][891,1522]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Start session",
+        "bounds": "[42,1558][1038,1682]",
+        "enabled": "true"
+      },
+      {
+        "text": "Start session",
+        "description": "",
+        "bounds": "[432,1593][647,1646]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Cancel",
+        "bounds": "[43,1714][1037,1820]",
+        "enabled": "true"
+      },
+      {
+        "text": "Cancel",
+        "description": "",
+        "bounds": "[489,1740][591,1793]",
+        "enabled": "true"
+      }
+    ],
+    "history-detail": [
+      {
+        "text": "",
+        "description": "Close modal",
+        "bounds": "[0,0][1080,2400]",
+        "enabled": "true"
+      },
+      {
+        "text": "Session Details",
+        "description": "",
+        "bounds": "[189,275][1038,338]",
+        "enabled": "true"
+      },
+      {
+        "text": "10/1/2026 • 6:25 PM • 5939 min",
+        "description": "",
+        "bounds": "[42,406][1038,464]",
+        "enabled": "true"
+      },
+      {
+        "text": "Summary",
+        "description": "",
+        "bounds": "[84,538][996,596]",
+        "enabled": "true"
+      },
+      {
+        "text": "8 exercises • 20 sets",
+        "description": "",
+        "bounds": "[84,617][996,665]",
+        "enabled": "true"
+      },
+      {
+        "text": "Volume: ~5394kg",
+        "description": "",
+        "bounds": "[84,675][996,723]",
+        "enabled": "true"
+      },
+      {
+        "text": "Exercises",
+        "description": "",
+        "bounds": "[42,807][1038,870]",
+        "enabled": "true"
+      },
+      {
+        "text": "1. Dumbbell Shoulder Press",
+        "description": "",
+        "bounds": "[84,934][996,992]",
+        "enabled": "true"
+      },
+      {
+        "text": "Set 1: 70kg × 7",
+        "description": "",
+        "bounds": "[84,1013][996,1061]",
+        "enabled": "true"
+      },
+      {
+        "text": "Set 2: 70kg × 7",
+        "description": "",
+        "bounds": "[84,1071][996,1119]",
+        "enabled": "true"
+      },
+      {
+        "text": "Set 3: 70kg × 7",
+        "description": "",
+        "bounds": "[84,1130][996,1178]",
+        "enabled": "true"
+      },
+      {
+        "text": "2. Barbell Row",
+        "description": "",
+        "bounds": "[84,1294][996,1352]",
+        "enabled": "true"
+      },
+      {
+        "text": "Holding 70kg — you got 3×7 last time; reach 3×9 to move up.",
+        "description": "",
+        "bounds": "[84,1362][996,1458]",
+        "enabled": "true"
+      },
+      {
+        "text": "Set 1: 70kg × 7",
+        "description": "",
+        "bounds": "[84,1480][996,1528]",
+        "enabled": "true"
+      },
+      {
+        "text": "Set 2: 70kg × 7",
+        "description": "",
+        "bounds": "[84,1538][996,1586]",
+        "enabled": "true"
+      },
+      {
+        "text": "Set 3: 70kg × 7",
+        "description": "",
+        "bounds": "[84,1597][996,1645]",
+        "enabled": "true"
+      },
+      {
+        "text": "3. Weighted Dips",
+        "description": "",
+        "bounds": "[84,1760][996,1818]",
+        "enabled": "true"
+      },
+      {
+        "text": "Set 1: Bodyweight × 12",
+        "description": "",
+        "bounds": "[84,1839][996,1887]",
+        "enabled": "true"
+      },
+      {
+        "text": "Set 2: Bodyweight × 12",
+        "description": "",
+        "bounds": "[84,1897][996,1942]",
+        "enabled": "true"
+      },
+      {
+        "text": "4. Front Raises",
+        "description": "",
+        "bounds": "[84,2061][996,1942]",
+        "enabled": "true"
+      },
+      {
+        "text": "Set 1: 70kg × 7",
+        "description": "",
+        "bounds": "[84,2140][996,1942]",
+        "enabled": "true"
+      },
+      {
+        "text": "Set 2: 70kg × 7",
+        "description": "",
+        "bounds": "[84,2198][996,1942]",
+        "enabled": "true"
+      },
+      {
+        "text": "Set 3: 70kg × 7",
+        "description": "",
+        "bounds": "[84,2257][996,1942]",
+        "enabled": "true"
+      },
+      {
+        "text": "",
+        "description": "Close",
+        "bounds": "[42,1984][1038,2090]",
+        "enabled": "true"
+      },
+      {
+        "text": "Close",
+        "description": "",
+        "bounds": "[487,2010][592,2063]",
+        "enabled": "true"
+      }
+    ]
+  }
+}
