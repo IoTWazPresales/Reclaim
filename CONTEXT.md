@@ -1,3 +1,7 @@
+## 2026-10-16 - EIF repair installation stopped at governance preflight
+
+Pinned repair a9f39d5 is source-compatible, but its supported upgrade unconditionally activates hooks, conflicting with AGENTS.md section 5 (leave hooks off). No installer or recovery transaction started. Public verify/status and N-0068–N-0071 reads still fail on historical R03 release. Exact hashes, probes and governance results: docs/eif/phase2-controls/LEASE-install-preflight.json; report: LEASE-install-verification.md. No runtime, ledger, source, lease, evidence or acceptance mutation; no R12. Stop after installation verification.
+
 ## 2026-10-16 - Phase 2 lease governance diagnosis; approval needed
 
 Public EIF reads fail naming historical R03 release sequence 541. Last materialized owners: expired R20261013P2 leases on N-0068/N-0070, none on N-0069/N-0071. Public release/acquire cannot pass status; no authorized local transition performed. No local process matches either historical run ID, but session liveness cannot be conclusively established. Shared-framework replay consistency repair proposal requires operator approval; see docs/eif/phase2-controls/LEASE-investigation.md and probe hashes. No source, ledger, evidence history, acceptance or completion changes; no R12. Stop after governance task.
