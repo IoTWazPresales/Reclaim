@@ -66,6 +66,9 @@ export function programmeWeekProposal(
     return entries;
   });
   const result = validateProgrammeWeek(declaration, { weekIndex, allocation: week.compilation, sessions }, profile);
+  // One weekly result is referenced by every day; warnings do not change feasibility.
+  const weeklyValidation = { ...result, weekIndex, policyVersion: declaration.policyVersion, strategyId: declaration.strategyId };
+  for (const proposal of proposals.values()) proposal.weeklyValidation = weeklyValidation;
   if (result.status === 'invalid') {
     for (const proposal of proposals.values()) proposal.programmeValidation = {
       policyVersion: week.compilation.policyVersion, status: 'infeasible',

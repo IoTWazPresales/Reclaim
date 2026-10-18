@@ -8,6 +8,21 @@ import { formatWeeklyMuscleSetLine } from './weeklyVolumeSummary';
 
 type StoredPlan = { programme?: { policyVersion: string }; weeks?: Array<{ weekIndex: number; days: Record<string, { allocation?: AllocatedProgrammeDay }> }> };
 
+/** One programme's current future-week diagnostics, never counts per-day copies.
+ * Frozen entries are historical prescriptions, not current validation subjects.
+ * Missing diagnostics mean unknown (legacy), never an inferred valid result.
+ */
+export function weeklyProgrammeDiagnostics(entries: Array<{ proposal: SessionPlan; frozen?: TrainingSessionItemRow[] }>): NonNullable<SessionPlan['weeklyValidation']>[] {
+  const weeks = new Map<string, NonNullable<SessionPlan['weeklyValidation']>>();
+  for (const { proposal, frozen } of entries) {
+    const validation = proposal.weeklyValidation;
+    if (frozen !== undefined || !validation) continue;
+    const key = JSON.stringify([validation.weekIndex, validation.policyVersion, validation.strategyId]);
+    if (!weeks.has(key)) weeks.set(key, validation);
+  }
+  return [...weeks.values()];
+}
+
 export function programDayInput(day: { label: string; intents: ProgramDayForSession['intents']; template_key: ProgramDayForSession['template_key']; week_index: number; day_index: number }, plan: StoredPlan): ProgramDayForSession {
   let allocation: AllocatedProgrammeDay | undefined;
   try {
@@ -45,6 +60,8 @@ export function frozenSessionProjection(plan: SessionPlan, items: TrainingSessio
   if (!items) return plan;
   return {
     ...plan,
+    // Current-profile diagnostics are not historical validation of frozen work.
+    weeklyValidation: undefined,
     exercises: [...items].sort((a, b) => a.order_index - b.order_index).flatMap(item => {
       const exercise = getExerciseById(item.exercise_id);
       if (!exercise) return [];

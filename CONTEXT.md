@@ -1,3 +1,7 @@
+## 2026-10-18 ? Weekly diagnostics source transport
+
+Full weekly validator status, issues and coverage now travel separately from daily feasibility. One-result-per-week summary selection avoids counting repeated daily references; current weekly diagnostics are excluded from frozen projections. Offline corrected case retains 20 feasible proposals and all 20 warnings per week. No UI, Android, live data, session rewrite, policy change, EIF acceptance or R12. Evidence and precise presentation follow-up: `docs/training/recovery/evidence/weekly-diagnostics-transport-20261018.md`. Stop after transport verification.
+
 ## 2026-10-18 ? Corrected-programme Android verification blocked
 
 Source `2480d09` on `fix/training-confident-ux`. Existing AVD retained; ADB

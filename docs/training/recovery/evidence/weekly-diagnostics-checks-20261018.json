@@ -1,0 +1,76 @@
+{
+  "scope": "Source transport only; no Android, live data, saved-session mutations, policy changes, EIF acceptance or R12",
+  "baseCommit": "05b5f7baade07572925eef89d2ab0dc4b780d11c",
+  "checks": [
+    {
+      "name": "focused",
+      "command": "cd app && npx vitest run src/lib/training/__tests__/weeklyDiagnosticsTransport.test.ts src/lib/training/__tests__/weeklyProgrammeValidator.test.ts src/lib/training/__tests__/programmePersistence.integration.test.ts src/lib/training/__tests__/programmeAcceptance.test.ts src/lib/training/preview/__tests__/preview.test.ts --pool=forks --maxWorkers=1 --reporter=verbose",
+      "exitCode": 0,
+      "result": "205 passed; 5 files",
+      "localLogPath": "app/weekly-diagnostics-focused-forks.local.txt",
+      "localLogSha256": "f2b9ef61ddc01b0f51341c105e0fe7f28f0c119c1785a841d269d76a58570961"
+    },
+    {
+      "name": "typecheck",
+      "command": "cd app && npm run typecheck",
+      "exitCode": 0,
+      "result": "0 errors",
+      "localLogPath": "app/weekly-diagnostics-types-final.local.txt",
+      "localLogSha256": "cd35ebdba9e12b61678eec835bf92424979bd88f78501689ba82b1dffbf391cc"
+    },
+    {
+      "name": "full",
+      "command": "cd app && npm test -- --reporter=verbose",
+      "exitCode": 1,
+      "result": "1436 passed / 4 established failures; 201 files",
+      "localLogPath": "app/weekly-diagnostics-full.local.txt",
+      "localLogSha256": "b57c49593c54d3f5776c7933d05daf3c8229a7998191b6de3ac1bf55fee27c1c"
+    },
+    {
+      "name": "dual-path",
+      "command": "Git Bash: cd /c/Reclaim/app && npm run audit:training-dual-paths",
+      "exitCode": 0,
+      "result": "31 passed / 0 failed",
+      "localLogPath": "app/weekly-diagnostics-dual.local.txt",
+      "localLogSha256": "0dd8080c5e0bde3107071dfa1f145f876ad93f92ff87b4e949a572755b35748b"
+    },
+    {
+      "name": "catalogue",
+      "command": "cd app && npm run med-catalog-qa",
+      "exitCode": 0,
+      "result": "357 rows / 0 governance issues; CLI test passed",
+      "localLogPath": "app/weekly-diagnostics-catalogue.local.txt",
+      "localLogSha256": "41059c4129688cd4b628dec8a53c0bc5894fa0b23b267867ded085f30213f48f"
+    },
+    {
+      "name": "wrapper",
+      "command": "python -m pytest scripts/test_eif_node.py -q",
+      "exitCode": 0,
+      "result": "3 passed",
+      "localLogPath": "app/weekly-diagnostics-wrapper.local.txt",
+      "localLogSha256": "88aca0be2232b5209629b1aedd0671817690fdd286b96fd06336579609e85a05"
+    }
+  ],
+  "sourceWorkingFileSha256": {
+    "app/src/lib/training/types.ts": "1c3fe27ab428e2271b9de22224ee402744f5073522ccecb0f94c69c6ab55be8b",
+    "app/src/lib/training/programmeWeekProposal.ts": "c813bc6ec7be52f0f3118bd92f5d940e0a1ed31866ce8b003546b73d3353f8dd",
+    "app/src/lib/training/programmeProjection.ts": "1fe8edf9c96be3e9876b8ece74a025700ca73b6cede866f668dfeefdc9add27a",
+    "app/src/lib/training/__tests__/weeklyDiagnosticsTransport.test.ts": "88202931ed211cef9a0b8854a385c3fa6988cec6b7ef783e8b58a78dbe894ea0",
+    "docs/training/recovery/evidence/replay-weekly-diagnostics.cjs": "7099185aa1dc7e43dd4b88be8a6d0b2ef66c22cb8395ab3ab0ce84c33268b8d6"
+  },
+  "sourceIndexBlob": {
+    "app/src/lib/training/types.ts": "d528bd21628b73a7c428445cdaa0281e9acaa5f1",
+    "app/src/lib/training/programmeWeekProposal.ts": "fa48e066cab694a54d4d62dad8b64596e3525669",
+    "app/src/lib/training/programmeProjection.ts": "0ce9b06894e1ef4781d58aeb4cdd77bbd7945ae2",
+    "app/src/lib/training/__tests__/weeklyDiagnosticsTransport.test.ts": "5cdead47b41b4563766c304603f81e08330da8a8",
+    "docs/training/recovery/evidence/replay-weekly-diagnostics.cjs": "cd6c5c83a2e56aa4a6de12db771f1c0c9cf882b9"
+  },
+  "preservedUnrelatedWorkingFiles": {
+    "app/src/lib/training/engine/index.ts": "3ba8cb793eb9da34a5d21ac14fd4ed65e5117776eb63adc76e72496cdf82dc48",
+    "app/supabase/migrations/20260930140000_run_routes.sql": "8184e6f9f1c4a2aa376f4fae66d63f83495c9355bcbb51b735dc8805cdd89bed"
+  },
+  "independentReview": "weekly-diagnostics-review-20261018.md",
+  "offlineReplay": "weekly-diagnostics-replay-20261018.json",
+  "earlierFocusedAttempts": "Default thread runners stalled; specifically identified owned runners stopped. Final constrained fork run passed. No shorter test timeout.",
+  "fullSuiteGate": "FAIL: four established mixed-working-tree failures, documented separately; no new failure identity. No isolated-baseline full rerun claimed."
+}

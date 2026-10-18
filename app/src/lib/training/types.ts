@@ -197,6 +197,12 @@ export interface SessionPlan {
   weekIndex?: number;
   /** Intents from intentOverrides that produced zero candidates (equipment/injury filtered) */
   skippedOverrideIntents?: MovementIntent[];
+  /** Whole-week diagnostics, separate from daily feasibility. Absent on legacy snapshots. */
+  weeklyValidation?: import('./weeklyProgrammeValidator').ProgrammeValidationResult & {
+    weekIndex: number;
+    policyVersion: string;
+    strategyId: string;
+  };
   programmeValidation?: {
     policyVersion: string;
     status: 'feasible' | 'infeasible' | 'legacy';

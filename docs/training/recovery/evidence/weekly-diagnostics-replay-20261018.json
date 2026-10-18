@@ -1,0 +1,530 @@
+{
+  "scope": "Offline transport verification only; no live access, session writes, Android or EIF acceptance",
+  "loadedBundleSha256": "9d7508593121c0019d37a26fd5f4e6b87085cdaaa689662312948096af2687f5",
+  "replacementSourceSha256": {
+    "src/lib/training/weeklyProgrammeValidator.ts": "b4730b3a791408cc6d2d971c4e1dab4998a173f13590a7badc98adfd3d54e3b4",
+    "src/lib/training/programmeWeekProposal.ts": "c813bc6ec7be52f0f3118bd92f5d940e0a1ed31866ce8b003546b73d3353f8dd",
+    "src/lib/training/programmeProjection.ts": "1fe8edf9c96be3e9876b8ece74a025700ca73b6cede866f668dfeefdc9add27a"
+  },
+  "trainingSourceFingerprints": [
+    {
+      "path": "src/lib/training/performanceHistory.ts",
+      "capturedSourceSha256": "4f7d07adc8e386882890b1b0b5ded5de244954c70b13482572292873a882b3ae",
+      "replaySourceSha256": "4f7d07adc8e386882890b1b0b5ded5de244954c70b13482572292873a882b3ae"
+    },
+    {
+      "path": "src/lib/training/catalog/exercises.v1.json",
+      "capturedSourceSha256": "f9f0009298c27a60b29462678c31f77b36a247aa0ff794d0b6fdb952704c1070",
+      "replaySourceSha256": "f9f0009298c27a60b29462678c31f77b36a247aa0ff794d0b6fdb952704c1070"
+    },
+    {
+      "path": "src/lib/training/exerciseLoadingProfile.ts",
+      "capturedSourceSha256": "237cb111aeee40f4489197869ea09d24ad5de04997f1f2d3a6cdd03fadb3a34f",
+      "replaySourceSha256": "237cb111aeee40f4489197869ea09d24ad5de04997f1f2d3a6cdd03fadb3a34f"
+    },
+    {
+      "path": "src/lib/training/sessionItemMutationLock.ts",
+      "capturedSourceSha256": "bb353fd75749507f0a5731ee8552627be1c2e07042de10f96648fb113333c587",
+      "replaySourceSha256": "bb353fd75749507f0a5731ee8552627be1c2e07042de10f96648fb113333c587"
+    },
+    {
+      "path": "src/lib/training/sessionCalorieReread.ts",
+      "capturedSourceSha256": "fbe42f7e1f89cca0cf351b6c5b518eb6e617ed907d2371233b5d6157b3070ccd",
+      "replaySourceSha256": "fbe42f7e1f89cca0cf351b6c5b518eb6e617ed907d2371233b5d6157b3070ccd"
+    },
+    {
+      "path": "src/lib/training/offlineQueue.ts",
+      "capturedSourceSha256": "94f98ea70a0f585d385121f29b175f9fe570c51a48c7ea453215c8b318d56c47",
+      "replaySourceSha256": "94f98ea70a0f585d385121f29b175f9fe570c51a48c7ea453215c8b318d56c47"
+    },
+    {
+      "path": "src/lib/training/offlineQueueSchema.ts",
+      "capturedSourceSha256": "977bf3811f4fcd20cb1764fb481fb7892eae63c570daa79545578863e9c817e4",
+      "replaySourceSha256": "977bf3811f4fcd20cb1764fb481fb7892eae63c570daa79545578863e9c817e4"
+    },
+    {
+      "path": "src/lib/training/dateUtils.ts",
+      "capturedSourceSha256": "9e859cbd885d69616479acc8c677c8a4faaddd3a192b17ccd67ed60b33cf242b",
+      "replaySourceSha256": "9e859cbd885d69616479acc8c677c8a4faaddd3a192b17ccd67ed60b33cf242b"
+    },
+    {
+      "path": "src/lib/training/sessionLabels.ts",
+      "capturedSourceSha256": "9484c02fb5421283ecd6a55911a3a94a40034d50daf6f5f750c9f73b44e3cd9e",
+      "replaySourceSha256": "9484c02fb5421283ecd6a55911a3a94a40034d50daf6f5f750c9f73b44e3cd9e"
+    },
+    {
+      "path": "src/lib/training/whyThisSession.ts",
+      "capturedSourceSha256": "f5a868af54f04f2813c33be974f1846232c743dc845b0b6c50a5880c6603c840",
+      "replaySourceSha256": "f5a868af54f04f2813c33be974f1846232c743dc845b0b6c50a5880c6603c840"
+    },
+    {
+      "path": "src/lib/training/guidedSessionFgs.ts",
+      "capturedSourceSha256": "d290db9e45cccd30a602e3cc612eab41a9b6bab09e5e208ad1c0acea3ad788ba",
+      "replaySourceSha256": "d290db9e45cccd30a602e3cc612eab41a9b6bab09e5e208ad1c0acea3ad788ba"
+    },
+    {
+      "path": "src/lib/training/runSession.ts",
+      "capturedSourceSha256": "f4f3a865cb6fa4f1bca6922dad7a225d6ffd7cf9cdf6ee011e4ec3f2f30aeeb7",
+      "replaySourceSha256": "f4f3a865cb6fa4f1bca6922dad7a225d6ffd7cf9cdf6ee011e4ec3f2f30aeeb7"
+    },
+    {
+      "path": "src/lib/training/runCue.ts",
+      "capturedSourceSha256": "c2f9395eee6419875579ce2eb5b34412aa988e2a307a69f4c87901c87e3581df",
+      "replaySourceSha256": "c2f9395eee6419875579ce2eb5b34412aa988e2a307a69f4c87901c87e3581df"
+    },
+    {
+      "path": "src/lib/training/runLocationPermission.ts",
+      "capturedSourceSha256": "233549051998cd7411f506d0b2eab41b302d5224e21d15740a9c9aa3a064b7ae",
+      "replaySourceSha256": "233549051998cd7411f506d0b2eab41b302d5224e21d15740a9c9aa3a064b7ae"
+    },
+    {
+      "path": "src/lib/training/runRouteRepository.ts",
+      "capturedSourceSha256": "babd17dfd15eaac2d1bd3af32e66cb9c37116e77feeb60d00761d17449ecb585",
+      "replaySourceSha256": "babd17dfd15eaac2d1bd3af32e66cb9c37116e77feeb60d00761d17449ecb585"
+    },
+    {
+      "path": "src/lib/training/runPrivacy.ts",
+      "capturedSourceSha256": "6ca42e79fb3c9baeafe39ec28f26a2f5aab85de1d7bca463d16ece4b25ba9215",
+      "replaySourceSha256": "6ca42e79fb3c9baeafe39ec28f26a2f5aab85de1d7bca463d16ece4b25ba9215"
+    },
+    {
+      "path": "src/lib/training/applySetCompletion.ts",
+      "capturedSourceSha256": "50d9c8dc2bb615d8d7916f809de4c75f26ff954881dec5f7b8095239134bb731",
+      "replaySourceSha256": "50d9c8dc2bb615d8d7916f809de4c75f26ff954881dec5f7b8095239134bb731"
+    },
+    {
+      "path": "src/lib/training/runtime/payloadBuilder.ts",
+      "capturedSourceSha256": "4e5043fba04cec4649b229365b9369bab892dc497f7764582c8917d631e2b0a5",
+      "replaySourceSha256": "4e5043fba04cec4649b229365b9369bab892dc497f7764582c8917d631e2b0a5"
+    },
+    {
+      "path": "src/lib/training/trainingSetCompletionPersistence.ts",
+      "capturedSourceSha256": "d61b53e5941d3e2704e6e5137b703c7feddb53a1389fc55a7d89d2f9d69fa962",
+      "replaySourceSha256": "d61b53e5941d3e2704e6e5137b703c7feddb53a1389fc55a7d89d2f9d69fa962"
+    },
+    {
+      "path": "src/lib/training/trainingSetCompletionMerge.ts",
+      "capturedSourceSha256": "c9188c12b778269771c32d24ce80bea6257b887e0c69b664c67a7ab22f9a5734",
+      "replaySourceSha256": "c9188c12b778269771c32d24ce80bea6257b887e0c69b664c67a7ab22f9a5734"
+    },
+    {
+      "path": "src/lib/training/offlineSync.ts",
+      "capturedSourceSha256": "965069830b27d3db11acde80bbad858a07e4599b18d4f5c3b8945e9129eea4a5",
+      "replaySourceSha256": "965069830b27d3db11acde80bbad858a07e4599b18d4f5c3b8945e9129eea4a5"
+    },
+    {
+      "path": "src/lib/training/closeTrainingSession.ts",
+      "capturedSourceSha256": "ef5a30af8b410ea4b8d9860938b4fb25557dfdba6f2ca2acc2f5ca18e86aecc6",
+      "replaySourceSha256": "ef5a30af8b410ea4b8d9860938b4fb25557dfdba6f2ca2acc2f5ca18e86aecc6"
+    },
+    {
+      "path": "src/lib/training/sessionDerivedState.ts",
+      "capturedSourceSha256": "4784b7b2746d0b1a55e5fd929e45d2f0d312326fbb0437bef253e353c72688fd",
+      "replaySourceSha256": "4784b7b2746d0b1a55e5fd929e45d2f0d312326fbb0437bef253e353c72688fd"
+    },
+    {
+      "path": "src/lib/training/sessionWorkAuthority.ts",
+      "capturedSourceSha256": "f4090be984b28fc1fd82b9d1386eb63807223f4c98d3d10c264344079acdde66",
+      "replaySourceSha256": "f4090be984b28fc1fd82b9d1386eb63807223f4c98d3d10c264344079acdde66"
+    },
+    {
+      "path": "src/lib/training/sessionCalorieRereadRunner.ts",
+      "capturedSourceSha256": "a860ef5d2e05d738e041a6a9fa90ddb8f688ae85b22f04a88741dfe4195cde3a",
+      "replaySourceSha256": "a860ef5d2e05d738e041a6a9fa90ddb8f688ae85b22f04a88741dfe4195cde3a"
+    },
+    {
+      "path": "src/lib/training/sessionWriteBuffer.ts",
+      "capturedSourceSha256": "cafd0c4ee46cb7c139b1976959e33d57b68fba8f43541b96eb0100a58ecd49c2",
+      "replaySourceSha256": "cafd0c4ee46cb7c139b1976959e33d57b68fba8f43541b96eb0100a58ecd49c2"
+    },
+    {
+      "path": "src/lib/training/trainingSessionProgression.ts",
+      "capturedSourceSha256": "26069f516704dcafb747d799dc1202f93f9c73e6494948cea2d415a9e45f582b",
+      "replaySourceSha256": "26069f516704dcafb747d799dc1202f93f9c73e6494948cea2d415a9e45f582b"
+    },
+    {
+      "path": "src/lib/training/engine/index.ts",
+      "capturedSourceSha256": "3ba8cb793eb9da34a5d21ac14fd4ed65e5117776eb63adc76e72496cdf82dc48",
+      "replaySourceSha256": "3ba8cb793eb9da34a5d21ac14fd4ed65e5117776eb63adc76e72496cdf82dc48"
+    },
+    {
+      "path": "src/lib/training/catalog/exerciseCues.v1.json",
+      "capturedSourceSha256": "f7eddbe019c27782b81d367093a6a80811049bfed924429bdd7563ecf4cd6636",
+      "replaySourceSha256": "f7eddbe019c27782b81d367093a6a80811049bfed924429bdd7563ecf4cd6636"
+    },
+    {
+      "path": "src/lib/training/rules/rules.v1.json",
+      "capturedSourceSha256": "fa8b0de1dbc54333313696df3b852df95202d844316c4e7fba4b8a7b4c3202b9",
+      "replaySourceSha256": "fa8b0de1dbc54333313696df3b852df95202d844316c4e7fba4b8a7b4c3202b9"
+    },
+    {
+      "path": "src/lib/training/progression.ts",
+      "capturedSourceSha256": "80a859449e89c04795e9c38a5f06a8cd3d8f2c611f6194fddeb416dd1c1a2712",
+      "replaySourceSha256": "80a859449e89c04795e9c38a5f06a8cd3d8f2c611f6194fddeb416dd1c1a2712"
+    },
+    {
+      "path": "src/lib/training/experienceLevel.ts",
+      "capturedSourceSha256": "bb6baea619014a324efe98ef55d403915b39a7e76847940cdd60ccb5ba4a4403",
+      "replaySourceSha256": "bb6baea619014a324efe98ef55d403915b39a7e76847940cdd60ccb5ba4a4403"
+    },
+    {
+      "path": "src/lib/training/adaptiveLoadBias.ts",
+      "capturedSourceSha256": "8ac5a65ca727d3486a265f0fd4bfb83f789b9c9b1de5e69a82f0c00b67f3674e",
+      "replaySourceSha256": "8ac5a65ca727d3486a265f0fd4bfb83f789b9c9b1de5e69a82f0c00b67f3674e"
+    },
+    {
+      "path": "src/lib/training/anchorLoad.ts",
+      "capturedSourceSha256": "12348d1c631973f908eb5f06e93b7b7f8ee6181cbc255445e74ae99393f6b59e",
+      "replaySourceSha256": "12348d1c631973f908eb5f06e93b7b7f8ee6181cbc255445e74ae99393f6b59e"
+    },
+    {
+      "path": "src/lib/training/runGuidance.ts",
+      "capturedSourceSha256": "e9e4a9ba33a66830e70dc3492f134a8632f74d119f27b783d42fd2ca04ba1df7",
+      "replaySourceSha256": "e9e4a9ba33a66830e70dc3492f134a8632f74d119f27b783d42fd2ca04ba1df7"
+    },
+    {
+      "path": "src/lib/training/smallMuscleVolume.ts",
+      "capturedSourceSha256": "e62c654eda7bcd9fce1b716d14f795a4e2dcd5211bd1c211103bd45d90231926",
+      "replaySourceSha256": "e62c654eda7bcd9fce1b716d14f795a4e2dcd5211bd1c211103bd45d90231926"
+    },
+    {
+      "path": "src/lib/training/warmupSets.ts",
+      "capturedSourceSha256": "dd988506e7b0763815bea394b9f92c049fb6f4cf906dcb474c9148ada99b9e0a",
+      "replaySourceSha256": "dd988506e7b0763815bea394b9f92c049fb6f4cf906dcb474c9148ada99b9e0a"
+    },
+    {
+      "path": "src/lib/training/balancedHypertrophy.ts",
+      "capturedSourceSha256": "fffdd582a0200fbfcd1dbcc5468a906bb41384121c1e22c97bf9bfc9a1f1dcbc",
+      "replaySourceSha256": "fffdd582a0200fbfcd1dbcc5468a906bb41384121c1e22c97bf9bfc9a1f1dcbc"
+    },
+    {
+      "path": "src/lib/training/exerciseEligibility.ts",
+      "capturedSourceSha256": "8f7cb3ca7d2ca365b58b1852d8ac068841976a1fdc0406365e2a74c63c4de036",
+      "replaySourceSha256": "8f7cb3ca7d2ca365b58b1852d8ac068841976a1fdc0406365e2a74c63c4de036"
+    },
+    {
+      "path": "src/lib/training/exerciseSessionRole.ts",
+      "capturedSourceSha256": "979b28f7886fd7ef72afe395005598ab025ab0e06c231cf5972f00ef21c89982",
+      "replaySourceSha256": "979b28f7886fd7ef72afe395005598ab025ab0e06c231cf5972f00ef21c89982"
+    },
+    {
+      "path": "src/lib/training/exerciseSelectionRank.ts",
+      "capturedSourceSha256": "4160ce759730759e6d01f3c3748ca2519de41b13b5b67c0ea5eb04c487ff1669",
+      "replaySourceSha256": "4160ce759730759e6d01f3c3748ca2519de41b13b5b67c0ea5eb04c487ff1669"
+    },
+    {
+      "path": "src/lib/training/allocatedProgramSession.ts",
+      "capturedSourceSha256": "2108c3244bbbca0c466c30882b99d1e6ca3baeba0e7d69ac7541a5861674f674",
+      "replaySourceSha256": "2108c3244bbbca0c466c30882b99d1e6ca3baeba0e7d69ac7541a5861674f674"
+    },
+    {
+      "path": "src/lib/training/weeklyProgrammeTypes.ts",
+      "capturedSourceSha256": "26f34f5edbaaafa80d782cea7b19a2655f7c258791d599dfcbded565774d1d48",
+      "replaySourceSha256": "26f34f5edbaaafa80d782cea7b19a2655f7c258791d599dfcbded565774d1d48"
+    },
+    {
+      "path": "src/lib/training/weeklyProgramme.ts",
+      "capturedSourceSha256": "00ca80d15c73478195d01435d2832dbdb506b64860747f5b55ee7bf846cca680",
+      "replaySourceSha256": "00ca80d15c73478195d01435d2832dbdb506b64860747f5b55ee7bf846cca680"
+    },
+    {
+      "path": "src/lib/training/weeklyProgrammePolicy.ts",
+      "capturedSourceSha256": "90838908fb43287a13a456c41ab60ffb57890809129dd7bc84522891fcc8df5f",
+      "replaySourceSha256": "90838908fb43287a13a456c41ab60ffb57890809129dd7bc84522891fcc8df5f"
+    },
+    {
+      "path": "src/lib/training/weeklyVolumeModel.ts",
+      "capturedSourceSha256": "ab4c2338a261f770b25b2f3f25754c8297d9f8c75af9250c78be56677f4b50f5",
+      "replaySourceSha256": "ab4c2338a261f770b25b2f3f25754c8297d9f8c75af9250c78be56677f4b50f5"
+    },
+    {
+      "path": "src/lib/training/loadDisplayFormat.ts",
+      "capturedSourceSha256": "84561ad9577b1c4794700cc3e399abee7fbbffc748aceaff9a619906ddb90017",
+      "replaySourceSha256": "84561ad9577b1c4794700cc3e399abee7fbbffc748aceaff9a619906ddb90017"
+    },
+    {
+      "path": "src/lib/training/sessionUiConstants.ts",
+      "capturedSourceSha256": "7be6a6026683d2011d1a71d5c24685696dda00747b909bb7e472694e85cf0a49",
+      "replaySourceSha256": "7be6a6026683d2011d1a71d5c24685696dda00747b909bb7e472694e85cf0a49"
+    },
+    {
+      "path": "src/lib/training/sessionQueryPatch.ts",
+      "capturedSourceSha256": "5efaa5f17d56d7d7de1ed3c7f0a2f740d880ef9136ab288499b5d578c304e9c9",
+      "replaySourceSha256": "5efaa5f17d56d7d7de1ed3c7f0a2f740d880ef9136ab288499b5d578c304e9c9"
+    },
+    {
+      "path": "src/lib/training/scheduleGuidedTrainingAfterSetPersist.ts",
+      "capturedSourceSha256": "6cf3449bd2520fea1cce93417579df14b289f42509ca50e74b24304b1a14b116",
+      "replaySourceSha256": "6cf3449bd2520fea1cce93417579df14b289f42509ca50e74b24304b1a14b116"
+    },
+    {
+      "path": "src/lib/training/guidedSetCompletionCanonical.ts",
+      "capturedSourceSha256": "7ed14ad8e8635da95443dcd231ac05d844ce8ef1c644bc4c650d57fe8604d090",
+      "replaySourceSha256": "7ed14ad8e8635da95443dcd231ac05d844ce8ef1c644bc4c650d57fe8604d090"
+    },
+    {
+      "path": "src/lib/training/guidedPhoneRestTransition.ts",
+      "capturedSourceSha256": "331f4ad923b24fe54ec230bccd05e0b7f46ef7a1f143ac3f8dc264c7c641d00d",
+      "replaySourceSha256": "331f4ad923b24fe54ec230bccd05e0b7f46ef7a1f143ac3f8dc264c7c641d00d"
+    },
+    {
+      "path": "src/lib/training/runtime/autoregulation.ts",
+      "capturedSourceSha256": "7a5d68247b4eb68475ea640d1fd6c1a3ec481e21a7f5b11351a5b22fb5aa1351",
+      "replaySourceSha256": "7a5d68247b4eb68475ea640d1fd6c1a3ec481e21a7f5b11351a5b22fb5aa1351"
+    },
+    {
+      "path": "src/lib/training/trainingNotificationWorkPlan.ts",
+      "capturedSourceSha256": "a625d36d26e918fb3a987c9b856b7c0a2ba4777e2c8495dcef595b78913e00a4",
+      "replaySourceSha256": "a625d36d26e918fb3a987c9b856b7c0a2ba4777e2c8495dcef595b78913e00a4"
+    },
+    {
+      "path": "src/lib/training/guidedPendingExternalRestStore.ts",
+      "capturedSourceSha256": "4e3c30162d03aab52e295193c38c291577e35f1badd69b508212a552c6313ece",
+      "replaySourceSha256": "4e3c30162d03aab52e295193c38c291577e35f1badd69b508212a552c6313ece"
+    },
+    {
+      "path": "src/lib/training/finalizeTrainingSession.ts",
+      "capturedSourceSha256": "b2e54201bbf0a20ee5221e7ca9659385295342666c7450ee70b5f9c6737ddf2f",
+      "replaySourceSha256": "b2e54201bbf0a20ee5221e7ca9659385295342666c7450ee70b5f9c6737ddf2f"
+    },
+    {
+      "path": "src/lib/training/guidedTransitionTrace.ts",
+      "capturedSourceSha256": "fa070b9ee876b68d8f8502af601d45efe0bacfff297f3c9886cd8797649ec25c",
+      "replaySourceSha256": "fa070b9ee876b68d8f8502af601d45efe0bacfff297f3c9886cd8797649ec25c"
+    },
+    {
+      "path": "src/lib/training/guidedDevInstrumentation.ts",
+      "capturedSourceSha256": "7b6fae13c5e7b54ec00fa28d31e677ed95257ccdac048a0c41eeba703c633c38",
+      "replaySourceSha256": "7b6fae13c5e7b54ec00fa28d31e677ed95257ccdac048a0c41eeba703c633c38"
+    },
+    {
+      "path": "src/lib/training/guidedTraceCapture.ts",
+      "capturedSourceSha256": "ce435c98cfb9470ca1c98d52f87861a5307536631313252dffb4a7b7facf96d8",
+      "replaySourceSha256": "ce435c98cfb9470ca1c98d52f87861a5307536631313252dffb4a7b7facf96d8"
+    },
+    {
+      "path": "src/lib/training/programmeProjection.ts",
+      "capturedSourceSha256": "a1d56c6a2eedd11ece111fb5c282c38626aa8f19617ce888d0a42a2827bf0d6e",
+      "replaySourceSha256": "1fe8edf9c96be3e9876b8ece74a025700ca73b6cede866f668dfeefdc9add27a"
+    },
+    {
+      "path": "src/lib/training/buildProgramDaySession.ts",
+      "capturedSourceSha256": "0a7ff84409799d212dd9210e7b943ff7e527fc7dcfdcfcf33e0e82421b7c533c",
+      "replaySourceSha256": "0a7ff84409799d212dd9210e7b943ff7e527fc7dcfdcfcf33e0e82421b7c533c"
+    },
+    {
+      "path": "src/lib/training/weeklyVolumeSummary.ts",
+      "capturedSourceSha256": "408919da492b05bad2312581ce8bc749157d1d875d001d570f3009a70734b036",
+      "replaySourceSha256": "408919da492b05bad2312581ce8bc749157d1d875d001d570f3009a70734b036"
+    },
+    {
+      "path": "src/lib/training/muscleTaxonomy.ts",
+      "capturedSourceSha256": "9b6d31ab63f4bee28e4e941e1e4c0997aedc14c501c7b5e056c1c646c4449898",
+      "replaySourceSha256": "9b6d31ab63f4bee28e4e941e1e4c0997aedc14c501c7b5e056c1c646c4449898"
+    },
+    {
+      "path": "src/lib/training/programmeWeekProposal.ts",
+      "capturedSourceSha256": "d0dc2065314734bc553ee01e4ecc70d781696cca701f5772df24b00ad83cce17",
+      "replaySourceSha256": "c813bc6ec7be52f0f3118bd92f5d940e0a1ed31866ce8b003546b73d3353f8dd"
+    },
+    {
+      "path": "src/lib/training/weeklyProgrammeValidator.ts",
+      "capturedSourceSha256": "6bfe75037fcb1c7cb7d8d77c4e1edcec69252458ec0e37850e44c8861a797336",
+      "replaySourceSha256": "b4730b3a791408cc6d2d971c4e1dab4998a173f13590a7badc98adfd3d54e3b4"
+    },
+    {
+      "path": "src/lib/training/trainingMode.ts",
+      "capturedSourceSha256": "8be76aac718edb4f9bd17a97accf85a5609bda674032a1998477f919f9028c84",
+      "replaySourceSha256": "8be76aac718edb4f9bd17a97accf85a5609bda674032a1998477f919f9028c84"
+    },
+    {
+      "path": "src/lib/training/activeSessionQueryTruth.ts",
+      "capturedSourceSha256": "f53ff94d10d6736909f78985d7c392bd433ca065482c38f7bac5f2da8b457fc2",
+      "replaySourceSha256": "f53ff94d10d6736909f78985d7c392bd433ca065482c38f7bac5f2da8b457fc2"
+    },
+    {
+      "path": "src/lib/training/trainingProgramPerformanceSeed.ts",
+      "capturedSourceSha256": "677adc23eb28c6681d6ef5e9bb0d90d7c4b5c1f803859e883cf3eaa541db282f",
+      "replaySourceSha256": "677adc23eb28c6681d6ef5e9bb0d90d7c4b5c1f803859e883cf3eaa541db282f"
+    },
+    {
+      "path": "src/lib/training/trainingProgramPerformanceSeedIds.ts",
+      "capturedSourceSha256": "a56c84df6581cff3ff3539d5cf9c014fcc31b1ce1917547089d3559f4a5bb440",
+      "replaySourceSha256": "a56c84df6581cff3ff3539d5cf9c014fcc31b1ce1917547089d3559f4a5bb440"
+    },
+    {
+      "path": "src/lib/training/preview/index.ts",
+      "capturedSourceSha256": "d4d903dd961ab933f0b48d309722fa61766257db78191cd66c7ff7101f3fd57e",
+      "replaySourceSha256": "d4d903dd961ab933f0b48d309722fa61766257db78191cd66c7ff7101f3fd57e"
+    },
+    {
+      "path": "src/lib/training/programPlanner.ts",
+      "capturedSourceSha256": "fee7e95b691ff79b49e73797aecda7fa4e80c6d2bf3d5f8aa703014fc61510ce",
+      "replaySourceSha256": "fee7e95b691ff79b49e73797aecda7fa4e80c6d2bf3d5f8aa703014fc61510ce"
+    },
+    {
+      "path": "src/lib/training/setupDraft.ts",
+      "capturedSourceSha256": "0ebd705a74e8221eff1f17da0076825a4b8dc17f56106542ea3c3d217eaa526c",
+      "replaySourceSha256": "0ebd705a74e8221eff1f17da0076825a4b8dc17f56106542ea3c3d217eaa526c"
+    },
+    {
+      "path": "src/lib/training/setupMappings.ts",
+      "capturedSourceSha256": "66acbe1d4593295b47f67bfd5870342dfed4e718f9763bee954ec0435f59cf0d",
+      "replaySourceSha256": "66acbe1d4593295b47f67bfd5870342dfed4e718f9763bee954ec0435f59cf0d"
+    },
+    {
+      "path": "src/lib/training/lastPerformance.ts",
+      "capturedSourceSha256": "32c9dd8b9f8447de1770e78f9246e43015b63928e359c61ddf4192429dde0127",
+      "replaySourceSha256": "32c9dd8b9f8447de1770e78f9246e43015b63928e359c61ddf4192429dde0127"
+    },
+    {
+      "path": "src/lib/training/autoregulationOverlay.ts",
+      "capturedSourceSha256": "cc377192dc566cc7087b8fddb880d23c7ac10e614ae277742b06d108a607a279",
+      "replaySourceSha256": "cc377192dc566cc7087b8fddb880d23c7ac10e614ae277742b06d108a607a279"
+    },
+    {
+      "path": "src/lib/training/sessionAdjustment.ts",
+      "capturedSourceSha256": "6c9aec62bdaf62046cbe3289dc1d68c558f9e1a42c05cf62ac6f8230ba56c496",
+      "replaySourceSha256": "6c9aec62bdaf62046cbe3289dc1d68c558f9e1a42c05cf62ac6f8230ba56c496"
+    },
+    {
+      "path": "src/lib/training/exerciseSubstitution.ts",
+      "capturedSourceSha256": "ee060f0df2068b740c62cd4732636e0691adaa2d492a370b674ebf2e1425ef30",
+      "replaySourceSha256": "ee060f0df2068b740c62cd4732636e0691adaa2d492a370b674ebf2e1425ef30"
+    },
+    {
+      "path": "src/lib/training/staleSessionGuard.ts",
+      "capturedSourceSha256": "442fb78c752519732c98f8e3a87a19eaf2918c43e67b7510903d4a3ec7a16a60",
+      "replaySourceSha256": "442fb78c752519732c98f8e3a87a19eaf2918c43e67b7510903d4a3ec7a16a60"
+    },
+    {
+      "path": "src/lib/training/staleSessionTimerDisplay.ts",
+      "capturedSourceSha256": "fc6941e7ffe3e08412e72e5567a20274dbf044f02c4dc89a4401045ac93453cb",
+      "replaySourceSha256": "fc6941e7ffe3e08412e72e5567a20274dbf044f02c4dc89a4401045ac93453cb"
+    },
+    {
+      "path": "src/lib/training/applySetEdit.ts",
+      "capturedSourceSha256": "cc7a1ff96cddef483a3a052618907380345bc0542bc38354e1ed5ce34a067990",
+      "replaySourceSha256": "cc7a1ff96cddef483a3a052618907380345bc0542bc38354e1ed5ce34a067990"
+    },
+    {
+      "path": "src/lib/training/sessionExercisePresence.ts",
+      "capturedSourceSha256": "957847cb110f51b2d6fdaca873f5c8ffd7d6288f7f1aa3ca82df1583f70be12b",
+      "replaySourceSha256": "957847cb110f51b2d6fdaca873f5c8ffd7d6288f7f1aa3ca82df1583f70be12b"
+    },
+    {
+      "path": "src/lib/training/movementPatternCues.ts",
+      "capturedSourceSha256": "a13d60e7d44b8f9d6bffb4ddf007b4d2d9e354cfb73c3ef5203a3e403a3f9e03",
+      "replaySourceSha256": "a13d60e7d44b8f9d6bffb4ddf007b4d2d9e354cfb73c3ef5203a3e403a3f9e03"
+    },
+    {
+      "path": "src/lib/training/bundledExerciseStills.ts",
+      "capturedSourceSha256": "198a4338778e9910c20219c4b591edffc2bc060441028cb9070bc7c6357c7606",
+      "replaySourceSha256": "198a4338778e9910c20219c4b591edffc2bc060441028cb9070bc7c6357c7606"
+    },
+    {
+      "path": "src/lib/training/exerciseIllustration.ts",
+      "capturedSourceSha256": "5fb6247ea70452e8b40e9a84bf66c9e6a42f33f9c95307721ba47ff1d467f436",
+      "replaySourceSha256": "5fb6247ea70452e8b40e9a84bf66c9e6a42f33f9c95307721ba47ff1d467f436"
+    },
+    {
+      "path": "src/lib/training/catalog/exerciseIllustrations.v1.json",
+      "capturedSourceSha256": "a60871c43613d3f04070f2167a7a92b9adfceb44716948a8a5bc2ababdaadd80",
+      "replaySourceSha256": "a60871c43613d3f04070f2167a7a92b9adfceb44716948a8a5bc2ababdaadd80"
+    },
+    {
+      "path": "src/lib/training/humanFormPoses.ts",
+      "capturedSourceSha256": "d1c72c8083eae3768982fbbc8fa7018dfc76aea81370c9660f346d4c21d77235",
+      "replaySourceSha256": "d1c72c8083eae3768982fbbc8fa7018dfc76aea81370c9660f346d4c21d77235"
+    },
+    {
+      "path": "src/lib/training/guidedExternalSetDoneTransition.ts",
+      "capturedSourceSha256": "b5eb0e99a4889ce62bedb634a65aee580abe9a4a2e8240bcd5d482db42341025",
+      "replaySourceSha256": "b5eb0e99a4889ce62bedb634a65aee580abe9a4a2e8240bcd5d482db42341025"
+    },
+    {
+      "path": "src/lib/training/guidedSessionRuntime.ts",
+      "capturedSourceSha256": "a89222442a1bfdf7830c68ec6f90d11e8a7636b9b304349e8233edc6af470bfe",
+      "replaySourceSha256": "a89222442a1bfdf7830c68ec6f90d11e8a7636b9b304349e8233edc6af470bfe"
+    },
+    {
+      "path": "src/lib/training/guidedNotificationRoute.ts",
+      "capturedSourceSha256": "651fc9aec7674dd193167cf62654b245c5a030a1675597a286eb5118aee11d78",
+      "replaySourceSha256": "651fc9aec7674dd193167cf62654b245c5a030a1675597a286eb5118aee11d78"
+    },
+    {
+      "path": "src/lib/training/historySessionVisibility.ts",
+      "capturedSourceSha256": "b33e282773b7a8f46532086f0d8caf5bd18d273e01c45b4e154ff6a84757890b",
+      "replaySourceSha256": "b33e282773b7a8f46532086f0d8caf5bd18d273e01c45b4e154ff6a84757890b"
+    },
+    {
+      "path": "src/lib/training/analytics/index.ts",
+      "capturedSourceSha256": "9171d33e94a278570e1f7f2d02548b9c0c7b8a5b2a27d4c4679b883bade723a0",
+      "replaySourceSha256": "9171d33e94a278570e1f7f2d02548b9c0c7b8a5b2a27d4c4679b883bade723a0"
+    },
+    {
+      "path": "src/lib/training/analytics/metrics.ts",
+      "capturedSourceSha256": "d48e4d9deb98393b676aa6b3bc2d988ea3a183d3df3b015db05e51dcbd829d9f",
+      "replaySourceSha256": "d48e4d9deb98393b676aa6b3bc2d988ea3a183d3df3b015db05e51dcbd829d9f"
+    },
+    {
+      "path": "src/lib/training/analytics/dataTransforms.ts",
+      "capturedSourceSha256": "d03ec79674795085fb6228e1a65ed2efea30b9d6ecb70edc05a3cd0b97a36d19",
+      "replaySourceSha256": "d03ec79674795085fb6228e1a65ed2efea30b9d6ecb70edc05a3cd0b97a36d19"
+    },
+    {
+      "path": "src/lib/training/exactAlarmGate.ts",
+      "capturedSourceSha256": "99864ac994ddb1486326d9af781d4b85aa2dedc14d3859722ab330d6f9817e66",
+      "replaySourceSha256": "99864ac994ddb1486326d9af781d4b85aa2dedc14d3859722ab330d6f9817e66"
+    }
+  ],
+  "registeredModules": 3619,
+  "correctedBaselineExactlyReproduced": true,
+  "originalPlanPrescriptionsHistoryAndValidationUnchanged": true,
+  "weeks": [
+    {
+      "week": 1,
+      "status": "unresolved",
+      "feasibleDays": 5,
+      "weeklyWarnings": 20,
+      "loadConfirmations": 19,
+      "historyBarriers": 1,
+      "uniqueSummaryResults": 1,
+      "exactIssueAndCoverageEquality": true,
+      "originalProposalExceptDiagnosticsUnchanged": true
+    },
+    {
+      "week": 2,
+      "status": "unresolved",
+      "feasibleDays": 5,
+      "weeklyWarnings": 20,
+      "loadConfirmations": 19,
+      "historyBarriers": 1,
+      "uniqueSummaryResults": 1,
+      "exactIssueAndCoverageEquality": true,
+      "originalProposalExceptDiagnosticsUnchanged": true
+    },
+    {
+      "week": 3,
+      "status": "unresolved",
+      "feasibleDays": 5,
+      "weeklyWarnings": 20,
+      "loadConfirmations": 19,
+      "historyBarriers": 1,
+      "uniqueSummaryResults": 1,
+      "exactIssueAndCoverageEquality": true,
+      "originalProposalExceptDiagnosticsUnchanged": true
+    },
+    {
+      "week": 4,
+      "status": "unresolved",
+      "feasibleDays": 5,
+      "weeklyWarnings": 20,
+      "loadConfirmations": 19,
+      "historyBarriers": 1,
+      "uniqueSummaryResults": 1,
+      "exactIssueAndCoverageEquality": true,
+      "originalProposalExceptDiagnosticsUnchanged": true
+    }
+  ]
+}
