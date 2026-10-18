@@ -1,0 +1,149 @@
+{
+  "utc": "2026-10-18T10:56:57.959985+00:00",
+  "commit": "b40fa80f32a2b035f830d3e563055b93c083137a",
+  "parent": "59b6221958d30630c757c1ab055b6443b5777a08",
+  "checkout": "C:\\Reclaim-R04-provenance-20261018",
+  "branch": "fix/training-confident-ux",
+  "head": "0658d8aeb948bd29ee758da4c730d8eac6332425",
+  "remote_observation": "0658d8aeb948bd29ee758da4c730d8eac6332425\trefs/heads/fix/training-confident-ux",
+  "files": [
+    {
+      "path": "app/src/lib/training/balancedHypertrophy.ts",
+      "git_blob": "2066af768343ad48d003037ad8fb153e81e3151c",
+      "sha256": "ff18e2d81c50adc8fc7a0e7868951e7accfbe482671552e7593b44ae2126e35f",
+      "bytes": 15811,
+      "crlf_sha256": "b211622fd36931d4ad7fc6661ce9e0bdf70c44171ae728e10fa6808cd7730788",
+      "manifest_match": true,
+      "filesystem_manifest_reproduced": true
+    },
+    {
+      "path": "app/src/lib/training/weeklyProgramme.ts",
+      "git_blob": "caa177fcb6e7f0a316935c8b7503daa5b1563368",
+      "sha256": "ee108accd0e07fd7d8c8d07e9099b38597a8fd7dda32a59ff350377fdcf6c159",
+      "bytes": 12862,
+      "crlf_sha256": "00ca80d15c73478195d01435d2832dbdb506b64860747f5b55ee7bf846cca680",
+      "manifest_match": true,
+      "filesystem_manifest_reproduced": true
+    },
+    {
+      "path": "app/src/lib/training/weeklyProgrammePolicy.ts",
+      "git_blob": "72c462a1311e48b086b6d2c9080cbed835148b2e",
+      "sha256": "ad94a32967777495e46e374a1b4ae6acace90f65e1b185ee7362b2246f6c6ef7",
+      "bytes": 9676,
+      "crlf_sha256": "90838908fb43287a13a456c41ab60ffb57890809129dd7bc84522891fcc8df5f",
+      "manifest_match": true,
+      "filesystem_manifest_reproduced": true
+    },
+    {
+      "path": "app/src/lib/training/weeklyProgrammeTypes.ts",
+      "git_blob": "e7a8fce6cdbf27227e6a0afc7fca5fbf73879d0e",
+      "sha256": "26f34f5edbaaafa80d782cea7b19a2655f7c258791d599dfcbded565774d1d48",
+      "bytes": 1896,
+      "crlf_sha256": "eedddd151c912127a0fbfd8d6d2b8484c2f5e2e0dd2a70acaa78dc003e2e64b2",
+      "manifest_match": true,
+      "filesystem_manifest_reproduced": true
+    },
+    {
+      "path": "app/src/lib/training/allocatedProgramSession.ts",
+      "git_blob": "2b025aaa2c250b367d8e7fe0a13c6ecb74b75291",
+      "sha256": "d8ec14692cca529713f12885eeb35279b3576bff5c8d11828ec95f6b01a0bbf3",
+      "bytes": 6222,
+      "crlf_sha256": "ea75dadee81d092034f38e2b736d741fe6aa9497822b6b961ec00c5ab987db46",
+      "manifest_match": true,
+      "filesystem_manifest_reproduced": true
+    },
+    {
+      "path": "app/src/lib/training/programPlanner.ts",
+      "git_blob": "a1fb94e43e58f09b30dbe387422b44cf0b49989a",
+      "sha256": "65ad0331eb9a45c46914e15aca3569eb40e5ef06257e0c5307aca534fe96a8de",
+      "bytes": 19505,
+      "crlf_sha256": "4491828a783d34542960729ff52a05a70083bed85b9720abd5ef0e3c90a02e11",
+      "manifest_match": true,
+      "filesystem_manifest_reproduced": true
+    },
+    {
+      "path": "app/src/lib/training/buildProgramDaySession.ts",
+      "git_blob": "d80c05f0f6adb13921eea9849baf91d8ad67aa95",
+      "sha256": "ab05b8b88fc4729e43bdd22516429eace786ba2d402da8fe72c157f804477430",
+      "bytes": 3139,
+      "crlf_sha256": "f3d398dde570e67db27fc4afff891d0a776916a01580f26ebb0740a39e543fdb",
+      "manifest_match": true,
+      "filesystem_manifest_reproduced": true
+    },
+    {
+      "path": "app/src/lib/training/types.ts",
+      "git_blob": "148abeb7e43678fba5739e7a3fcb0a355aeea954",
+      "sha256": "887bcb82715afc9f28e8258d4f5bc06f329b95e2f10de28b64d5dafe6b39d280",
+      "bytes": 16495,
+      "crlf_sha256": "dbbea33caa2b2d92d247ffd596e118e4970f577570f7e133381ed4beac1b5e40",
+      "manifest_match": true,
+      "filesystem_manifest_reproduced": true
+    },
+    {
+      "path": "app/src/lib/training/engine/index.ts",
+      "git_blob": "b852a6630bf11e4f56fa0a779947ad8cd9defdb8",
+      "sha256": "996f13908dd7a97925183089e69181573ecff5639045c94056af76bd6583fff1",
+      "bytes": 70565,
+      "crlf_sha256": "e4fa63806e4142655cf7f6b5fe7eac2171045ed23e9b471bb8abad2bf9567c4b",
+      "manifest_match": true,
+      "filesystem_manifest_reproduced": true
+    },
+    {
+      "path": "app/src/lib/training/preview/index.ts",
+      "git_blob": "6fb2dbf4fdcf3e8b9a544a4a8cb70b8510b1a63e",
+      "sha256": "1ba9888b9fbc543c1144deb17c29c15ca439eafaf0e8c210c3a4dacc2e821b83",
+      "bytes": 5631,
+      "crlf_sha256": "4d1ff5844d02bfe5f7443f1a5b9b5c6d66fe8368258d666becf45a324c9f1e1f",
+      "manifest_match": true,
+      "filesystem_manifest_reproduced": true
+    },
+    {
+      "path": "app/src/lib/training/preview/__tests__/preview.test.ts",
+      "git_blob": "2835435e697a098e635e3aa8f744d31c683a688c",
+      "sha256": "d8aae83145899ee637fb4f7260800f7d8b8bb3904c00873dd13a12ea0be646dc",
+      "bytes": 6974,
+      "crlf_sha256": "2504cd9c6584811c77f6619ad1453c6756a43b5eaca07764864fc025b0e20ab0",
+      "manifest_match": true,
+      "filesystem_manifest_reproduced": true
+    },
+    {
+      "path": "app/src/lib/training/preview/__tests__/setupContract.test.ts",
+      "git_blob": "8dfdfcbcfc08a78c083ffc0c4edbbbef4d28fd7b",
+      "sha256": "5f94252869505d94c8313e29b1d8c2d66db77756ed8971deefd34b882289e606",
+      "bytes": 4289,
+      "crlf_sha256": "f83561b7111eeaadbd10d421bfb7998fc7048bb949baff08b2e11fab715aa346",
+      "manifest_match": true,
+      "filesystem_manifest_reproduced": true
+    },
+    {
+      "path": "app/src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts",
+      "git_blob": "0603e37abf3f7cf3bee92df2abbfb7d49a135498",
+      "sha256": "5f09795c32c85def0047e6ebc8dc713a89b0b1a2824e868b63ccd266494f2fd7",
+      "bytes": 13453,
+      "crlf_sha256": "236a9b1e999c1c59b3b10f4ac42d9e22eabedcdc098ffc124dd797191e0cbec6",
+      "manifest_match": true,
+      "filesystem_manifest_reproduced": true
+    }
+  ],
+  "mismatch": {
+    "path": "app/src/lib/training/balancedHypertrophy.ts",
+    "historical_review_sha256": "81d1982368d4ffdb6d043146fb81dd4e79dbd979a513b7239dc09f7854a08818",
+    "reproduced_review_sha256": "81d1982368d4ffdb6d043146fb81dd4e79dbd979a513b7239dc09f7854a08818",
+    "committed_sha256": "ff18e2d81c50adc8fc7a0e7868951e7accfbe482671552e7593b44ae2126e35f",
+    "review_bytes": 16144,
+    "committed_bytes": 15811,
+    "lf_normalized_review_sha256": "25a9cc1dc0a9237025187e57adac95f77585a80315161ad5e753f57f1ed72668",
+    "lf_normalized_exact_equal": false,
+    "lf_normalized_difference": "one extra trailing LF in historical reviewed bytes",
+    "trailing_whitespace_normalized_equal": true,
+    "reconstruction": "committed LF bytes -> CRLF -> append one CRLF",
+    "historical_helper_path": ".eif\\audit\\N-0069\\R04\\whitespace.py",
+    "historical_helper_sha256": "ce7b22988562a53c2af039910110308b9e07d3173d30107ab3a30970d3f97712",
+    "limitation": "The fingerprint is exactly reproduced, not a recovered immutable historical source file. The surviving whitespace.py independently documents rstrip()+one newline on both old trees; no execution timestamp is inferred."
+  },
+  "original_receipts": {
+    ".eif/audit/N-0069/R04/independent-review.md": "95b49e304536d2858befed1ff3421a62500e452ce3802bffb24390b8fe791556",
+    ".eif/audit/N-0069/R04/result.md": "55f7251c64b4063f2d79474756f1bf29e82a6ef73d82409eaecd301b8392b585",
+    ".eif/audit/N-0069/R04/source-manifest.json": "eca4d379d879f2bf896d3f6bef0efbcf7e949f5c22f7a47df4f8ab5180719fe8"
+  }
+}

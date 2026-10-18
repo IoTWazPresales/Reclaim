@@ -1,0 +1,75 @@
+{
+  "compared": [
+    {
+      "path": "app/src/lib/training/weeklyProgramme.ts",
+      "historical_review_sha256": "00ca80d15c73478195d01435d2832dbdb506b64860747f5b55ee7bf846cca680",
+      "final_filesystem_sha256": "00ca80d15c73478195d01435d2832dbdb506b64860747f5b55ee7bf846cca680",
+      "equal": true
+    },
+    {
+      "path": "app/src/lib/training/weeklyProgrammeTypes.ts",
+      "historical_review_sha256": "eedddd151c912127a0fbfd8d6d2b8484c2f5e2e0dd2a70acaa78dc003e2e64b2",
+      "final_filesystem_sha256": "eedddd151c912127a0fbfd8d6d2b8484c2f5e2e0dd2a70acaa78dc003e2e64b2",
+      "equal": true
+    },
+    {
+      "path": "app/src/lib/training/weeklyProgrammePolicy.ts",
+      "historical_review_sha256": "90838908fb43287a13a456c41ab60ffb57890809129dd7bc84522891fcc8df5f",
+      "final_filesystem_sha256": "90838908fb43287a13a456c41ab60ffb57890809129dd7bc84522891fcc8df5f",
+      "equal": true
+    },
+    {
+      "path": "app/src/lib/training/allocatedProgramSession.ts",
+      "historical_review_sha256": "ea75dadee81d092034f38e2b736d741fe6aa9497822b6b961ec00c5ab987db46",
+      "final_filesystem_sha256": "ea75dadee81d092034f38e2b736d741fe6aa9497822b6b961ec00c5ab987db46",
+      "equal": true
+    },
+    {
+      "path": "app/src/lib/training/balancedHypertrophy.ts",
+      "historical_review_sha256": "81d1982368d4ffdb6d043146fb81dd4e79dbd979a513b7239dc09f7854a08818",
+      "final_filesystem_sha256": "b211622fd36931d4ad7fc6661ce9e0bdf70c44171ae728e10fa6808cd7730788",
+      "equal": false
+    },
+    {
+      "path": "app/src/lib/training/engine/index.ts",
+      "historical_review_sha256": "e4fa63806e4142655cf7f6b5fe7eac2171045ed23e9b471bb8abad2bf9567c4b",
+      "final_filesystem_sha256": "e4fa63806e4142655cf7f6b5fe7eac2171045ed23e9b471bb8abad2bf9567c4b",
+      "equal": true
+    },
+    {
+      "path": "app/src/lib/training/types.ts",
+      "historical_review_sha256": "dbbea33caa2b2d92d247ffd596e118e4970f577570f7e133381ed4beac1b5e40",
+      "final_filesystem_sha256": "dbbea33caa2b2d92d247ffd596e118e4970f577570f7e133381ed4beac1b5e40",
+      "equal": true
+    },
+    {
+      "path": "app/src/lib/training/programPlanner.ts",
+      "historical_review_sha256": "4491828a783d34542960729ff52a05a70083bed85b9720abd5ef0e3c90a02e11",
+      "final_filesystem_sha256": "4491828a783d34542960729ff52a05a70083bed85b9720abd5ef0e3c90a02e11",
+      "equal": true
+    },
+    {
+      "path": "app/src/lib/training/buildProgramDaySession.ts",
+      "historical_review_sha256": "f3d398dde570e67db27fc4afff891d0a776916a01580f26ebb0740a39e543fdb",
+      "final_filesystem_sha256": "f3d398dde570e67db27fc4afff891d0a776916a01580f26ebb0740a39e543fdb",
+      "equal": true
+    },
+    {
+      "path": "app/src/lib/training/preview/index.ts",
+      "historical_review_sha256": "4d1ff5844d02bfe5f7443f1a5b9b5c6d66fe8368258d666becf45a324c9f1e1f",
+      "final_filesystem_sha256": "4d1ff5844d02bfe5f7443f1a5b9b5c6d66fe8368258d666becf45a324c9f1e1f",
+      "equal": true
+    },
+    {
+      "path": "app/src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts",
+      "historical_review_sha256": "236a9b1e999c1c59b3b10f4ac42d9e22eabedcdc098ffc124dd797191e0cbec6",
+      "final_filesystem_sha256": "236a9b1e999c1c59b3b10f4ac42d9e22eabedcdc098ffc124dd797191e0cbec6",
+      "equal": true
+    }
+  ],
+  "absent_from_historical_hash_table": [
+    "app/src/lib/training/preview/__tests__/preview.test.ts",
+    "app/src/lib/training/preview/__tests__/setupContract.test.ts"
+  ],
+  "all_13_now_covered_by_fresh_review": true
+}

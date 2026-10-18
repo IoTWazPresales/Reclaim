@@ -1,0 +1,139 @@
+{
+  "reviewer": "fresh delegated implementation reviewer /root/r04_fresh_review",
+  "observedAtUtc": "2026-10-18T10:58:44.105647+00:00",
+  "sourceCommit": "b40fa80f32a2b035f830d3e563055b93c083137a",
+  "parentCommit": "59b6221958d30630c757c1ab055b6443b5777a08",
+  "hashConvention": "gitBlobId: Git object identifier; sha256GitBlobBytes: SHA256 of exact immutable blob payload, no EOL or trailing whitespace normalization",
+  "files": [
+    {
+      "path": "app/src/lib/training/balancedHypertrophy.ts",
+      "gitBlobId": "2066af768343ad48d003037ad8fb153e81e3151c",
+      "sha256GitBlobBytes": "ff18e2d81c50adc8fc7a0e7868951e7accfbe482671552e7593b44ae2126e35f",
+      "byteLength": 15811,
+      "manifestSha256": "ff18e2d81c50adc8fc7a0e7868951e7accfbe482671552e7593b44ae2126e35f",
+      "matchesCommittedManifest": true,
+      "isolatedCheckoutMatchesGitBlobBytes": true,
+      "inspection": "All changed hunks against verified parent inspected, with relevant module bodies and caller/contract context"
+    },
+    {
+      "path": "app/src/lib/training/weeklyProgramme.ts",
+      "gitBlobId": "caa177fcb6e7f0a316935c8b7503daa5b1563368",
+      "sha256GitBlobBytes": "ee108accd0e07fd7d8c8d07e9099b38597a8fd7dda32a59ff350377fdcf6c159",
+      "byteLength": 12862,
+      "manifestSha256": "ee108accd0e07fd7d8c8d07e9099b38597a8fd7dda32a59ff350377fdcf6c159",
+      "matchesCommittedManifest": true,
+      "isolatedCheckoutMatchesGitBlobBytes": true,
+      "inspection": "All changed hunks against verified parent inspected, with relevant module bodies and caller/contract context"
+    },
+    {
+      "path": "app/src/lib/training/weeklyProgrammePolicy.ts",
+      "gitBlobId": "72c462a1311e48b086b6d2c9080cbed835148b2e",
+      "sha256GitBlobBytes": "ad94a32967777495e46e374a1b4ae6acace90f65e1b185ee7362b2246f6c6ef7",
+      "byteLength": 9676,
+      "manifestSha256": "ad94a32967777495e46e374a1b4ae6acace90f65e1b185ee7362b2246f6c6ef7",
+      "matchesCommittedManifest": true,
+      "isolatedCheckoutMatchesGitBlobBytes": true,
+      "inspection": "All changed hunks against verified parent inspected, with relevant module bodies and caller/contract context"
+    },
+    {
+      "path": "app/src/lib/training/weeklyProgrammeTypes.ts",
+      "gitBlobId": "e7a8fce6cdbf27227e6a0afc7fca5fbf73879d0e",
+      "sha256GitBlobBytes": "26f34f5edbaaafa80d782cea7b19a2655f7c258791d599dfcbded565774d1d48",
+      "byteLength": 1896,
+      "manifestSha256": "26f34f5edbaaafa80d782cea7b19a2655f7c258791d599dfcbded565774d1d48",
+      "matchesCommittedManifest": true,
+      "isolatedCheckoutMatchesGitBlobBytes": true,
+      "inspection": "All changed hunks against verified parent inspected, with relevant module bodies and caller/contract context"
+    },
+    {
+      "path": "app/src/lib/training/allocatedProgramSession.ts",
+      "gitBlobId": "2b025aaa2c250b367d8e7fe0a13c6ecb74b75291",
+      "sha256GitBlobBytes": "d8ec14692cca529713f12885eeb35279b3576bff5c8d11828ec95f6b01a0bbf3",
+      "byteLength": 6222,
+      "manifestSha256": "d8ec14692cca529713f12885eeb35279b3576bff5c8d11828ec95f6b01a0bbf3",
+      "matchesCommittedManifest": true,
+      "isolatedCheckoutMatchesGitBlobBytes": true,
+      "inspection": "All changed hunks against verified parent inspected, with relevant module bodies and caller/contract context"
+    },
+    {
+      "path": "app/src/lib/training/programPlanner.ts",
+      "gitBlobId": "a1fb94e43e58f09b30dbe387422b44cf0b49989a",
+      "sha256GitBlobBytes": "65ad0331eb9a45c46914e15aca3569eb40e5ef06257e0c5307aca534fe96a8de",
+      "byteLength": 19505,
+      "manifestSha256": "65ad0331eb9a45c46914e15aca3569eb40e5ef06257e0c5307aca534fe96a8de",
+      "matchesCommittedManifest": true,
+      "isolatedCheckoutMatchesGitBlobBytes": true,
+      "inspection": "All changed hunks against verified parent inspected, with relevant module bodies and caller/contract context"
+    },
+    {
+      "path": "app/src/lib/training/buildProgramDaySession.ts",
+      "gitBlobId": "d80c05f0f6adb13921eea9849baf91d8ad67aa95",
+      "sha256GitBlobBytes": "ab05b8b88fc4729e43bdd22516429eace786ba2d402da8fe72c157f804477430",
+      "byteLength": 3139,
+      "manifestSha256": "ab05b8b88fc4729e43bdd22516429eace786ba2d402da8fe72c157f804477430",
+      "matchesCommittedManifest": true,
+      "isolatedCheckoutMatchesGitBlobBytes": true,
+      "inspection": "All changed hunks against verified parent inspected, with relevant module bodies and caller/contract context"
+    },
+    {
+      "path": "app/src/lib/training/types.ts",
+      "gitBlobId": "148abeb7e43678fba5739e7a3fcb0a355aeea954",
+      "sha256GitBlobBytes": "887bcb82715afc9f28e8258d4f5bc06f329b95e2f10de28b64d5dafe6b39d280",
+      "byteLength": 16495,
+      "manifestSha256": "887bcb82715afc9f28e8258d4f5bc06f329b95e2f10de28b64d5dafe6b39d280",
+      "matchesCommittedManifest": true,
+      "isolatedCheckoutMatchesGitBlobBytes": true,
+      "inspection": "All changed hunks against verified parent inspected, with relevant module bodies and caller/contract context"
+    },
+    {
+      "path": "app/src/lib/training/engine/index.ts",
+      "gitBlobId": "b852a6630bf11e4f56fa0a779947ad8cd9defdb8",
+      "sha256GitBlobBytes": "996f13908dd7a97925183089e69181573ecff5639045c94056af76bd6583fff1",
+      "byteLength": 70565,
+      "manifestSha256": "996f13908dd7a97925183089e69181573ecff5639045c94056af76bd6583fff1",
+      "matchesCommittedManifest": true,
+      "isolatedCheckoutMatchesGitBlobBytes": true,
+      "inspection": "All changed hunks against verified parent inspected, with relevant module bodies and caller/contract context"
+    },
+    {
+      "path": "app/src/lib/training/preview/index.ts",
+      "gitBlobId": "6fb2dbf4fdcf3e8b9a544a4a8cb70b8510b1a63e",
+      "sha256GitBlobBytes": "1ba9888b9fbc543c1144deb17c29c15ca439eafaf0e8c210c3a4dacc2e821b83",
+      "byteLength": 5631,
+      "manifestSha256": "1ba9888b9fbc543c1144deb17c29c15ca439eafaf0e8c210c3a4dacc2e821b83",
+      "matchesCommittedManifest": true,
+      "isolatedCheckoutMatchesGitBlobBytes": true,
+      "inspection": "All changed hunks against verified parent inspected, with relevant module bodies and caller/contract context"
+    },
+    {
+      "path": "app/src/lib/training/preview/__tests__/preview.test.ts",
+      "gitBlobId": "2835435e697a098e635e3aa8f744d31c683a688c",
+      "sha256GitBlobBytes": "d8aae83145899ee637fb4f7260800f7d8b8bb3904c00873dd13a12ea0be646dc",
+      "byteLength": 6974,
+      "manifestSha256": "d8aae83145899ee637fb4f7260800f7d8b8bb3904c00873dd13a12ea0be646dc",
+      "matchesCommittedManifest": true,
+      "isolatedCheckoutMatchesGitBlobBytes": true,
+      "inspection": "All changed hunks against verified parent inspected, with relevant module bodies and caller/contract context"
+    },
+    {
+      "path": "app/src/lib/training/preview/__tests__/setupContract.test.ts",
+      "gitBlobId": "8dfdfcbcfc08a78c083ffc0c4edbbbef4d28fd7b",
+      "sha256GitBlobBytes": "5f94252869505d94c8313e29b1d8c2d66db77756ed8971deefd34b882289e606",
+      "byteLength": 4289,
+      "manifestSha256": "5f94252869505d94c8313e29b1d8c2d66db77756ed8971deefd34b882289e606",
+      "matchesCommittedManifest": true,
+      "isolatedCheckoutMatchesGitBlobBytes": true,
+      "inspection": "All changed hunks against verified parent inspected, with relevant module bodies and caller/contract context"
+    },
+    {
+      "path": "app/src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts",
+      "gitBlobId": "0603e37abf3f7cf3bee92df2abbfb7d49a135498",
+      "sha256GitBlobBytes": "5f09795c32c85def0047e6ebc8dc713a89b0b1a2824e868b63ccd266494f2fd7",
+      "byteLength": 13453,
+      "manifestSha256": "5f09795c32c85def0047e6ebc8dc713a89b0b1a2824e868b63ccd266494f2fd7",
+      "matchesCommittedManifest": true,
+      "isolatedCheckoutMatchesGitBlobBytes": true,
+      "inspection": "All changed hunks against verified parent inspected, with relevant module bodies and caller/contract context"
+    }
+  ]
+}

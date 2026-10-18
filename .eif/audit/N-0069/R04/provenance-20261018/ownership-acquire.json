@@ -1,0 +1,14 @@
+{
+  "utc": "2026-10-18T10:58:12.785838+00:00",
+  "run": "R20261018R04PROVENANCE",
+  "command": [
+    "C:\\Python314\\python.exe",
+    "-B",
+    "scripts/eif_node.py",
+    "lease",
+    "N-0069"
+  ],
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": ""
+}

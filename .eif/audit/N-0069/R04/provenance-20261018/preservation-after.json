@@ -1,0 +1,24 @@
+{
+  "utc": "2026-10-18T11:09:23.961183+00:00",
+  "unchanged": {
+    ".cursor/rules/eif-core.mdc": "1766615b43d34ed76e8b01e93a5c8a56b6d94fb0204485e43c3cdc691772f2d4",
+    ".cursor/rules/eif-project-adapter.mdc": "e720d5bac01525ea3273888f375e4c364bce8b161527b8335f4ddbf6453a6443",
+    "app/src/lib/training/engine/index.ts": "3ba8cb793eb9da34a5d21ac14fd4ed65e5117776eb63adc76e72496cdf82dc48",
+    "app/supabase/.temp/cli-latest": "2f99ec07bad208b0108748390c2fe80fb0a91b1784a8f7bf1d303efda7deeaee",
+    "app/supabase/migrations/20260930140000_run_routes.sql": "8184e6f9f1c4a2aa376f4fae66d63f83495c9355bcbb51b735dc8805cdd89bed",
+    "docs/audits/insight-rules-audit.md": "bf11d5d37b85187f6a5d4a246ad3551e77cd2241d7d1cc322c02a0f3456d8e8c",
+    "docs/release/play_human_outstanding_2026-07-29.md": "935651bf06ece7fadaaed2bd4520d72bf910a7782eeec39d608c2a4a1a98bf22",
+    "docs/training/ROUTINE_VOLUME_BASELINE.md": "35934d84f0874da53b395828a1ced0ebe9e3a8c6f3ebd5d0fb8bc6f5c996f4f1",
+    ".eif/audit/N-0069/R04/independent-review.md": "95b49e304536d2858befed1ff3421a62500e452ce3802bffb24390b8fe791556",
+    ".eif/audit/N-0069/R04/result.md": "55f7251c64b4063f2d79474756f1bf29e82a6ef73d82409eaecd301b8392b585",
+    ".eif/audit/N-0069/R04/source-manifest.json": "eca4d379d879f2bf896d3f6bef0efbcf7e949f5c22f7a47df4f8ab5180719fe8",
+    "docs/eif/LEDGER_PENDING.md": "8ec545e53f40876cda3a95bf06c3e096977e383b7a37140aadb4bf820fde7e35",
+    "docs/eif/AWAITING_APPROVAL.md": "9dcc2c486e3def670e2ff9678937b31d9751db25ff849b517549d559212ce1b5",
+    "docs/eif/HUMAN_CHECKS.md": "ec96e28c1b81f16118ed15e95c8e2b182a823d083acc1c3feea7818f11931376",
+    "docs/training/ROUTINE_AUDIT.md": "8d868ca88a4e5d354f677200c22e75ec9f58214ee84fb97726eb5f2a55f46e3f",
+    "docs/training/RUNNING_DESIGN.md": "f58f99a098860aef1aea17a4a50b4fc4747e06d7b3e95188accdd746ccc120f2",
+    ".cursor/hooks.json.off": "d7d7c183e44342e4674a83e969a1d79400b3af2763fa1a352239afc2f7a58167"
+  },
+  "original_receipts_preserved": true,
+  "reviewer_blobs_independently_rechecked": 13
+}
