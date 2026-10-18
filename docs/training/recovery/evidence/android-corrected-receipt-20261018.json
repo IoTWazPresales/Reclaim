@@ -1,0 +1,123 @@
+{
+  "scope": "Read-only Android verification attempt at source 2480d09; runtime blocked; no corrected rendered programme claim",
+  "checkpoint": "2480d09",
+  "branch": "fix/training-confident-ux",
+  "validatorDiskSha256": "b4730b3a791408cc6d2d971c4e1dab4998a173f13590a7badc98adfd3d54e3b4",
+  "engineDiskSha256": "3ba8cb793eb9da34a5d21ac14fd4ed65e5117776eb63adc76e72496cdf82dc48",
+  "loadedCorrectedValidator": "UNABLE_TO_VERIFY",
+  "loadedSourceFingerprint": null,
+  "authenticatedReadAndFreshMemoryGeneration": "UNABLE_TO_VERIFY",
+  "currentAndroidVsOfflineParity": "UNABLE_TO_VERIFY",
+  "pureStartability": {
+    "scope": "Pure current-source guard only; retained offline corrected proposals; no live API or session write",
+    "source": "app/src/lib/training/buildProgramDaySession.ts",
+    "sourceSha256": "0a7ff84409799d212dd9210e7b943ff7e527fc7dcfdcfcf33e0e82421b7c533c",
+    "correctedOfflineProposalChecks": 20,
+    "warningOnlyAllowed": true,
+    "errorRejected": true,
+    "infeasibleRejected": true,
+    "runtimeStart": "NOT_ATTEMPTED"
+  },
+  "runtime": {
+    "adbInitialDevices": "emulator-5554 device",
+    "adbInitialShellEcho": "timeout 12s",
+    "adbInitialBootProperty": "timeout 12s",
+    "adbReset": "kill-server; shell echo then responds; same AVD retained",
+    "metroInitially": "not running; no Reclaim Expo process or reachable listener",
+    "metroRestored": "expo start --dev-client --localhost; then same owned Metro restarted with --max-workers 2",
+    "hostStatus": {
+      "http": 200,
+      "body": "packager-status:running",
+      "elapsedSeconds": 22.22
+    },
+    "hostInspector": {
+      "http": 200,
+      "body": [],
+      "elapsedSeconds": 24.16
+    },
+    "androidManifest": {
+      "result": "TimeoutError",
+      "budgetSeconds": 40,
+      "elapsedSeconds": 40.01
+    },
+    "recovery": "one Reclaim force-stop/localhost reopen; visible error-screen Reload; no build/reinstall/clear/reset",
+    "secondForceStopReopen": "automatic approval review rejected: blocked by policy; not retried",
+    "finalRenderedState": "Reclaim ANR"
+  },
+  "captures": {
+    "android-corrected-loading-20261018": {
+      "pngSha256": "e8d37b79d487a94cb3bcc81b39235851c6ccc9d20d17f9012cedcbc17f2f9b28",
+      "nodes": [
+        {
+          "text": "There was a problem loading the project.",
+          "content-desc": "",
+          "bounds": "[21,105][817,156]",
+          "clickable": "false",
+          "enabled": "true"
+        },
+        {
+          "text": "This development build encountered the following error.",
+          "content-desc": "",
+          "bounds": "[21,198][924,243]",
+          "clickable": "false",
+          "enabled": "true"
+        },
+        {
+          "text": "java.net.SocketTimeoutException: timeout\n\tat okio.SocketAsyncTimeout.newTimeoutException(JvmOkio.kt:146)\n\tat okio.AsyncTimeout.access$newTimeoutException(AsyncTimeout.kt:186)\n\tat okio.AsyncTimeout$source$1.read(AsyncTimeout.kt:390)\n\tat okio.RealBufferedSource.indexOf(RealBufferedSource.kt:436)\n\tat okio.RealBufferedSource.readUtf8LineStrict(RealBufferedSource.kt:329)\n\tat okhttp3.internal.http1.HeadersReader.readLine(HeadersReader.kt:29)\n\tat okhttp3.internal.http1.Http1ExchangeCodec.readResponseHeaders(Http1ExchangeCodec.kt:180)\n\tat okhttp3.internal.connection.Exchange.readResponseHeaders(Exchange.kt:110)\n\tat okhttp3.internal.http.CallServerInterceptor.intercept(CallServerInterceptor.kt:93)\n\tat okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)\n\tat okhttp3.internal.connection.ConnectInterceptor.intercept(ConnectInterceptor.kt:34)\n\tat okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)\n\tat okhttp3.internal.cache.CacheInterceptor.intercept(CacheInterceptor.kt:95)\n\tat okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)\n\tat okhttp3.internal.http.BridgeInterceptor.intercept(BridgeInterceptor.kt:83)\n\tat okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)\n\tat okhttp3.internal.http.RetryAndFollowUpInterceptor.intercept(RetryAndFollowUpInterceptor.kt:76)\n\tat okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)\n\tat okhttp3.internal.connection.RealCall.getResponseWithInterceptorChain$okhttp(RealCall.kt:201)\n\tat okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:517)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652)\n\tat java.lang.Thread.run(Thread.java:1563)\nCaused by: java.net.SocketTimeoutException: Read timed out\n\tat java.net.SocketInputStream.socketRead0(Native Method)\n\tat java.net.SocketInputStream.socketRead(SocketInputStream.java:118)\n\tat java.net.SocketInputStream.read(SocketInputStream.java:173)\n\tat java.net.SocketInputStream.read(SocketInputStream.java:143)\n\tat okio.InputStreamSource.read(JvmOkio.kt:93)\n\tat okio.AsyncTimeout$source$1.read(AsyncTimeout.kt:153)\n\t... 20 more\n",
+          "content-desc": "",
+          "bounds": "[63,285][1080,1664]",
+          "clickable": "false",
+          "enabled": "true"
+        },
+        {
+          "text": "Reload",
+          "content-desc": "",
+          "bounds": "[473,2046][607,2097]",
+          "clickable": "false",
+          "enabled": "true"
+        },
+        {
+          "text": "Go To Home",
+          "content-desc": "",
+          "bounds": "[420,2160][661,2211]",
+          "clickable": "false",
+          "enabled": "true"
+        }
+      ]
+    },
+    "android-corrected-anr-20261018": {
+      "pngSha256": "cfa2f4d04c8c1d6638f3873fa9bcd90d8ef9dca7ff9d7d0541d2f4fce45c782d",
+      "nodes": [
+        {
+          "text": "Reclaim isn't responding",
+          "content-desc": "",
+          "bounds": "[133,1000][947,1071]",
+          "clickable": "false",
+          "enabled": "true"
+        },
+        {
+          "text": "Close app",
+          "content-desc": "",
+          "bounds": "[70,1110][1010,1236]",
+          "clickable": "true",
+          "enabled": "true"
+        },
+        {
+          "text": "Wait",
+          "content-desc": "",
+          "bounds": "[70,1236][1010,1362]",
+          "clickable": "true",
+          "enabled": "true"
+        }
+      ]
+    }
+  },
+  "capturePrivacy": "Only app ANR/loading error screens published. Retained calendar capture and raw logs remain outside repo. No identity, token, profile/history rows or measurements published.",
+  "limits": [
+    "No Start, Save, Done or session creation invoked",
+    "No authenticated data API call executed because inspector unavailable",
+    "No live before/after data identity assertion is possible in this attempt",
+    "Existing offline result is not a current Android result",
+    "No EIF operation, acceptance, R12, scientific policy or application edit"
+  ]
+}

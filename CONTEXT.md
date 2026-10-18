@@ -1,3 +1,17 @@
+## 2026-10-18 ? Corrected-programme Android verification blocked
+
+Source `2480d09` on `fix/training-confident-ux`. Existing AVD retained; ADB
+transport recovered and absent Metro restored, but app ended in ANR/dev-client
+HTTP timeout with empty inspector list. Corrected loaded JS, current API reads,
+fresh memory generation and weekly/exercise rendering remain UNABLE_TO_VERIFY.
+Pure source guard accepts 20 prior corrected offline proposals and warning-only
+control; rejects errors/infeasible controls. Source loses unresolved weekly
+issues before preview; no application fix made. Separate failure-render review
+and sanitised evidence: `docs/training/recovery/evidence/android-corrected-result-20261018.md`.
+No Start/Save/data API write, scientific-policy change, EIF mutation/acceptance
+or R12 invoked. Cannot assert live before/after equality without inspector.
+Preserve engine edit and all unrelated work. Stop after verification report.
+
 ## 2026-10-18 - Incomplete-history validation correction
 
 Scoped weekly validator correction and synthetic regressions; exact captured bundle replay changes all four weeks invalid -> unresolved, removes only the legitimate leg-press hard error, retains 19 load-confirmation warnings plus one barrier warning per week. Plan/prescriptions/history unchanged. Separate reviewer approves after 55 assertions and isolated-source repeat. Malformed/false-qualified controls still fail; incomplete history cannot anchor load or earn progression/deload. Evidence: `docs/training/recovery/evidence/incomplete-history-correction-20261018.md`. Focused156/review55/types/dual31/catalogue357/wrapper3 pass. Working full1429 pass/4 inherited failures (mixed identities); isolated final full stalls at64 outcome files/663 pass/4 established failures, gate incomplete. Commands/fingerprints are in the companion checks receipt. No live/session/history writes, node acceptance or R12; existing node table and unrelated engine edit preserved. Stop after this correction.
