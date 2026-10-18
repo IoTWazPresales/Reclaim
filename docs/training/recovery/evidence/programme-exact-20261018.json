@@ -1,0 +1,1000 @@
+{
+  "scope": "Diagnostic evidence only; no acceptance, live writes or R12",
+  "head": "738f9eac87f5a0e6b5d0271ca9d67851b46e8daa",
+  "captureMode": "Retained authenticated runtime; in-memory generation from active snapshot plus exact cached canonical performance seed; start date from retained programme, not current-date setup save",
+  "uiAccess": {
+    "reclaimFocused": true,
+    "trainingNavigationSucceeded": true,
+    "restarts": 0,
+    "rebuilds": 0,
+    "reinstalls": 0
+  },
+  "privacy": "Exact profile, dates, weekdays, full maps, identities, rows, complete results, bundle and replay stay outside repository under LOCALAPPDATA/ReclaimDiagnostics/programme-exact-20261018",
+  "privateArtifactSha256": {
+    "exact-private.json": "785785fd58a3e42c5cd30c347c74ce2f05661d6ddb1d39b33dd9e66fd0b1d036",
+    "history-private.json": "db0726dfe4479079ecacc56bb66035c32e378c5ee82e98c630c0a611fde66bee",
+    "offline-private.json": "b288299050105f88433c9a74b29069af22d454dec59c19c8a3e58e5002edb80d",
+    "loaded-bundle.js": "9d7508593121c0019d37a26fd5f4e6b87085cdaaa689662312948096af2687f5"
+  },
+  "replay": {
+    "planExact": true,
+    "allFourWeeksExact": true,
+    "historyAdapterExact": true,
+    "clockReplay": "Only zero-argument new Date() and Date.now() replay captured createdAt/session IDs; input start date unchanged; no prescription/output normalization",
+    "executedModuleCount": 3619,
+    "historyRows": 23,
+    "validationResultCount": 4,
+    "errorsByWeek": [
+      {
+        "week": 1,
+        "status": "invalid",
+        "errors": [
+          {
+            "code": "invalid_load_evidence",
+            "severity": "error",
+            "message": "Exercise history has invalid numeric values or identity.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "leg_press",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          }
+        ],
+        "coverageRows": 19
+      },
+      {
+        "week": 2,
+        "status": "invalid",
+        "errors": [
+          {
+            "code": "invalid_load_evidence",
+            "severity": "error",
+            "message": "Exercise history has invalid numeric values or identity.",
+            "weekIndex": 2,
+            "dayKey": "5",
+            "exerciseId": "leg_press",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          }
+        ],
+        "coverageRows": 19
+      },
+      {
+        "week": 3,
+        "status": "invalid",
+        "errors": [
+          {
+            "code": "invalid_load_evidence",
+            "severity": "error",
+            "message": "Exercise history has invalid numeric values or identity.",
+            "weekIndex": 3,
+            "dayKey": "5",
+            "exerciseId": "leg_press",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          }
+        ],
+        "coverageRows": 19
+      },
+      {
+        "week": 4,
+        "status": "invalid",
+        "errors": [
+          {
+            "code": "invalid_load_evidence",
+            "severity": "error",
+            "message": "Exercise history has invalid numeric values or identity.",
+            "weekIndex": 4,
+            "dayKey": "5",
+            "exerciseId": "leg_press",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          }
+        ],
+        "coverageRows": 19
+      }
+    ],
+    "controls": {
+      "originalStatus": "invalid",
+      "originalErrors": [
+        {
+          "code": "invalid_load_evidence",
+          "severity": "error",
+          "message": "Exercise history has invalid numeric values or identity.",
+          "weekIndex": 1,
+          "dayKey": "5",
+          "exerciseId": "leg_press",
+          "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+        }
+      ],
+      "afterRemovingOnlyLastLegPress": {
+        "status": "unresolved",
+        "issues": [
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "dumbbell_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "lat_pulldown",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "lateral_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "1",
+            "exerciseId": "barbell_curl",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "hack_squat",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "romanian_deadlift",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "calf_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "calf_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "2",
+            "exerciseId": "calf_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "cable_chest_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "lateral_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "face_pulls",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "face_pulls",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "3",
+            "exerciseId": "face_pulls",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "pull_ups",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "dumbbell_curl",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "rear_delt_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "rear_delt_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "rear_delt_flyes",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "history_evidence_unverified",
+            "severity": "warning",
+            "message": "Numeric history alone does not prove qualified progression evidence; R06 remains separate.",
+            "weekIndex": 1,
+            "dayKey": "4",
+            "exerciseId": "shrugs",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "romanian_deadlift",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "leg_press",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "calf_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "calf_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          },
+          {
+            "code": "load_requires_confirmation",
+            "severity": "warning",
+            "message": "External-load zero is unspecified load, not validated bodyweight work.",
+            "weekIndex": 1,
+            "dayKey": "5",
+            "exerciseId": "calf_raises",
+            "provenance": "docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md"
+          }
+        ],
+        "coverage": [
+          {
+            "weekIndex": 1,
+            "requirementId": "bench",
+            "expectedSets": 6,
+            "actualSets": 6,
+            "expectedExposures": 2,
+            "actualExposures": 2
+          },
+          {
+            "weekIndex": 1,
+            "requirementId": "fly",
+            "expectedSets": 2,
+            "actualSets": 2,
+            "expectedExposures": 2,
+            "actualExposures": 2
+          },
+          {
+            "weekIndex": 1,
+            "requirementId": "row-heavy",
+            "expectedSets": 3,
+            "actualSets": 3,
+            "expectedExposures": 1,
+            "actualExposures": 1
+          },
+          {
+            "weekIndex": 1,
+            "requirementId": "pulldown",
+            "expectedSets": 1,
+            "actualSets": 1,
+            "expectedExposures": 1,
+            "actualExposures": 1
+          },
+          {
+            "weekIndex": 1,
+            "requirementId": "lateral",
+            "expectedSets": 6,
+            "actualSets": 6,
+            "expectedExposures": 2,
+            "actualExposures": 2
+          },
+          {
+            "weekIndex": 1,
+            "requirementId": "curl",
+            "expectedSets": 6,
+            "actualSets": 6,
+            "expectedExposures": 2,
+            "actualExposures": 2
+          },
+          {
+            "weekIndex": 1,
+            "requirementId": "squat",
+            "expectedSets": 3,
+            "actualSets": 3,
+            "expectedExposures": 1,
+            "actualExposures": 1
+          },
+          {
+            "weekIndex": 1,
+            "requirementId": "quadFollow",
+            "expectedSets": 2,
+            "actualSets": 2,
+            "expectedExposures": 2,
+            "actualExposures": 2
+          },
+          {
+            "weekIndex": 1,
+            "requirementId": "hingeHeavy",
+            "expectedSets": 3,
+            "actualSets": 3,
+            "expectedExposures": 1,
+            "actualExposures": 1
+          },
+          {
+            "weekIndex": 1,
+            "requirementId": "hingeFollow",
+            "expectedSets": 2,
+            "actualSets": 2,
+            "expectedExposures": 2,
+            "actualExposures": 2
+          },
+          {
+            "weekIndex": 1,
+            "requirementId": "calf",
+            "expectedSets": 6,
+            "actualSets": 6,
+            "expectedExposures": 2,
+            "actualExposures": 2
+          },
+          {
+            "weekIndex": 1,
+            "requirementId": "ohp",
+            "expectedSets": 3,
+            "actualSets": 3,
+            "expectedExposures": 1,
+            "actualExposures": 1
+          },
+          {
+            "weekIndex": 1,
+            "requirementId": "pushdown",
+            "expectedSets": 6,
+            "actualSets": 6,
+            "expectedExposures": 2,
+            "actualExposures": 2
+          },
+          {
+            "weekIndex": 1,
+            "requirementId": "face",
+            "expectedSets": 6,
+            "actualSets": 6,
+            "expectedExposures": 2,
+            "actualExposures": 2
+          },
+          {
+            "weekIndex": 1,
+            "requirementId": "pullUp",
+            "expectedSets": 3,
+            "actualSets": 3,
+            "expectedExposures": 1,
+            "actualExposures": 1
+          },
+          {
+            "weekIndex": 1,
+            "requirementId": "row-follow",
+            "expectedSets": 1,
+            "actualSets": 1,
+            "expectedExposures": 1,
+            "actualExposures": 1
+          },
+          {
+            "weekIndex": 1,
+            "requirementId": "shrug",
+            "expectedSets": 3,
+            "actualSets": 3,
+            "expectedExposures": 1,
+            "actualExposures": 1
+          },
+          {
+            "weekIndex": 1,
+            "requirementId": "deadlift",
+            "expectedSets": 3,
+            "actualSets": 3,
+            "expectedExposures": 1,
+            "actualExposures": 1
+          },
+          {
+            "weekIndex": 1,
+            "requirementId": "quadHeavy",
+            "expectedSets": 3,
+            "actualSets": 3,
+            "expectedExposures": 1,
+            "actualExposures": 1
+          }
+        ]
+      },
+      "qualification": false
+    }
+  },
+  "source": {
+    "bundleSha256": "9d7508593121c0019d37a26fd5f4e6b87085cdaaa689662312948096af2687f5",
+    "loadedEngineIncludesWorkingTreeEligibilityEdit": true,
+    "engineSource": {
+      "path": "src/lib/training/engine/index.ts",
+      "mapSha256": "3ba8cb793eb9da34a5d21ac14fd4ed65e5117776eb63adc76e72496cdf82dc48",
+      "workingTreeSha256": "3ba8cb793eb9da34a5d21ac14fd4ed65e5117776eb63adc76e72496cdf82dc48",
+      "exactMatch": true
+    },
+    "mapSourceCount": 94,
+    "mapWorkingTreeMatches": 94,
+    "sourceMapCaveat": "Map fetched from retained Metro after actual executed bundle captured; transformed executed module fingerprints authoritative.",
+    "executedFactorySha256": [
+      {
+        "id": 1762,
+        "name": "src/lib/training/performanceHistory.ts",
+        "sha256": "9c8c4f4fddb67823fda47ec309647e1666cd69fdf085eeeced1e7e8b7021e4a4"
+      },
+      {
+        "id": 1763,
+        "name": "src/lib/training/catalog/exercises.v1.json",
+        "sha256": "c8f85d1a5f920c8d7bc5c0275c2e5f572ff5cc4e1b35f6db0f21378c9b3ba25c"
+      },
+      {
+        "id": 1764,
+        "name": "src/lib/training/exerciseLoadingProfile.ts",
+        "sha256": "823355224bc07297fa41f3d0ae9450ddcd1a0b153abcb450f385b036442a8231"
+      },
+      {
+        "id": 1765,
+        "name": "src/lib/training/sessionItemMutationLock.ts",
+        "sha256": "e8884b686f3bb3b6fc74d8041abfebdc7923f7f7b64b1d1dee0ec4750b8a3772"
+      },
+      {
+        "id": 1816,
+        "name": "src/lib/training/sessionCalorieReread.ts",
+        "sha256": "f299c271588c38267f7622535476cc6c4a52b6dd80f6b51a7d78715cfc9ea347"
+      },
+      {
+        "id": 1828,
+        "name": "src/lib/training/offlineQueue.ts",
+        "sha256": "2d2406f1bb60b8f5edf42b73b0a53024c2296a5594f9c38529e3afce2219f253"
+      },
+      {
+        "id": 1829,
+        "name": "src/lib/training/offlineQueueSchema.ts",
+        "sha256": "8ba69966a89a26c881bcae37240784c2f8152c3686d7aec524bc2536392da837"
+      },
+      {
+        "id": 3117,
+        "name": "src/lib/training/dateUtils.ts",
+        "sha256": "cf4d46553b1cbcab629fdafce7b618ba179e205d97839fc863cbbbe2beeebdc0"
+      },
+      {
+        "id": 3189,
+        "name": "src/lib/training/sessionLabels.ts",
+        "sha256": "c04675bccf9a5f54fd6ec400f58132fb244146c489ae32fe1ef8d6df8feac977"
+      },
+      {
+        "id": 3190,
+        "name": "src/lib/training/whyThisSession.ts",
+        "sha256": "b5b962e567cb946ca4e4963cfa637a9921637c9044f73b96d8907fa086360414"
+      },
+      {
+        "id": 3215,
+        "name": "src/lib/training/guidedSessionFgs.ts",
+        "sha256": "45661979d1b10b404e626b178c8eb93f6f7bd3165c44eff8ca7f00015ad61587"
+      },
+      {
+        "id": 3219,
+        "name": "src/lib/training/runSession.ts",
+        "sha256": "9ded35a34694cad7e6f0a9afc4c81ad4e4766d8132781ecb9dff9ae9810283e8"
+      },
+      {
+        "id": 3220,
+        "name": "src/lib/training/runCue.ts",
+        "sha256": "8c586de95a4a5f356b649d68d7cf11b236cf00213402070cd80299d7cbb49e98"
+      },
+      {
+        "id": 3221,
+        "name": "src/lib/training/runLocationPermission.ts",
+        "sha256": "017a05e5fd63a995497f990d24794812ab02db85afb27f80822b0d9cc5d45600"
+      },
+      {
+        "id": 3222,
+        "name": "src/lib/training/runRouteRepository.ts",
+        "sha256": "c410b3f2d81b2821b6f2da38a933191fd3813e5636217fdaf2e73daae3d6ebc0"
+      },
+      {
+        "id": 3223,
+        "name": "src/lib/training/runPrivacy.ts",
+        "sha256": "a0813c870877c6410d1d2fe5a2a1fe0ebeab1df1b771aca0c8be3bb32098958c"
+      },
+      {
+        "id": 3225,
+        "name": "src/lib/training/applySetCompletion.ts",
+        "sha256": "1f1be577d4d501d208d918f03b423af07be9c45d96dee457aed2f4e0cc558991"
+      },
+      {
+        "id": 3227,
+        "name": "src/lib/training/runtime/payloadBuilder.ts",
+        "sha256": "c42bd49315a847b82f008d9d077378fd184d1e8eb330c6768bfd7ce1ec062468"
+      },
+      {
+        "id": 3228,
+        "name": "src/lib/training/trainingSetCompletionPersistence.ts",
+        "sha256": "60116c29281e611c8271f2619344e9d963a8f23b180f24dc74d8134f8fdafaa5"
+      },
+      {
+        "id": 3229,
+        "name": "src/lib/training/trainingSetCompletionMerge.ts",
+        "sha256": "da6dd0101353703144537cb0dca94d9aceea586357e9acdd38218a975bf98a76"
+      },
+      {
+        "id": 3230,
+        "name": "src/lib/training/offlineSync.ts",
+        "sha256": "13d96d72e19b35f02d215291f31a34eb22c7221f12b4204715d69ffaefd314b8"
+      },
+      {
+        "id": 3231,
+        "name": "src/lib/training/closeTrainingSession.ts",
+        "sha256": "692a8c5793aa426078e0f6469fd930dc4fc4005a9c8fce15798e17087bd25446"
+      },
+      {
+        "id": 3232,
+        "name": "src/lib/training/sessionDerivedState.ts",
+        "sha256": "f96cde6ef17fd20037733254ce26b1dfc20874fc1f87b99162fe5c95c94ccdf7"
+      },
+      {
+        "id": 3233,
+        "name": "src/lib/training/sessionWorkAuthority.ts",
+        "sha256": "c719b4d59b022c4e62f095c2fd414e059fc420f460e14953dd18e9429effa113"
+      },
+      {
+        "id": 3234,
+        "name": "src/lib/training/sessionCalorieRereadRunner.ts",
+        "sha256": "71d0c554804a104bff9e9cd87e6636672607d49d2c44000a4bbb7069ca3f3308"
+      },
+      {
+        "id": 3236,
+        "name": "src/lib/training/sessionWriteBuffer.ts",
+        "sha256": "244cdd51be117b13d6250184c05d9d58abcbc226a8d646302fe8f100c93299c2"
+      },
+      {
+        "id": 3237,
+        "name": "src/lib/training/trainingSessionProgression.ts",
+        "sha256": "9992267eba0903f23b6e63883537a1f37e7263a886342b9afc81ccf267c3a6f9"
+      },
+      {
+        "id": 3238,
+        "name": "src/lib/training/engine/index.ts",
+        "sha256": "23dcc5704fb56e6819ac5d30e1d084cf911643aa1a79268a822441d960e9a332"
+      },
+      {
+        "id": 3239,
+        "name": "src/lib/training/catalog/exerciseCues.v1.json",
+        "sha256": "df5bb9eb4aebf780631dc1f2d6375a06d4d20364df27e723e18bb9c075f86fb5"
+      },
+      {
+        "id": 3240,
+        "name": "src/lib/training/rules/rules.v1.json",
+        "sha256": "4b2e0d6d8f8c0262d740fabadac3c8e54248b8ac9de8675c38818d56b3b6ecc9"
+      },
+      {
+        "id": 3241,
+        "name": "src/lib/training/progression.ts",
+        "sha256": "526ec92f9310545ca3a60852600dcd90c55ed2b4026375837de2f680ccaf4886"
+      },
+      {
+        "id": 3242,
+        "name": "src/lib/training/experienceLevel.ts",
+        "sha256": "103c86940ac4d10c378bb80deeda9e3619e2e30d6879390334f25e94f3ea5fa3"
+      },
+      {
+        "id": 3243,
+        "name": "src/lib/training/adaptiveLoadBias.ts",
+        "sha256": "0e6624aa0457329194e5b332fbce9038282e7a84b5bb7393178bf5a00a84f034"
+      },
+      {
+        "id": 3244,
+        "name": "src/lib/training/anchorLoad.ts",
+        "sha256": "207f6cc57d443ea325d2a3f621835dcc67669dd76e85eca07ae78758fd1f82ac"
+      },
+      {
+        "id": 3245,
+        "name": "src/lib/training/runGuidance.ts",
+        "sha256": "30459a58bf5ad8268159ff52005956f89a321e71923ce77050a384f46577c21b"
+      },
+      {
+        "id": 3246,
+        "name": "src/lib/training/smallMuscleVolume.ts",
+        "sha256": "1f77fb0012acbaaf91180f3fcd1f0245f537dbe0f975a35c0c5a3b1ce883a8e2"
+      },
+      {
+        "id": 3247,
+        "name": "src/lib/training/warmupSets.ts",
+        "sha256": "11ce8ced407aa00f34357b8ea46349726db576f9fa37c58d4e83d484c4a37162"
+      },
+      {
+        "id": 3248,
+        "name": "src/lib/training/balancedHypertrophy.ts",
+        "sha256": "68994fe1f039d5234b1a1a9a6fb5be3a447866b8f66fe0ee9e79517bf6b74fd4"
+      },
+      {
+        "id": 3249,
+        "name": "src/lib/training/exerciseEligibility.ts",
+        "sha256": "bb4f74ab27cdc33aaf57fb3a156bb3f707ec6551fa59edffcc379601ed3057ba"
+      },
+      {
+        "id": 3250,
+        "name": "src/lib/training/exerciseSessionRole.ts",
+        "sha256": "6c760f70ba20ad5566ac6329f8f9d0cb646fab26b28bf90e389499fb2295f7fc"
+      },
+      {
+        "id": 3251,
+        "name": "src/lib/training/exerciseSelectionRank.ts",
+        "sha256": "bb6d56210f1644ab1a6a9bceecc7d09b791b768d93e02753a9a6775144930290"
+      },
+      {
+        "id": 3252,
+        "name": "src/lib/training/allocatedProgramSession.ts",
+        "sha256": "8245157e573dda0a8956a763c1e47af6969bd1b7ba45a9795002670bb3ec195d"
+      },
+      {
+        "id": 3253,
+        "name": "src/lib/training/weeklyProgrammeTypes.ts",
+        "sha256": "e66311039cf76ad9b2bd412fb13d186003a587473d77476a9c88f23a0af71087"
+      },
+      {
+        "id": 3254,
+        "name": "src/lib/training/weeklyProgramme.ts",
+        "sha256": "bed0e9e008aec228069a6fe29ad9bc0157aa0712f423eae9956ad55215b05ce9"
+      },
+      {
+        "id": 3255,
+        "name": "src/lib/training/weeklyProgrammePolicy.ts",
+        "sha256": "f8b77f5260d39716d6e02965dfeac629c94d32a79cf72b5e22706cc89249e18d"
+      },
+      {
+        "id": 3256,
+        "name": "src/lib/training/weeklyVolumeModel.ts",
+        "sha256": "712d2dc4cea7a49885a833274c91f3223aa915149e29258d86b652b509cf4c29"
+      },
+      {
+        "id": 3257,
+        "name": "src/lib/training/loadDisplayFormat.ts",
+        "sha256": "34e95d0d2649d7c9c860de72e6bc1c5716fa95bfc4b82574e8ff8e6eb85f185c"
+      },
+      {
+        "id": 3258,
+        "name": "src/lib/training/sessionUiConstants.ts",
+        "sha256": "4733c02fc484b89ec08d5e4a04a4f7f4018fe275a99615bb86a261674e05a603"
+      },
+      {
+        "id": 3259,
+        "name": "src/lib/training/sessionQueryPatch.ts",
+        "sha256": "9bf0ec3d9810f3bcd961d9c1cde45a56d55daf7089588ac882d07a202cf4ed93"
+      },
+      {
+        "id": 3260,
+        "name": "src/lib/training/scheduleGuidedTrainingAfterSetPersist.ts",
+        "sha256": "640a228aea801022f88e2b73dba78a5db1bcb5899343d2cd7a49cda2138f16d6"
+      },
+      {
+        "id": 3261,
+        "name": "src/lib/training/guidedSetCompletionCanonical.ts",
+        "sha256": "15bfc127ada2141dccbe4fae5370a47e60af9d2f13165b348df10752832a7222"
+      },
+      {
+        "id": 3262,
+        "name": "src/lib/training/guidedPhoneRestTransition.ts",
+        "sha256": "de2115bed8a582ecc4a1608b483c7ac53da754f6aa6d5ae1274a49a41ad10f82"
+      },
+      {
+        "id": 3263,
+        "name": "src/lib/training/runtime/autoregulation.ts",
+        "sha256": "1be8d6462d16c6dafa50cec0d5431234728ffe9939bb8f520fff402e48445273"
+      },
+      {
+        "id": 3264,
+        "name": "src/lib/training/trainingNotificationWorkPlan.ts",
+        "sha256": "0c49d5f13cdd60a6e0b4352290bbec4e92db69849926d8a482e2c51032d7044d"
+      },
+      {
+        "id": 3265,
+        "name": "src/lib/training/guidedPendingExternalRestStore.ts",
+        "sha256": "3ee0a893569ef17636df8481034210a6bca4482e85c2ebd703778b009cdf673e"
+      },
+      {
+        "id": 3266,
+        "name": "src/lib/training/finalizeTrainingSession.ts",
+        "sha256": "06cfd0a84adb83bc35f9f65b96a410728611921bbafc2211d9e132265d9811c6"
+      },
+      {
+        "id": 3267,
+        "name": "src/lib/training/guidedTransitionTrace.ts",
+        "sha256": "5971ab73294de472737ca52f9c7ac76ce2f98bffdb9313470868bb941c6e5896"
+      },
+      {
+        "id": 3268,
+        "name": "src/lib/training/guidedDevInstrumentation.ts",
+        "sha256": "7e2b45db5fb8aaa6ce8df54eec7b360a6bedd770a7c5d917551fdd8a285870d6"
+      },
+      {
+        "id": 3269,
+        "name": "src/lib/training/guidedTraceCapture.ts",
+        "sha256": "c25c61bdff500a4850bb3014027717f53281d69916ce57d7a3582d2e19671f27"
+      },
+      {
+        "id": 3348,
+        "name": "src/lib/training/programmeProjection.ts",
+        "sha256": "4277d06c10b45d09fe78c862fe2ada1e5fa7753de8065cf54069b07a6af83089"
+      },
+      {
+        "id": 3349,
+        "name": "src/lib/training/buildProgramDaySession.ts",
+        "sha256": "6789c257d09a418519f9aebc8ccbc1d68f456cf1fa0c8e40b1594708add9ae42"
+      },
+      {
+        "id": 3350,
+        "name": "src/lib/training/weeklyVolumeSummary.ts",
+        "sha256": "c868a11365103b7d4a000757f9474e77ba7a250291fd5bdb8934327473763739"
+      },
+      {
+        "id": 3351,
+        "name": "src/lib/training/muscleTaxonomy.ts",
+        "sha256": "5b37f2940fd11dd814693f0fdc3578e172b0ac7da30489addf1fb9156ed99e4b"
+      },
+      {
+        "id": 3352,
+        "name": "src/lib/training/programmeWeekProposal.ts",
+        "sha256": "7f81ad7fd4415c9151d2cd5ceba4d13e1f9e0afc66330c705c3f44bf301f91a1"
+      },
+      {
+        "id": 3353,
+        "name": "src/lib/training/weeklyProgrammeValidator.ts",
+        "sha256": "905634fc22537bc7fd3113030f4c5b5371ad1982a42268864ea8198c3401d238"
+      },
+      {
+        "id": 3354,
+        "name": "src/lib/training/trainingMode.ts",
+        "sha256": "0de8d8397da94920467f66185aa79861418b690750a52d0f31d91fc952452458"
+      },
+      {
+        "id": 3355,
+        "name": "src/lib/training/activeSessionQueryTruth.ts",
+        "sha256": "68c14547d5993d49bbc413523cbd36998fce267370f6207a7c3ffe93584f19bb"
+      },
+      {
+        "id": 3356,
+        "name": "src/lib/training/trainingProgramPerformanceSeed.ts",
+        "sha256": "257b3ce34e6832c54247577be2c102e1a89e2b3d7f693ce23e098b6affc957c9"
+      },
+      {
+        "id": 3357,
+        "name": "src/lib/training/trainingProgramPerformanceSeedIds.ts",
+        "sha256": "bb460b810a4556a83fddd9e9eb6fe6fa8f72283bfc3d6fbfa95d085eb4d03b80"
+      },
+      {
+        "id": 3360,
+        "name": "src/lib/training/preview/index.ts",
+        "sha256": "5f160b11ddc04dd212f4df94f4df15454e73514b9d90afc8d9ffbd95beeda181"
+      },
+      {
+        "id": 3361,
+        "name": "src/lib/training/programPlanner.ts",
+        "sha256": "58ca500cff57f3204046e60cc9796c2f0aaafd64985db1634f8a04f0501ad266"
+      },
+      {
+        "id": 3362,
+        "name": "src/lib/training/setupDraft.ts",
+        "sha256": "a733d471961b4d55f4af6a1cb18fe636bcada3b325368974965c266749359050"
+      },
+      {
+        "id": 3363,
+        "name": "src/lib/training/setupMappings.ts",
+        "sha256": "e39a4e982f8a072112202d009b9fb47b943166eca6412de5148d1086cecf3375"
+      },
+      {
+        "id": 3365,
+        "name": "src/lib/training/lastPerformance.ts",
+        "sha256": "4c8badd54d14167ee05fda69670b1fc8abcf8380262e011a96ae99e987d554d7"
+      },
+      {
+        "id": 3366,
+        "name": "src/lib/training/autoregulationOverlay.ts",
+        "sha256": "e800f879d08e651edc9e3174272be314a82f6219bc0a08a0a32692c6f23c243e"
+      },
+      {
+        "id": 3367,
+        "name": "src/lib/training/sessionAdjustment.ts",
+        "sha256": "f7e5336847e740a06664fbb0ebc36435e05b9487bdc89decfef901c3180d03ec"
+      },
+      {
+        "id": 3368,
+        "name": "src/lib/training/exerciseSubstitution.ts",
+        "sha256": "3ce7099377840b49a0a484c64d86dfd1468bfea43d984a259fd32eb2f8006d7d"
+      },
+      {
+        "id": 3369,
+        "name": "src/lib/training/staleSessionGuard.ts",
+        "sha256": "f515c7e0a18eabc0070d2b051f230b600b9b7c1ea88f461f1d1af575c8af59a3"
+      },
+      {
+        "id": 3370,
+        "name": "src/lib/training/staleSessionTimerDisplay.ts",
+        "sha256": "95ffba514ae360149f7279d3ab5ff2b53858974c025779ef3058f88b58875613"
+      },
+      {
+        "id": 3371,
+        "name": "src/lib/training/applySetEdit.ts",
+        "sha256": "ac1a2e04bf31e4c88e2991c0a1f8901b41419f5669c5d689c7df8752529b72b9"
+      },
+      {
+        "id": 3373,
+        "name": "src/lib/training/sessionExercisePresence.ts",
+        "sha256": "55e3eaecf0f7a8f9a9561dab8b73f9963c69257d0328412500a30ee3fd59857d"
+      },
+      {
+        "id": 3375,
+        "name": "src/lib/training/movementPatternCues.ts",
+        "sha256": "581d2d9a9ee76479af2af7a3441cf2f6a6a34f9094d24ec99924c7bd7736b7a2"
+      },
+      {
+        "id": 3378,
+        "name": "src/lib/training/bundledExerciseStills.ts",
+        "sha256": "22343dd459d31cf44ca5c9520edd623636dab43128ad508a6efefba906a31bcb"
+      },
+      {
+        "id": 3437,
+        "name": "src/lib/training/exerciseIllustration.ts",
+        "sha256": "cdfcb94cb0f87ff9c95bb355a5b8e850070211d0f61802d17410f5d799126934"
+      },
+      {
+        "id": 3438,
+        "name": "src/lib/training/catalog/exerciseIllustrations.v1.json",
+        "sha256": "36738b2a395cb34a73e1218829b0c398d49d9cb17753b3df265ec6647f3eb234"
+      },
+      {
+        "id": 3440,
+        "name": "src/lib/training/humanFormPoses.ts",
+        "sha256": "e65b934df2787733cc6bd51673f4732ba41110655614efb7b008da02e801e9f2"
+      },
+      {
+        "id": 3442,
+        "name": "src/lib/training/guidedExternalSetDoneTransition.ts",
+        "sha256": "0ddbcdf9f996fda5f7003b76566c0f9b8a9d34c51a3906566dec312918b0d8be"
+      },
+      {
+        "id": 3443,
+        "name": "src/lib/training/guidedSessionRuntime.ts",
+        "sha256": "449915240bc231636b817c10741b52f8ff53b57515caf0eca3518ca505727900"
+      },
+      {
+        "id": 3444,
+        "name": "src/lib/training/guidedNotificationRoute.ts",
+        "sha256": "e3deaca29f9d9bbd2df3dcdaed99b1fe991ba7a94beb5feed8066067014fe5e3"
+      },
+      {
+        "id": 3455,
+        "name": "src/lib/training/historySessionVisibility.ts",
+        "sha256": "0fabd151482206fbcaeb9f541cf6968f0b1f2af08c703acc51611dc366607e93"
+      },
+      {
+        "id": 3461,
+        "name": "src/lib/training/analytics/index.ts",
+        "sha256": "ac85441e9efd3df2123de760baaf379682d42af805e1f9e2564ad92fc2cd963b"
+      },
+      {
+        "id": 3462,
+        "name": "src/lib/training/analytics/metrics.ts",
+        "sha256": "62db88d128c326303663fa4ff5bcd3e8191f9e3f4d192870265d22200b507b31"
+      },
+      {
+        "id": 3463,
+        "name": "src/lib/training/analytics/dataTransforms.ts",
+        "sha256": "0e0de6f6d4773c9fa021a06d5861bc312a61ac755803d7bf402d3bd724b3875c"
+      },
+      {
+        "id": 3485,
+        "name": "src/lib/training/exactAlarmGate.ts",
+        "sha256": "320071aa454c86e50156bac64e3fa21252d748ca6b032c7bb04878c9a08fc70d"
+      }
+    ]
+  },
+  "historyEvidence": {
+    "exercise": "leg_press",
+    "sessionAlias": "history-session-A",
+    "itemAlias": "history-item-A",
+    "identityMatches": true,
+    "skipped": false,
+    "plannedSetIndices": [
+      1,
+      2,
+      3
+    ],
+    "performedSets": [],
+    "qualification": {
+      "source": "training_session_items.performed.sets",
+      "status": "incomplete",
+      "reasons": [
+        "incomplete_or_invalid_sets"
+      ]
+    },
+    "lastEqualsRecentFirst": true,
+    "qualifiedForProgression": false
+  }
+}
