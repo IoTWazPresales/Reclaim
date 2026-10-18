@@ -829,3 +829,8 @@ was attempted. R04 source/independent tests are not visual approval. Steps are
 registration fails before mutation with LEASE_NOT_OWNER: R20261014R03; no
 human-check queue event is claimed. Repair public replay and transition the
 actual lease through the authorized wrapper before registering. No R05 began.
+
+
+## N-0070 R02 correction ? 2026-10-18 ? registered, UNABLE_TO_VERIFY
+
+Public human-check succeeded under R20261018R02CORRECTION. The wrapper retained the existing N-0070 section; this supplemental entry supplies the corrected scope. No ADB device or reachable localhost Metro was available. No AVD rendering, live save or persistence approval is claimed. Follow `.eif/audit/N-0070/R02/correction-20261018/visual-steps.md` on unsaved setup, capture AVD renders, and seek operator approval for the R02 visible correction. This does not accept or complete N-0070.

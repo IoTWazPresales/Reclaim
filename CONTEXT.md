@@ -1,3 +1,7 @@
+## 2026-10-18 - R02 correction/provenance registered as EV-0068
+
+Corrected source b7644d1 and supplemental separate review/evidence df0d4a4 are pushed/remote-verified. Public wrapper issued EV-0068 only after source approval and fresh legitimate ownership checks; replay confirms no node-field change from attachment. Human/visual checks queued UNABLE_TO_VERIFY, lease released; N-0070 remains in_progress/revision10/acceptance pending. Full suite1385 pass/four established baseline assertions still fails. Eleven exact source fingerprints and original failed review preserved. Final receipt: .eif/audit/N-0070/R02/correction-20261018/registration.md. No live data, policy resolution, node completion or R12. Stop here.
+
 ## 2026-10-18 - R02 corrected committed-source review approved
 
 Source b7644d14e593712e333ab330cb4105a83ba17d6a pushed and remote-verified. Fresh-context separate reviewer approves scoped source; focused42 and independent probes4 pass, all eleven committed source fingerprints match. Full suite completes1385 pass/four exact known baseline assertions, still failing. Public wrapper legitimately acquired fresh R20261018R02CORRECTION ownership after approval; evidence registration follows pushed supplemental receipt. Android visual approval remains UNABLE_TO_VERIFY. Original failed review preserved; D-P2-02 and duration policy unchanged. N-0070 remains open; stop after R02, no R12.

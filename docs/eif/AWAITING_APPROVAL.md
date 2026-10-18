@@ -214,3 +214,16 @@ not prove the device. Steps: `baseline/N0059_DEVICE_CHECK.md`.
 **Renders:** `.eif\audit\N-0020\product-renders` (UNABLE_TO_VERIFY — renders missing). Home was on screen; UI dump could not get an idle state, so the session preview was not opened. That is not acceptance of the line.
 
 **Approve?** N-0020
+
+## N-0070 Training decision integration and evidence contracts
+
+**Status:** pending operator review; this queue note grants no approval.
+
+**Renders:** `.eif/audit/N-0070/R02/correction-20261018 (UNABLE_TO_VERIFY — no PNG/JPEG image artifacts)`
+
+**Approve?** N-0070
+
+
+### R02 correction scope ? 2026-10-18
+
+The N-0070 queue entry above covers the corrected R02 running preview in source b7644d1: actual prescribed run minutes, distance/pace qualification, honest unavailable state and confirmation wording. Public await-approval succeeded and recorded no PNG/JPEG images, UNABLE_TO_VERIFY. Follow `.eif/audit/N-0070/R02/correction-20261018/visual-steps.md`; scoped visual approval grants no full-node acceptance or completion. Nothing ships until operator approval.
