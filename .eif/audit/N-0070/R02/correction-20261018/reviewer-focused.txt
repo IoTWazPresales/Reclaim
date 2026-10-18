@@ -1,0 +1,52 @@
+
+ RUN  v4.0.8 C:/Reclaim-R02-correction-20261018/app
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 setup decision contract > novice strength preview matches the confirmed proposal 94ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 setup decision contract > advanced and skill enabled preview matches the confirmed proposal 31ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 setup decision contract > non-five-rep baseline and restrictions preview matches the confirmed proposal 24ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 setup decision contract > one day frequency fallback preview matches the confirmed proposal 24ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 setup decision contract > running preview matches the confirmed proposal 3ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 setup decision contract > hybrid preview matches the confirmed proposal 25ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 setup decision contract > uses entered reps for the same estimated baseline in preview and confirmation 2ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 setup decision contract > preserves skill and frequency preferences in the programme snapshot 1ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 timed running preview correction > preserves prescribed minutes and confirmation parity in week 1 4ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 timed running preview correction > preserves prescribed minutes and confirmation parity in week 2 3ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 timed running preview correction > preserves prescribed minutes and confirmation parity in week 3 3ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 timed running preview correction > preserves prescribed minutes and confirmation parity in week 4 3ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 timed running preview correction > keeps empty strength sessions and invalid timed runs unavailable 2ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 timed running preview correction > keeps unavailable programmes distinct from valid runs 14ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 timed running preview correction > keeps strength lifting summaries and confirmation parity 35ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 timed running preview correction > keeps hybrid lifting summaries and confirmation parity 19ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > dryRunTrainingGeneration > should generate a session plan without DB writes 64ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > dryRunTrainingGeneration > should return null when no weekdays selected 1ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > dryRunTrainingGeneration > should use deterministic context (first weekday, week 1) 29ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > dryRunTrainingGeneration > should handle constraints correctly 13ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > dryRunTrainingGeneration > maps UI injury constraints to engine contraindication tokens 18ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > dryRunTrainingGeneration > should handle baselines correctly 16ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > computePreviewSummary > should extract rep ranges from actual plan 16ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > computePreviewSummary > should return null for null plan 0ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > computePreviewSummary > should compute grouping style from session label 19ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > computePreviewSummary > should detect AMRAP when high rep ranges present 14ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > Preview equivalence with real generation > should match real generation for same settings 17ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > Preview equivalence with real generation > should not perform DB writes (no supabase imports) 14ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > generatePreview > should return summary for valid settings 14ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > generatePreview > should handle missing equipment gracefully 12ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > generatePreview > should handle minimal training days (1-2 days/week) 31ms
+ ✓ src/lib/training/preview/__tests__/outcomePreview.test.tsx > R02 outcome preview state and copy > renders prescribed run minutes and scopes distance and save claims 22ms
+ ✓ src/lib/training/preview/__tests__/outcomePreview.test.tsx > R02 outcome preview state and copy > renders an empty selection and an infeasible programme as distinct unavailable states 24ms
+ ✓ src/lib/training/preview/__tests__/outcomePreview.test.tsx > R02 outcome preview state and copy > retains lifting presentation for a valid strength programme 35ms
+ ✓ src/lib/training/__tests__/trainingMode.test.ts > training mode > treats a missing or unknown mode as strength 35ms
+ ✓ src/lib/training/__tests__/trainingMode.test.ts > training mode > schedules running days without lifting intents or a prescribed duration 10ms
+ ✓ src/lib/training/__tests__/trainingMode.test.ts > training mode > puts a hybrid run only on push, pull, or upper days 26ms
+ ✓ src/lib/training/__tests__/trainingMode.test.ts > training mode > skips lifting setup for running and never asks the setup screen for location 4ms
+ ✓ src/lib/training/__tests__/experienceLevelLoads.test.ts > experience level and Epley ceilings > treats a missing or unknown level as beginner and keeps a stored level 4ms
+ ✓ src/lib/training/__tests__/experienceLevelLoads.test.ts > experience level and Epley ceilings > uses beginner loads when the program snapshot omits experience 21ms
+ ✓ src/lib/training/__tests__/experienceLevelLoads.test.ts > experience level and Epley ceilings > caps a progressed load at that exercise Epley ceiling and leaves another exercise alone 6ms
+ ✓ src/lib/training/__tests__/experienceLevelLoads.test.ts > experience level and Epley ceilings > writes experienceLevel onto the profile constraints and the program snapshot 3ms
+
+ Test Files  5 passed (5)
+      Tests  42 passed (42)
+   Start at  16:33:35
+   Duration  16.88s (transform 1.20s, setup 604ms, collect 1.86s, tests 773ms, environment 2ms, prepare 932ms)
+

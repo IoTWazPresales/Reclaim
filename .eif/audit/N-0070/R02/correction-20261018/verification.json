@@ -1,0 +1,65 @@
+{
+  "checks": [
+    {
+      "check": "focused-final",
+      "command": [
+        "cmd",
+        "/c",
+        "npx vitest run src/lib/training/preview/__tests__ src/lib/training/__tests__/experienceLevelLoads.test.ts src/lib/training/__tests__/trainingMode.test.ts --reporter=verbose"
+      ],
+      "exit_code": 0,
+      "seconds": 19.64
+    },
+    {
+      "check": "typecheck-final",
+      "command": [
+        "cmd",
+        "/c",
+        "npm run typecheck"
+      ],
+      "exit_code": 0,
+      "seconds": 55.82
+    },
+    {
+      "check": "full-vitest",
+      "command": [
+        "cmd",
+        "/c",
+        "npm test -- --reporter=verbose"
+      ],
+      "exit_code": 1,
+      "seconds": 448.83
+    },
+    {
+      "check": "dual-path",
+      "command": "Git Bash: cd /c/Reclaim-R02-correction-20261018/app && npm run audit:training-dual-paths",
+      "exit_code": 0,
+      "passed": 31
+    },
+    {
+      "check": "catalogue",
+      "command": "npm run med-catalog-qa",
+      "exit_code": 0,
+      "rows": 357,
+      "governance_issues": 0
+    },
+    {
+      "check": "wrapper",
+      "command": "python -m pytest scripts/test_eif_node.py scripts/test_eif_node_commands.py -q",
+      "exit_code": 0,
+      "passed": 14
+    }
+  ],
+  "logs": {
+    "focused-final.txt": "9cf0238d837ffb667a36dbe6e16a5a13a092f9a014d4175d7753cb0eb7b57394",
+    "typecheck-final.txt": "cd35ebdba9e12b61678eec835bf92424979bd88f78501689ba82b1dffbf391cc",
+    "full-vitest.txt": "c2a4861d44a4083314fa75a01cccc5c2c0f64b921cc11ca8dfee6db1ae665ee2",
+    "dual-path.txt": "20cec7d1d596d239f00736ccdc3f719e1a29f434d056ced70c06e332d27a4feb",
+    "catalogue.txt": "13178c0f78d70e00d1c7a1d790ba86030fc3fd0571440894a4dde30a9719fa08",
+    "wrapper.txt": "cb2ab6056d246ae30c78d2885ee9e081cdeb6e612a7580d06a2781cca68ad122"
+  },
+  "full_suite_gate_passed": false,
+  "baseline_comparison": "baseline-comparison.json",
+  "source_byte_binding": "source-manifest.json",
+  "scope": "R02 correction only; not N-0070 acceptance"
+}

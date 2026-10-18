@@ -1,3 +1,7 @@
+## 2026-10-18 - R02 corrected committed-source review approved
+
+Source b7644d14e593712e333ab330cb4105a83ba17d6a pushed and remote-verified. Fresh-context separate reviewer approves scoped source; focused42 and independent probes4 pass, all eleven committed source fingerprints match. Full suite completes1385 pass/four exact known baseline assertions, still failing. Public wrapper legitimately acquired fresh R20261018R02CORRECTION ownership after approval; evidence registration follows pushed supplemental receipt. Android visual approval remains UNABLE_TO_VERIFY. Original failed review preserved; D-P2-02 and duration policy unchanged. N-0070 remains open; stop after R02, no R12.
+
 ## 2026-10-18 - R02 running preview correction source checkpoint
 
 Running preview now reads prescribed minutes from the generated session, including a valid run with no lifting exercises. Invalid/infeasible proposals remain unavailable. Distance copy does not imply a pace, derive minutes or claim an unsaved programme is saved. RD-006 20/20/30/30 and D-P2-02 are unchanged. Original failed review is preserved; fresh committed-source review and supplemental evidence registration follow separately. Android visual approval remains pending (no ADB device/Metro). N-0070 remains open; stop after R02, no R12.

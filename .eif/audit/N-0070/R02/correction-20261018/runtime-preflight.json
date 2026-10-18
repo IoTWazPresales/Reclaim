@@ -1,0 +1,7 @@
+{
+  "utc": "2026-10-18T14:26:03.075972+00:00",
+  "method": "socket.create_connection 127.0.0.1:8081 timeout=2",
+  "metro_tcp_reachable": false,
+  "adb_devices": "no devices on initial preflight",
+  "visual_status": "UNABLE_TO_VERIFY"
+}

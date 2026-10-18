@@ -1,0 +1,61 @@
+{
+  "base_commit": "8cda12a6f3c7ec6f30de689e16a37a55ebb46949",
+  "checkout": "C:/Reclaim-R02-correction-20261018",
+  "sources": [
+    {
+      "path": "app/src/components/training/OutcomePreviewPanel.tsx",
+      "sha256": "2d0ac5f031eb792677c46a94e8cfd8f982bece684f17fbbfe174e0d3682cd7db",
+      "bytes": 5718
+    },
+    {
+      "path": "app/src/lib/api.ts",
+      "sha256": "4918447ef45dc790b981565adddbd727eafd6893e379635b1cd9f5de86b77faa",
+      "bytes": 107123
+    },
+    {
+      "path": "app/src/lib/training/__tests__/experienceLevelLoads.test.ts",
+      "sha256": "2c074de034f076548a28a3852dbba9c4e1bf6f45e248709baea512b72b9b518c",
+      "bytes": 4369
+    },
+    {
+      "path": "app/src/lib/training/__tests__/trainingMode.test.ts",
+      "sha256": "6a74bf6acae64f83d07d8c5b83b1e18be31c44e091a5434f04a67455a150d383",
+      "bytes": 4522
+    },
+    {
+      "path": "app/src/lib/training/preview/__tests__/outcomePreview.test.tsx",
+      "sha256": "bf61611350b774d874d69d2f0fa56c3232534e0705be4d4ac116e89a23fb4b84",
+      "bytes": 2897
+    },
+    {
+      "path": "app/src/lib/training/preview/__tests__/preview.test.ts",
+      "sha256": "578af88930f9ee94719ffd80b91d73ab20363a01ee34c00932386212a5554442",
+      "bytes": 7314
+    },
+    {
+      "path": "app/src/lib/training/preview/__tests__/setupContract.test.ts",
+      "sha256": "848066c54748975a5af9c6dffd6d368355d718689d70ecd73678a831b33be025",
+      "bytes": 7158
+    },
+    {
+      "path": "app/src/lib/training/preview/index.ts",
+      "sha256": "373aec7e04eea497dd264a48f16cb8fd4b1dc136fbb07806c2761984c1808d44",
+      "bytes": 5899
+    },
+    {
+      "path": "app/src/lib/training/setupDraft.ts",
+      "sha256": "0ebd705a74e8221eff1f17da0076825a4b8dc17f56106542ea3c3d217eaa526c",
+      "bytes": 4290
+    },
+    {
+      "path": "app/src/lib/training/types.ts",
+      "sha256": "d0c467f0d7b4f8ecfd1233e6f2cda67b0cc989cffe9ffe877a7aa0b5ecb5d071",
+      "bytes": 17229
+    },
+    {
+      "path": "app/src/screens/training/TrainingSetupScreen.tsx",
+      "sha256": "a552b7dea22a053f047e97f5dd7f3036a5277c29b77c08778fefaae3ab74ab06",
+      "bytes": 44821
+    }
+  ]
+}

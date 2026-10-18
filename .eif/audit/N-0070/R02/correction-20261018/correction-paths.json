@@ -1,0 +1,8 @@
+[
+  "app/src/components/training/OutcomePreviewPanel.tsx",
+  "app/src/lib/training/preview/index.ts",
+  "app/src/screens/training/TrainingSetupScreen.tsx",
+  "app/src/lib/training/preview/__tests__/setupContract.test.ts",
+  "app/src/lib/training/preview/__tests__/preview.test.ts",
+  "app/src/lib/training/preview/__tests__/outcomePreview.test.tsx"
+]

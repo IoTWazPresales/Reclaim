@@ -1,0 +1,76 @@
+{
+  "source_commit": "b7644d14e593712e333ab330cb4105a83ba17d6a",
+  "source_tree": "97ba2c1571d9f457d4216f58e774ac3a8f45f9bb",
+  "original_r02_commit": "cda17e7c3326272325b2a6b67bb805cbc7481ae2",
+  "sources": [
+    {
+      "path": "app/src/components/training/OutcomePreviewPanel.tsx",
+      "sha256": "2d0ac5f031eb792677c46a94e8cfd8f982bece684f17fbbfe174e0d3682cd7db",
+      "bytes": 5718,
+      "blob": "564aa87bcbaf7d2e79f51757b3500e46cff75bd2"
+    },
+    {
+      "path": "app/src/lib/api.ts",
+      "sha256": "4918447ef45dc790b981565adddbd727eafd6893e379635b1cd9f5de86b77faa",
+      "bytes": 107123,
+      "blob": "152f32aa3a39b9ce22805c87f7e42bb9587076cf"
+    },
+    {
+      "path": "app/src/lib/training/__tests__/experienceLevelLoads.test.ts",
+      "sha256": "2c074de034f076548a28a3852dbba9c4e1bf6f45e248709baea512b72b9b518c",
+      "bytes": 4369,
+      "blob": "c874619f285e201cc329e096c5b11b564391a750"
+    },
+    {
+      "path": "app/src/lib/training/__tests__/trainingMode.test.ts",
+      "sha256": "6a74bf6acae64f83d07d8c5b83b1e18be31c44e091a5434f04a67455a150d383",
+      "bytes": 4522,
+      "blob": "2484eecb7eec011f55f7c4dc3a2ffb957a748e71"
+    },
+    {
+      "path": "app/src/lib/training/preview/__tests__/outcomePreview.test.tsx",
+      "sha256": "bf61611350b774d874d69d2f0fa56c3232534e0705be4d4ac116e89a23fb4b84",
+      "bytes": 2897,
+      "blob": "7889f6ce629e463bebc58bd70db306e509d288ba"
+    },
+    {
+      "path": "app/src/lib/training/preview/__tests__/preview.test.ts",
+      "sha256": "578af88930f9ee94719ffd80b91d73ab20363a01ee34c00932386212a5554442",
+      "bytes": 7314,
+      "blob": "3531993eb03b3b935b99203d720c8cc0b5ab6fc2"
+    },
+    {
+      "path": "app/src/lib/training/preview/__tests__/setupContract.test.ts",
+      "sha256": "848066c54748975a5af9c6dffd6d368355d718689d70ecd73678a831b33be025",
+      "bytes": 7158,
+      "blob": "a9021e8ba4416fe0e53fb6d9cce53ad2b9bb5d16"
+    },
+    {
+      "path": "app/src/lib/training/preview/index.ts",
+      "sha256": "373aec7e04eea497dd264a48f16cb8fd4b1dc136fbb07806c2761984c1808d44",
+      "bytes": 5899,
+      "blob": "2d5152a6f0b969f859a70c9aeb9283cf61dac995"
+    },
+    {
+      "path": "app/src/lib/training/setupDraft.ts",
+      "sha256": "0ebd705a74e8221eff1f17da0076825a4b8dc17f56106542ea3c3d217eaa526c",
+      "bytes": 4290,
+      "blob": "aeac9a56bf67093d024209df3a468d78d4d7def0"
+    },
+    {
+      "path": "app/src/lib/training/types.ts",
+      "sha256": "d0c467f0d7b4f8ecfd1233e6f2cda67b0cc989cffe9ffe877a7aa0b5ecb5d071",
+      "bytes": 17229,
+      "blob": "56ff64901d08fb4f717374536fbe8db5a3c1f92b"
+    },
+    {
+      "path": "app/src/screens/training/TrainingSetupScreen.tsx",
+      "sha256": "a552b7dea22a053f047e97f5dd7f3036a5277c29b77c08778fefaae3ab74ab06",
+      "bytes": 44821,
+      "blob": "d3b4f3896cd838e8a99561cc46bc9f977948cb1e"
+    }
+  ],
+  "all_eleven_tested_bytes_match_commit": true,
+  "lock_sha256": "7cefeb323e17199935d0f6df436b8aa9284e4fe592993765c2dd45e78ce88d37",
+  "dependency_note": "Existing canonical node_modules shared via junction; no fresh installation"
+}

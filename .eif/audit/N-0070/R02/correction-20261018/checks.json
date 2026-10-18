@@ -1,0 +1,32 @@
+[
+  {
+    "check": "focused-final",
+    "command": [
+      "cmd",
+      "/c",
+      "npx vitest run src/lib/training/preview/__tests__ src/lib/training/__tests__/experienceLevelLoads.test.ts src/lib/training/__tests__/trainingMode.test.ts --reporter=verbose"
+    ],
+    "exit_code": 0,
+    "seconds": 19.64
+  },
+  {
+    "check": "typecheck-final",
+    "command": [
+      "cmd",
+      "/c",
+      "npm run typecheck"
+    ],
+    "exit_code": 0,
+    "seconds": 55.82
+  },
+  {
+    "check": "full-vitest",
+    "command": [
+      "cmd",
+      "/c",
+      "npm test -- --reporter=verbose"
+    ],
+    "exit_code": 1,
+    "seconds": 448.83
+  }
+]

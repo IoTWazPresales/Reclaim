@@ -1,0 +1,14 @@
+{
+  "baseline_receipt": "docs/training/recovery/evidence/R11-gates.json",
+  "failed_assertions": [
+    "src/lib/training/__tests__/routineVolumeMeasurement.test.ts > routine volume measurement harness > measures the two-pass TrainingScreen path across goals \u00d7 days \u00d7 equipment \u00d7 frequency",
+    "src/lib/training/__tests__/runSession.test.ts > run route migration > stores the training session link as text and keeps the link on the same user",
+    "src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > clamps a new session when a tighter cap is supplied",
+    "src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > leaves a started session snapshot frozen when a later build is capped"
+  ],
+  "exact_assertion_identity_match": true,
+  "passed": 1385,
+  "failed": 4,
+  "new_assertion_failures": 0,
+  "full_suite_passed": false
+}

@@ -1,0 +1,14 @@
+
+ RUN  v4.0.8 C:/Reclaim-R02-correction-20261018/app
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ✓ src/lib/training/preview/__tests__/reviewerR02.probe.test.ts > Independent R02 corrected source probes > preserves every scheduled run across JSON serialization for 5k 24ms
+ ✓ src/lib/training/preview/__tests__/reviewerR02.probe.test.ts > Independent R02 corrected source probes > preserves every scheduled run across JSON serialization for 10k 7ms
+ ✓ src/lib/training/preview/__tests__/reviewerR02.probe.test.ts > Independent R02 corrected source probes > preserves every scheduled run across JSON serialization for custom 8ms
+ ✓ src/lib/training/preview/__tests__/reviewerR02.probe.test.ts > Independent R02 corrected source probes > leaves prior proposals and frozen lifting prescriptions unchanged during later previews 76ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  16:34:36
+   Duration  2.73s (transform 663ms, setup 147ms, collect 717ms, tests 119ms, environment 0ms, prepare 119ms)
+

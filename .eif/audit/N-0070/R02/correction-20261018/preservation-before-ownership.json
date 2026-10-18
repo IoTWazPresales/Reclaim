@@ -1,0 +1,35 @@
+{
+  "unchanged_preexisting_dirty_and_failed_review_files": {
+    ".cursor/rules/eif-core.mdc": true,
+    ".cursor/rules/eif-project-adapter.mdc": true,
+    ".eif/CURRENT.md": true,
+    ".eif/PROGRAM.md": true,
+    ".eif/WORK_ITEM.md": true,
+    ".eif/program/PROGRAM.yaml": true,
+    ".eif/program/PROGRAM_LOG.ndjson": true,
+    "app/src/lib/training/engine/index.ts": true,
+    "app/supabase/.temp/cli-latest": true,
+    "app/supabase/migrations/20260930140000_run_routes.sql": true,
+    "docs/audits/insight-rules-audit.md": true,
+    "docs/release/play_human_outstanding_2026-07-29.md": true,
+    "docs/training/ROUTINE_VOLUME_BASELINE.md": true,
+    ".eif/audit/N-0070/R02/provenance-20261018/artifact-sha256.json": true,
+    ".eif/audit/N-0070/R02/provenance-20261018/catalogue.txt": true,
+    ".eif/audit/N-0070/R02/provenance-20261018/checks.json": true,
+    ".eif/audit/N-0070/R02/provenance-20261018/dual-path.txt": true,
+    ".eif/audit/N-0070/R02/provenance-20261018/focused.txt": true,
+    ".eif/audit/N-0070/R02/provenance-20261018/full-vitest.txt": true,
+    ".eif/audit/N-0070/R02/provenance-20261018/integrity.json": true,
+    ".eif/audit/N-0070/R02/provenance-20261018/reconstruct.py": true,
+    ".eif/audit/N-0070/R02/provenance-20261018/reconstruction.json": true,
+    ".eif/audit/N-0070/R02/provenance-20261018/result.md": true,
+    ".eif/audit/N-0070/R02/provenance-20261018/reviewer.md": true,
+    ".eif/audit/N-0070/R02/provenance-20261018/typecheck.txt": true,
+    ".eif/audit/N-0070/R02/provenance-20261018/wrapper.txt": true
+  },
+  "expected_authorized_document_changes": [
+    "CONTEXT.md",
+    "docs/eif/PROGRESS.md"
+  ],
+  "all_preserved": true
+}
