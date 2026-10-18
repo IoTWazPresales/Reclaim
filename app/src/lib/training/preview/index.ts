@@ -3,10 +3,9 @@
 // WITHOUT any DB writes or side effects, for preview purposes only.
 
 import { buildFourWeekPlan } from '../programPlanner';
-import { buildProgramDaySession } from '../buildProgramDaySession';
 import { prepareTrainingSetup, type TrainingSetupDraft } from '../setupDraft';
 import { programmeWeekProposal } from '../programmeWeekProposal';
-import type { SessionPlan, PlannedExercise, PlannedSet } from '../types';
+import type { SessionPlan } from '../types';
 
 export type PreviewSettings = TrainingSetupDraft;
 
@@ -18,6 +17,8 @@ export interface PreviewContext {
 }
 
 export interface PreviewSummary {
+  /** Prescribed minutes from the generated run; distance goals do not set these. */
+  runningDurationMinutes: number | null;
   repRanges: {
     primary: [number, number] | null;
     accessory: [number, number] | null;
@@ -77,7 +78,13 @@ export function dryRunTrainingGeneration(
  * This ensures preview NEVER contradicts real generation
  */
 export function computePreviewSummary(plan: SessionPlan | null): PreviewSummary | null {
-  if (!plan || !plan.exercises || plan.exercises.length === 0) {
+  if (!plan || plan.programmeValidation?.status === 'infeasible' || !plan.exercises) {
+    return null;
+  }
+  const runningDurationMinutes = plan.template === 'run' ? plan.estimatedDurationMinutes : null;
+  if (runningDurationMinutes !== null
+    ? !Number.isFinite(runningDurationMinutes) || runningDurationMinutes <= 0
+    : plan.exercises.length === 0) {
     return null;
   }
 
@@ -142,6 +149,7 @@ export function computePreviewSummary(plan: SessionPlan | null): PreviewSummary 
     : 'No exercises generated';
 
   return {
+    runningDurationMinutes,
     repRanges: {
       primary: computeRange(repRangesByPriority.primary),
       accessory: computeRange(repRangesByPriority.accessory),

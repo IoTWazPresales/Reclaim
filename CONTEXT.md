@@ -1,3 +1,11 @@
+## 2026-10-18 - R02 running preview correction source checkpoint
+
+Running preview now reads prescribed minutes from the generated session, including a valid run with no lifting exercises. Invalid/infeasible proposals remain unavailable. Distance copy does not imply a pace, derive minutes or claim an unsaved programme is saved. RD-006 20/20/30/30 and D-P2-02 are unchanged. Original failed review is preserved; fresh committed-source review and supplemental evidence registration follow separately. Android visual approval remains pending (no ADB device/Metro). N-0070 remains open; stop after R02, no R12.
+
+# R02 provenance stopped - 2026-10-18
+
+Exact cda17e7 source fingerprints and a fresh separate reviewer receipt exist locally at `.eif/audit/N-0070/R02/provenance-20261018/`. Reviewer withheld acceptance for running-preview duration copy contradicting committed engine targets. No app repair, publication, ownership mutation, evidence ID or N-0070 completion. Stop after R02.
+
 ## 2026-10-18 - R04 supplemental evidence registered
 
 Published evidence 32d3541708ddd3eebae254878796d41c1cd55650; canonical wrapper issued EV-0067 for source b40fa80f32a2b035f830d3e563055b93c083137a. Successful public replay confirms N-0069 revision6, in_progress, acceptance pending and no node-field changes from evidence registration. Publication receipt: .eif/audit/N-0069/R04/provenance-20261018/publication.json. No node acceptance or completion; original evidence and unrelated work preserved. Stop after R04.

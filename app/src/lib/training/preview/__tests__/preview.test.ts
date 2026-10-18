@@ -13,10 +13,11 @@ describe('Training Preview', () => {
       lose_fat: 0.2,
       get_fitter: 0.0,
     },
-    selectedWeekdays: [1, 3, 5], // Mon, Wed, Fri
-    equipment: ['barbell', 'dumbbells', 'bench'],
+    selectedWeekdays: [1, 2, 3, 4, 5], // Feasible balanced strength programme
+    equipment: ['barbell', 'dumbbells', 'bench', 'rack'],
     constraints: [],
     baselines: {},
+    muscleFrequency: 'once',
   };
 
   describe('dryRunTrainingGeneration', () => {
@@ -185,8 +186,11 @@ describe('Training Preview', () => {
         ...mockSettings,
         selectedWeekdays: [1, 4], // 2 days/week
       });
-      expect(summary1).not.toBeNull();
-      expect(summary2).not.toBeNull();
+      for (const [summary, selectedWeekdays] of [[summary1, [1]], [summary2, [1, 4]]] as const) {
+        const plan = dryRunTrainingGeneration({ ...mockSettings, selectedWeekdays: [...selectedWeekdays] });
+        if (plan?.programmeValidation?.status === 'infeasible') expect(summary).toBeNull();
+        else expect(summary).not.toBeNull();
+      }
     });
   });
 });

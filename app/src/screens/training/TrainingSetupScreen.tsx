@@ -728,7 +728,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
             {trainingMode !== 'strength' && (
               <View style={{ marginBottom: appTheme.spacing.lg }}>
                 <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>
-                  Distance goal is saved to your profile. It does not set a pace or session duration.
+                  Your distance goal will be saved when you confirm. It does not prescribe a pace or determine the timed session duration.
                 </Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.sm }}>
                   {(

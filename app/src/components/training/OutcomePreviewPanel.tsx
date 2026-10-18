@@ -37,9 +37,9 @@ export function OutcomePreviewPanel({
     return (
       <Card style={{ marginTop: 16, padding: 16 }}>
         <Text style={{ color: theme.colors.onSurfaceVariant }}>
-          {trainingMode === 'running' && selectedWeekdays.length > 0
-            ? `${selectedWeekdays.length} run day${selectedWeekdays.length === 1 ? '' : 's'} per week. Your distance goal is saved; pace and duration are not prescribed.`
-            : 'Select training days to see preview'}
+          {selectedWeekdays.length === 0
+            ? 'Select training days to see preview'
+            : 'Preview unavailable. Review your training setup before confirming.'}
         </Text>
       </Card>
     );
@@ -66,6 +66,17 @@ export function OutcomePreviewPanel({
       </Text>
 
       <ScrollView style={{ maxHeight: bodyMaxH }} showsVerticalScrollIndicator={false} nestedScrollEnabled>
+        {preview.runningDurationMinutes !== null ? (
+          <View>
+            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+              Preview session: {preview.runningDurationMinutes} minutes of running and walking.
+            </Text>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              Your distance goal does not prescribe a pace or determine these minutes. Nothing is saved until you confirm.
+            </Text>
+          </View>
+        ) : (
+          <>
         {/* Grouping Style */}
         <View style={{ marginBottom: appTheme.spacing.md }}>
           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 4 }}>
@@ -129,6 +140,8 @@ export function OutcomePreviewPanel({
             {preview.exampleSnippet}
           </Text>
         </View>
+          </>
+        )}
       </ScrollView>
     </Card>
   );

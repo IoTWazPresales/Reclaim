@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { prepareTrainingSetup, type TrainingSetupDraft } from '../../setupDraft';
-import { dryRunTrainingGeneration } from '../index';
+import { dryRunTrainingGeneration, computePreviewSummary, generatePreview } from '../index';
 import { buildFourWeekPlan } from '../../programPlanner';
 import { programmeWeekProposal } from '../../programmeWeekProposal';
 
@@ -66,5 +66,51 @@ describe('R02 setup decision contract', () => {
     const { snapshot, profile } = prepareTrainingSetup(draft);
     expect(snapshot.constraints?.preferences).toEqual({ muscle_frequency_preference: 'auto', includeSkillWork: true });
     expect(profile.constraints.preferences).toEqual(snapshot.constraints?.preferences);
+  });
+});
+
+// RD-006: compare real preview and confirmation adapters without changing policy.
+describe('R02 timed running preview correction', () => {
+  it.each([1, 2, 3, 4])('preserves prescribed minutes and confirmation parity in week %i', weekIndex => {
+    const draft: TrainingSetupDraft = { ...base, trainingMode: 'running', runningGoal: '5k' };
+    const { profile, snapshot, selectedWeekdaysJs } = prepareTrainingSetup(draft);
+    const programme = buildFourWeekPlan(profile, selectedWeekdaysJs, new Date());
+    const confirmed = programmeWeekProposal(programme, weekIndex, snapshot).get(programme.selectedWeekdays[0])!;
+    const preview = dryRunTrainingGeneration(draft, { weekIndex })!;
+    expect(preview.template).toBe('run');
+    expect(preview.exercises).toEqual([]);
+    expect(preview.estimatedDurationMinutes).toBe(weekIndex < 3 ? 20 : 30);
+    expect(preview.constraints.timeBudgetMinutes).toBe(preview.estimatedDurationMinutes);
+    expect(computePreviewSummary(preview)).toEqual(computePreviewSummary(confirmed));
+    expect(generatePreview(draft, { weekIndex })?.runningDurationMinutes).toBe(confirmed.estimatedDurationMinutes);
+    for (const goal of [{ runningGoal: '10k' as const }, { runningGoal: 'custom' as const, runningDistanceKm: '42' }]) {
+      expect(generatePreview({ ...draft, ...goal }, { weekIndex })?.runningDurationMinutes).toBe(confirmed.estimatedDurationMinutes);
+    }
+  });
+
+  it('keeps empty strength sessions and invalid timed runs unavailable', () => {
+    const run = dryRunTrainingGeneration({ ...base, trainingMode: 'running' })!;
+    expect(computePreviewSummary({ ...run, template: 'full_body' })).toBeNull();
+    for (const estimatedDurationMinutes of [0, -1, NaN, Infinity]) {
+      expect(computePreviewSummary({ ...run, estimatedDurationMinutes })).toBeNull();
+    }
+    expect(computePreviewSummary({ ...run, programmeValidation: { policyVersion: 'test', status: 'infeasible', issues: [] } })).toBeNull();
+  });
+
+  it('keeps unavailable programmes distinct from valid runs', () => {
+    expect(generatePreview({ ...base, trainingMode: 'running', selectedWeekdays: [] })).toBeNull();
+    expect(generatePreview({ ...base, trainingMode: 'running' }, { weekIndex: 5 })).toBeNull();
+    expect(generatePreview({ ...base, trainingMode: 'running' }, { targetWeekday: 2 })).toBeNull();
+    // Existing R05 policy rejects hybrid two/three-day programmes.
+    expect(generatePreview({ ...base, trainingMode: 'hybrid' })).toBeNull();
+  });
+
+  it.each(['strength', 'hybrid'] as const)('keeps %s lifting summaries and confirmation parity', trainingMode => {
+    const draft = { ...base, trainingMode, muscleFrequency: 'once' as const, selectedWeekdays: [1, 2, 3, 4, 5] };
+    const summary = generatePreview(draft);
+    expect(summary).not.toBeNull();
+    expect(summary?.runningDurationMinutes).toBeNull();
+    expect(summary?.setCounts.total).toBeGreaterThan(0);
+    expect(summary).toEqual(computePreviewSummary(confirmedProposal(draft)));
   });
 });

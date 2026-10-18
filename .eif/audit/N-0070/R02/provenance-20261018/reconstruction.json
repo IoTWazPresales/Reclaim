@@ -1,0 +1,123 @@
+{
+  "source_commit": "cda17e7c3326272325b2a6b67bb805cbc7481ae2",
+  "parent": "5f29215b1276eb1c391ba8c9b1b8cd68ae54f331",
+  "source_tree": "8fb8a26190b670782223005919c65905d11ebb99",
+  "checkout": "C:\\Reclaim-R02-provenance-20261018",
+  "sources": [
+    {
+      "path": "app/src/components/training/OutcomePreviewPanel.tsx",
+      "blob": "c91c248718f53439bcf072f0896c832503032bbe",
+      "sha256": "7bc431198f21ba77b8049d6565064b65eb27bf8b81545aabb31e8434c022c169",
+      "bytes": 5265,
+      "original_checkout_sha256": "201094136c23022193b33e87699fb639aaddf7d862da39f3e96350f4924015c9",
+      "reconstructed_exact": true
+    },
+    {
+      "path": "app/src/lib/api.ts",
+      "blob": "de522d6d11fb37ba092bfb27ea97a82123ed41b7",
+      "sha256": "7af353f11bdca25b33b46b5dbe0effdebee1373c9b5fd7079648d98fda8cb446",
+      "bytes": 107675,
+      "original_checkout_sha256": "f80c6d97642396f7215c048d8356439b45fdfc2d1ec1181d05b66f1ee8ff3db8",
+      "reconstructed_exact": true
+    },
+    {
+      "path": "app/src/lib/training/__tests__/experienceLevelLoads.test.ts",
+      "blob": "6e556ac14b653123f426856bdc6bfa56a9e0c243",
+      "sha256": "ad655ca39fa48f7148f61b4b5b7ad027427249e6eaa9da96269655dec2811d1a",
+      "bytes": 4311,
+      "original_checkout_sha256": "15bc684512a0228b8e0afc73906110dd5942de82b37176d042889382ad7ed306",
+      "reconstructed_exact": true
+    },
+    {
+      "path": "app/src/lib/training/__tests__/trainingMode.test.ts",
+      "blob": "2484eecb7eec011f55f7c4dc3a2ffb957a748e71",
+      "sha256": "6a74bf6acae64f83d07d8c5b83b1e18be31c44e091a5434f04a67455a150d383",
+      "bytes": 4522,
+      "original_checkout_sha256": "9da2c481193c379713dae446cb6d5b876c6b3fc0a77800cdfb31404c484e8e02",
+      "reconstructed_exact": true
+    },
+    {
+      "path": "app/src/lib/training/preview/__tests__/preview.test.ts",
+      "blob": "4831a7253f625285fc31f5d8ba9a16b91757d9f1",
+      "sha256": "5e5327b90a429a1ecac2d918f333998aaf867af4a3533d131745d6e89f53d5fc",
+      "bytes": 6927,
+      "original_checkout_sha256": "52144b694c48f6e2139f5f84ed502778ffa900a3a5b1aba089d8365e56d2444b",
+      "reconstructed_exact": true
+    },
+    {
+      "path": "app/src/lib/training/preview/__tests__/setupContract.test.ts",
+      "blob": "9691118f6c1828f92404272db9f5e29b748fec9b",
+      "sha256": "618a97cc7fd6080304e5bb7eb6ee8df682529ecd08afe0552f6218f3755ca4b1",
+      "bytes": 4257,
+      "original_checkout_sha256": "e5283fc096739851ad8e5e7dac86ef946e99d17ae9fdcc3c22c29bf1cd195022",
+      "reconstructed_exact": true
+    },
+    {
+      "path": "app/src/lib/training/preview/index.ts",
+      "blob": "82df0c665688ef6c01487724521795cfa500a431",
+      "sha256": "560b8951e9eee7b196481a0e931fbe9c30fffc8796b880d3d8345659eda567bd",
+      "bytes": 5591,
+      "original_checkout_sha256": "cc923e506ef7d4a435fc0daee08c5653139aae0cadeab235cb964e5be268bea4",
+      "reconstructed_exact": true
+    },
+    {
+      "path": "app/src/lib/training/setupDraft.ts",
+      "blob": "aeac9a56bf67093d024209df3a468d78d4d7def0",
+      "sha256": "0ebd705a74e8221eff1f17da0076825a4b8dc17f56106542ea3c3d217eaa526c",
+      "bytes": 4290,
+      "original_checkout_sha256": "47b3c682030305d3d455981205aa94d04619d6dcaa92ef466b31eb034fb63ed4",
+      "reconstructed_exact": true
+    },
+    {
+      "path": "app/src/lib/training/types.ts",
+      "blob": "56098f4d7901ea70aa3ddc00e5a930b4ef97bde2",
+      "sha256": "8f6e2492e9191e3295d35d7f5792e500e81b402be758a9ff3e69e14e50018502",
+      "bytes": 16158,
+      "original_checkout_sha256": "25acc31dab9625ab1f5043d26ad8a50ad9e8c85282bc133b0379403abf6b4c6f",
+      "reconstructed_exact": true
+    },
+    {
+      "path": "app/src/screens/training/TrainingSetupScreen.tsx",
+      "blob": "edd459e1bd1e21317c8d5edcb4c37de143f0dddc",
+      "sha256": "c1a901116cc2c133ab3c567c2d07d4df92bcdf9831f8d852c724bf3a47baaaba",
+      "bytes": 44229,
+      "original_checkout_sha256": "b2ae62c528cd4195f83e13220a209e877562b1735b35e2baca68f9c3f1cc7dd6",
+      "reconstructed_exact": true
+    }
+  ],
+  "historical_artifacts": [
+    {
+      "path": ".eif/audit/N-0070/R02/android-check.md",
+      "blob": "120d33b445d920edaa73b6c931498a7b22c9af37",
+      "sha256": "3dbe61ae0fcdfe85164b7a29799b73f837c0554fd27048090231c652eb1a9267",
+      "working_sha256": "3dbe61ae0fcdfe85164b7a29799b73f837c0554fd27048090231c652eb1a9267",
+      "unchanged_head_blob": true,
+      "working_equal_after_lf_normalization": true
+    },
+    {
+      "path": ".eif/audit/N-0070/R02/fixture-and-review.md",
+      "blob": "52309a92853ea98e8bc3449f2c7f9df5186341c4",
+      "sha256": "9e3c69a465406b3de3405f42dd8403c8fbb017eeb3b8a5038a5e4b831274d78d",
+      "working_sha256": "9e3c69a465406b3de3405f42dd8403c8fbb017eeb3b8a5038a5e4b831274d78d",
+      "unchanged_head_blob": true,
+      "working_equal_after_lf_normalization": true
+    }
+  ],
+  "preexisting_dirty_files": {
+    ".cursor/rules/eif-core.mdc": "1766615b43d34ed76e8b01e93a5c8a56b6d94fb0204485e43c3cdc691772f2d4",
+    ".cursor/rules/eif-project-adapter.mdc": "e720d5bac01525ea3273888f375e4c364bce8b161527b8335f4ddbf6453a6443",
+    ".eif/CURRENT.md": "325952d73ff66d61e219d909c5d7336bc60acaae057552a8e14e5db967797a41",
+    ".eif/PROGRAM.md": "9796c63c62dbd6af501014abc66bba8216db26fb31ee0ff03082175b87ceaffb",
+    ".eif/WORK_ITEM.md": "6059f0cee9855b2ee93fe5aa8a4fa34edcc7f8db52db1c22cb05f455e66f3fc8",
+    ".eif/program/PROGRAM.yaml": "4d0e2b6cb170e9d86e173cefd89231a6ae7bc7bedbbb1275ba67ebe698b4d718",
+    ".eif/program/PROGRAM_LOG.ndjson": "5f6250454b33b5779d438d1e784c67ab307e5bac88fad6b4c6e7fc3d4ddb3b6c",
+    "app/src/lib/training/engine/index.ts": "3ba8cb793eb9da34a5d21ac14fd4ed65e5117776eb63adc76e72496cdf82dc48",
+    "app/supabase/.temp/cli-latest": "2f99ec07bad208b0108748390c2fe80fb0a91b1784a8f7bf1d303efda7deeaee",
+    "app/supabase/migrations/20260930140000_run_routes.sql": "8184e6f9f1c4a2aa376f4fae66d63f83495c9355bcbb51b735dc8805cdd89bed",
+    "docs/audits/insight-rules-audit.md": "bf11d5d37b85187f6a5d4a246ad3551e77cd2241d7d1cc322c02a0f3456d8e8c",
+    "docs/release/play_human_outstanding_2026-07-29.md": "935651bf06ece7fadaaed2bd4520d72bf910a7782eeec39d608c2a4a1a98bf22",
+    "docs/training/ROUTINE_VOLUME_BASELINE.md": "35934d84f0874da53b395828a1ced0ebe9e3a8c6f3ebd5d0fb8bc6f5c996f4f1"
+  },
+  "dependency_lock_sha256": "7cefeb323e17199935d0f6df436b8aa9284e4fe592993765c2dd45e78ce88d37",
+  "dependency_note": "Existing C:/Reclaim/app/node_modules shared by junction; no fresh npm ci"
+}
