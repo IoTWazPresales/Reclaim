@@ -12,6 +12,7 @@ import { formatExercisePreviewLine } from '@/lib/training/loadDisplayFormat';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 import { formatDuration } from './uiFormat';
 import ExerciseDetailsModal from './ExerciseDetailsModal';
+import { PreviewProgrammeReview, previewExerciseIssues, type PreviewDiagnosticLocation } from './SessionPreviewProgrammeReview';
 
 interface SessionPreviewModalProps {
   visible: boolean;
@@ -22,6 +23,7 @@ interface SessionPreviewModalProps {
   onCancel: () => void;
   /** e.g. "Chest 12 · Shoulders 10 · Arms 8" */
   weeklySetsLine?: string | null;
+  diagnosticLocation?: PreviewDiagnosticLocation;
 }
 
 export default function SessionPreviewModal({
@@ -32,6 +34,7 @@ export default function SessionPreviewModal({
   onConfirm,
   onCancel,
   weeklySetsLine,
+  diagnosticLocation,
 }: SessionPreviewModalProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -213,15 +216,18 @@ export default function SessionPreviewModal({
               </Card.Content>
             </Card>
 
+            <PreviewProgrammeReview plan={plan} location={diagnosticLocation} />
             <Text variant="titleSmall" style={{ fontWeight: '700', marginBottom: appTheme.spacing.sm, color: theme.colors.onSurface }}>
               Exercises
             </Text>
             {plan.exercises.map((ex, idx) => {
               const exercise = getExerciseById(ex.exerciseId);
               if (!exercise) return null;
+              const issues = previewExerciseIssues(plan, diagnosticLocation, ex.exerciseId);
+              const needsWeight = issues.some(issue => issue.code === 'load_requires_confirmation');
               return (
                 <Card
-                  key={ex.exerciseId}
+                  key={`${ex.exerciseId}:${idx}`}
                   mode="elevated"
                   style={{ marginBottom: appTheme.spacing.sm, borderRadius: appTheme.borderRadius.lg, backgroundColor: theme.colors.elevation.level1 }}
                 >
@@ -232,7 +238,9 @@ export default function SessionPreviewModal({
                           {idx + 1}. {exercise.name}
                         </Text>
                         <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
-                          {formatExercisePreviewLine(ex, exercise)}
+                          {needsWeight
+                            ? `${ex.plannedSets.length} sets · ${ex.plannedSets[0]?.targetReps ?? '—'} reps · weight confirmation required`
+                            : formatExercisePreviewLine(ex, exercise)}
                         </Text>
                         <Text variant="bodySmall" style={{ color: theme.colors.primary, marginTop: appTheme.spacing.xs }}>
                           {ex.priority}
@@ -241,6 +249,7 @@ export default function SessionPreviewModal({
                             : ''}
                           {exercise.id === 'pallof_press' ? ' · anti-rotation core' : ''}
                         </Text>
+                        <PreviewProgrammeReview issues={issues} />
                       </View>
                       <Pressable
                         onPress={() => setGuidanceExercise(exercise)}

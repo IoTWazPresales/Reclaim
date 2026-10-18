@@ -1,3 +1,18 @@
+## 2026-10-19 - Session preview programme warnings (source only)
+
+Preview now reads the existing weekly diagnostic result with distinct status and
+unavailable states, original day/exercise/optional-slot matching, required weight
+confirmation and incomplete-history progression barriers. Weekly issues remain
+separate; genuine occurrences survive without weekly-array multiplication.
+Daily feasibility, Start guard, legacy and frozen prescriptions are unchanged.
+Focused41 (including component13), types, dual31, catalogue357/0 retry and wrapper3
+pass; separate source/UI review approved. Full1449 pass/4 established mixed-tree
+failures; repository gate remains failing. Result and sanitised review:
+`docs/training/recovery/evidence/session-preview-warnings-20261018.md`.
+Android visual acceptance remains UNABLE_TO_VERIFY until separately authorised;
+no Android/ADB/Metro/reopen, live data, session start, scientific policy, EIF
+acceptance or R12. Preserve unrelated edits. Stop after this source correction.
+
 ## 2026-10-18 ? Weekly diagnostics source transport
 
 Full weekly validator status, issues and coverage now travel separately from daily feasibility. One-result-per-week summary selection avoids counting repeated daily references; current weekly diagnostics are excluded from frozen projections. Offline corrected case retains 20 feasible proposals and all 20 warnings per week. No UI, Android, live data, session rewrite, policy change, EIF acceptance or R12. Evidence and precise presentation follow-up: `docs/training/recovery/evidence/weekly-diagnostics-transport-20261018.md`. Stop after transport verification.

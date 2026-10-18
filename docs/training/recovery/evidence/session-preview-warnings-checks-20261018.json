@@ -1,0 +1,161 @@
+{
+  "scope": "Session preview presentation only. No Android/ADB/Metro/reopen, live data, actual session starts, scientific policy, EIF acceptance or R12. Unrelated working-tree edits excluded.",
+  "baseCommit": "596ea1bfa7003cb8a0d8c9dbd17aa7386227818b",
+  "completed": "2026-10-19",
+  "review": {
+    "verdict": "APPROVED source/UI only",
+    "path": "docs/training/recovery/evidence/session-preview-warnings-review-20261018.md",
+    "sha256": "d4888f6cc514a8803bd836274c635c78e9fc3d513e0221095220ff04c8335134"
+  },
+  "source": [
+    {
+      "path": "app/src/components/training/SessionPreviewModal.tsx",
+      "sha256": "4769098312374356404fdc1118545c48d27403a14d8764815d0854d8738dd243",
+      "gitBlob": "66e20dee53d361c854d8f6ef31851825688a874d"
+    },
+    {
+      "path": "app/src/components/training/SessionPreviewProgrammeReview.tsx",
+      "sha256": "8a024f4ec4ac9679933d8202e759b17d2808a25a0f81e1cbc8695e9567f6f8c5",
+      "gitBlob": "46d1c4b6116d6938c50eeea84cf2c738759fbe34"
+    },
+    {
+      "path": "app/src/components/training/__tests__/SessionPreviewModal.test.tsx",
+      "sha256": "9377074a95d1e38ecae2f0a987a203f92acda9915ff83530843e173aab5b9673",
+      "gitBlob": "cbe767d5b9c0b2e7a387e666dc35d4faf029f1d9"
+    },
+    {
+      "path": "app/src/screens/TrainingScreen.tsx",
+      "sha256": "33b91637004bafb9d1036702de3b06f98a04442aec5f3a2b4fa136ea139b091a",
+      "gitBlob": "2ab8c8fd3ac1c475225f8a9575bb6aacc1d221f9"
+    }
+  ],
+  "checks": [
+    {
+      "name": "component-final",
+      "command": "cd app && npx vitest run src/components/training/__tests__/SessionPreviewModal.test.tsx --pool=forks --maxWorkers=1 --reporter=verbose",
+      "exitCode": 0,
+      "result": "13 passed; 1 file",
+      "localLogPath": "app/preview-warnings-focused-final.local.txt",
+      "localLogSha256": "f38a475d96be705f557ff2b6b82fd763d5d06c8c0124f2ee6821fb731c19cef1"
+    },
+    {
+      "name": "focused-regressions-final",
+      "command": "cd app && npx vitest run src/components/training/__tests__/SessionPreviewModal.test.tsx src/lib/training/__tests__/weeklyDiagnosticsTransport.test.ts src/lib/training/__tests__/programmePersistence.integration.test.ts src/lib/training/preview/__tests__/preview.test.ts --pool=forks --maxWorkers=1 --reporter=verbose",
+      "exitCode": 0,
+      "result": "41 passed; 4 files",
+      "localLogPath": "app/preview-warnings-regressions-retry.local.txt",
+      "localLogSha256": "863caa3770343c70909162ce90f57b0679952f3f411ce2ba1897edc34e21adbd"
+    },
+    {
+      "name": "typecheck",
+      "command": "cd app && npm run typecheck",
+      "exitCode": 0,
+      "result": "0 errors",
+      "localLogPath": "app/preview-warnings-types.local.txt",
+      "localLogSha256": "cd35ebdba9e12b61678eec835bf92424979bd88f78501689ba82b1dffbf391cc"
+    },
+    {
+      "name": "dual-path",
+      "command": "Git Bash: cd /c/Reclaim/app && npm run audit:training-dual-paths",
+      "exitCode": 0,
+      "result": "31 passed; 0 failed",
+      "localLogPath": "app/preview-warnings-dual.local.txt",
+      "localLogSha256": "0dd8080c5e0bde3107071dfa1f145f876ad93f92ff87b4e949a572755b35748b"
+    },
+    {
+      "name": "catalogue-retry",
+      "command": "cd app && npm run med-catalog-qa",
+      "exitCode": 0,
+      "result": "357 rows; 0 governance issues; 1 CLI test passed",
+      "localLogPath": "app/preview-warnings-catalogue-retry.local.txt",
+      "localLogSha256": "55e364d46ac10969436f8333a836cb71eaa788293fd611e4098d30d59d39724f"
+    },
+    {
+      "name": "ledger-wrapper",
+      "command": "python -m pytest scripts/test_eif_node.py -q",
+      "exitCode": 0,
+      "result": "3 passed; no ledger mutation",
+      "localLogPath": "app/preview-warnings-wrapper.local.txt",
+      "localLogSha256": "bd49a7f72a82bf205cedd317a6ae322dcb65c16c00f63dd68a93ba076e05a9af"
+    },
+    {
+      "name": "catalogue-initial",
+      "command": "cd app && npm run med-catalog-qa",
+      "exitCode": 1,
+      "result": "Thread-runner startup timeout; later assertion output does not override failed invocation",
+      "localLogPath": "app/preview-warnings-catalogue.local.txt",
+      "localLogSha256": "46a49e70f3ca2071d3880fd6100f9da609f1a646a3945b1342a977d501374ce3"
+    },
+    {
+      "name": "independent-initial",
+      "command": "cd app && npx vitest run src/components/training/__tests__/SessionPreviewModal.test.tsx --pool=forks --maxWorkers=1 --reporter=verbose",
+      "exitCode": 0,
+      "result": "Independent earlier version: 12 passed",
+      "localLogPath": "app/preview-warnings-independent-review.local.txt",
+      "localLogSha256": "23ab68c766197337e43b70d1359853220979dfcf479e6acb9cefaa55a76ee486"
+    },
+    {
+      "name": "independent-final",
+      "command": "cd app && npx vitest run src/components/training/__tests__/SessionPreviewModal.test.tsx --pool=forks --maxWorkers=1 --reporter=verbose",
+      "exitCode": 1,
+      "result": "Fork-runner startup timeout; no tests collected; Vite close timeout",
+      "localLogPath": "app/preview-warnings-independent-final.local.txt",
+      "localLogSha256": "4dfc709373107c0d420c8a8ec56a37cdf971018ace567e4da0f1876f748d7d09"
+    },
+    {
+      "name": "focused-initial",
+      "command": "cd app && npx vitest run src/components/training/__tests__/SessionPreviewModal.test.tsx src/lib/training/__tests__/weeklyDiagnosticsTransport.test.ts src/lib/training/__tests__/programmePersistence.integration.test.ts src/lib/training/preview/__tests__/preview.test.ts --pool=forks --maxWorkers=1 --reporter=verbose",
+      "exitCode": null,
+      "result": "Stalled after 7 transport passes; owned runners stopped; incomplete gate",
+      "localLogPath": "app/preview-warnings-regressions.local.txt",
+      "localLogSha256": "389396e40e00271f46ae1c6ec5d258972f7747d0166492ed03231ca3d2cbf795"
+    },
+    {
+      "name": "full-initial",
+      "command": "cd app && npm test -- --reporter=verbose",
+      "exitCode": null,
+      "result": "Stalled after known routine-volume failure; owned runners stopped; incomplete gate",
+      "localLogPath": "app/preview-warnings-full.local.txt",
+      "localLogSha256": "861642675aef10e0fa45194ca9a0b4651ebad9bac70765ada5de46d69c2a3006"
+    },
+    {
+      "name": "full-final",
+      "command": "cd app && npm test -- --reporter=verbose",
+      "exitCode": 1,
+      "result": "202 files: 199 passed / 3 failed; 1449 tests passed / 4 established mixed-tree failures; 489.43 seconds",
+      "localLogPath": "app/preview-warnings-full-retry.local.txt",
+      "localLogSha256": "fd67a0d217cee0b1eafcf10e3a28d3ba59098e0e1cd706b65bda613e202ad422"
+    }
+  ],
+  "limits": [
+    "Source/SSR tests mock native presentation primitives; actual Android visual acceptance remains UNABLE_TO_VERIFY pending separate authorisation.",
+    "Mixed working-tree checks include preexisting engine and migration edits; no fresh clean-baseline full run is claimed.",
+    "Per-test timeout remains the repository 30-second budget. Raw logs are not published."
+  ],
+  "establishedFailures": [
+    {
+      "file": "routineVolumeMeasurement.test.ts",
+      "case": "two-pass matrix",
+      "expected": 18,
+      "received": 31
+    },
+    {
+      "file": "smallMuscleVolume.test.ts",
+      "case": "advanced 50/50 leg day carry sets",
+      "expected": 3,
+      "received": "undefined"
+    },
+    {
+      "file": "weeklyVolumeModel.test.ts",
+      "case": "tighter cap",
+      "expected": "at most 10",
+      "received": 15
+    },
+    {
+      "file": "weeklyVolumeModel.test.ts",
+      "case": "later capped build/frozen snapshot",
+      "expected": "at most 2",
+      "received": 6
+    }
+  ]
+}

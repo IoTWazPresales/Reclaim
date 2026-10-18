@@ -1,5 +1,18 @@
 # Human checks — PRG-20260917T222550
 
+## Session preview programme warnings — UNABLE_TO_VERIFY, unregistered (2026-10-19)
+
+Source/UI review is approved; actual Android visual approval remains pending.
+The operator explicitly prohibited Android operation/reopening after the prior
+ANR and policy-blocked attempt, so no ADB, Metro, app or screenshot method was
+attempted for this correction. Separately authorise loaded-source proof, preview
+renders for all diagnostic states, selected-day/exercise and week-level warning
+review, confirmation wording, scrolling/font scaling, and independent actual-render
+review. Real Start/save verification needs separate authorised disposable scope.
+See [source result and remaining steps](../training/recovery/evidence/session-preview-warnings-20261018.md).
+This manual note is not EIF registration, visual approval, node acceptance or
+shipping permission. No current diagnostics were applied to historical work.
+
 ## R11 / N-0071 — PARTIAL runtime verified; remaining acceptance UNABLE_TO_VERIFY, unregistered (2026-10-16)
 
 Canonical emulator/Metro/current app recovered. Retained live profile and legacy saved days, all 27 preview exercise rows and existing historical summary were compared with actual Android evidence. Full new-version save/start/frozen/effective-guidance/Wear acceptance remains unverified: no current-programme frozen day or open session and no expressly authorized disposable write scope. [R11 result](../training/recovery/evidence/R11-android-acceptance.md); [exact remaining steps](../training/recovery/evidence/R11-human-verification.md). Actual public human-check exits2 with established LEASE_NOT_OWNER: R20261014R03 before registration. This manual queue entry is not an EIF event, approval or acceptance. R10-P01 and D-P2-01–06 remain open. No training data changed. Stop after R11; do not start R12 or another task.

@@ -1651,6 +1651,11 @@ export default function TrainingScreen() {
       <SessionPreviewModal
         visible={showPreview}
         plan={pendingPlan}
+        diagnosticLocation={pendingPlan?.weeklyValidation && selectedProgramDay && activeProgramQ.data ? {
+          weekIndex: selectedProgramDay.week_index,
+          dayKey: String(selectedProgramDay.day_index),
+          slots: programDayInput(selectedProgramDay, activeProgramQ.data.plan).allocation?.slots,
+        } : undefined}
         sessionMode={sessionMode}
         onSessionModeChange={setSessionMode}
         weeklySetsLine={weekSessionVolume.weeklySetsLine}
