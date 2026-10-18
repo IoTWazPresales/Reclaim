@@ -1,3 +1,7 @@
+## 2026-10-18 - R04 supplemental evidence registered
+
+Published evidence 32d3541708ddd3eebae254878796d41c1cd55650; canonical wrapper issued EV-0067 for source b40fa80f32a2b035f830d3e563055b93c083137a. Successful public replay confirms N-0069 revision6, in_progress, acceptance pending and no node-field changes from evidence registration. Publication receipt: .eif/audit/N-0069/R04/provenance-20261018/publication.json. No node acceptance or completion; original evidence and unrelated work preserved. Stop after R04.
+
 ## 2026-10-18 - R04 review provenance checkpoint
 
 Exact b40fa80 source reconstructed in a new detached checkout: all 13 manifest pairs match. The historical balancedHypertrophy fingerprint is exactly reproduced by CRLF plus one trailing blank line. A fresh-context separate reviewer bound all 13 final Git blobs and found no substantive scoped defect; scientific decisions remain pending. Focused 83, types and dual31 pass; full1138 pass / same4 baseline failures. Public fresh-run recovery of expired N-0069 lease succeeded at revision6; supplemental evidence registration follows pushed publication. Original evidence and unrelated work retained. No node acceptance or completion, R02, application change, live data or R12. Receipt: .eif/audit/N-0069/R04/provenance-20261018/result.md. Stop after R04.

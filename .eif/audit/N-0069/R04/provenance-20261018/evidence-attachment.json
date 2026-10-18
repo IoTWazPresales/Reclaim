@@ -1,0 +1,20 @@
+{
+  "utc": "2026-10-18T11:11:23.969640+00:00",
+  "run": "R20261018R04PROVENANCE",
+  "command": [
+    "C:\\Python314\\python.exe",
+    "-B",
+    "scripts/eif_node.py",
+    "evidence",
+    "N-0069",
+    "--commit",
+    "b40fa80f32a2b035f830d3e563055b93c083137a",
+    "--path",
+    ".eif/audit/N-0069/R04/provenance-20261018/result.md",
+    "--note",
+    "R04 supplemental provenance: 13 exact committed blobs, fresh separate source review and independent focused rerun; historical fingerprint reproduced as CRLF plus trailing blank line; no criterion acceptance or node completion"
+  ],
+  "exit_code": 0,
+  "stdout": "EV-0067\n",
+  "stderr": ""
+}

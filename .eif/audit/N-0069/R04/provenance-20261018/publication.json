@@ -1,0 +1,16 @@
+{
+  "utc": "2026-10-18T11:11:52.313839+00:00",
+  "reviewed_source_commit": "b40fa80f32a2b035f830d3e563055b93c083137a",
+  "published_evidence_commit": "32d3541708ddd3eebae254878796d41c1cd55650",
+  "remote_confirmed": true,
+  "artifact": ".eif/audit/N-0069/R04/provenance-20261018/result.md",
+  "artifact_sha256": "47e87e8afc2ca8d04a62ef3cf10013670bfcec135c7c6729aca3ead6d9b3ce96",
+  "evidence_id": "EV-0067",
+  "registration_exit_code": 0,
+  "public_replay_exit_code": 0,
+  "node_unchanged_by_registration": true,
+  "node_revision": 6,
+  "acceptance_state": "pending",
+  "node_status": "in_progress",
+  "limitation": "Programme-level evidence.add; not criterion evidence satisfaction, node acceptance or completion"
+}
