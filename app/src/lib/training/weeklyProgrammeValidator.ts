@@ -2,16 +2,74 @@ import catalogData from './catalog/exercises.v1.json';
 import { SESSION_SET_CAP, SESSION_MINUTE_CAP } from './balancedHypertrophy';
 import { evaluateExerciseEligibility } from './exerciseEligibility';
 import { getExerciseLoadingProfile } from './exerciseLoadingProfile';
+import { isQualifiedPerformance, PERFORMANCE_HISTORY_SOURCE } from './performanceHistory';
 import { getPrimarySlotRoleTier, PrimarySlotRoleTier } from './exerciseSessionRole';
 import { epleyWorkingWeightCeiling, getWeightStep } from './progression';
 import { isNonLegTrainingTemplate } from './trainingMode';
 import { WEEKLY_POLICY_VERSION } from './weeklyProgrammeTypes';
-import type { Exercise, PlannedExercise, PlannedSet, SessionPlan, TrainingProfileSnapshot } from './types';
+import type { Exercise, ExercisePerformance, PlannedExercise, PlannedSet, SessionPlan, TrainingProfileSnapshot } from './types';
 import type { AllocatedSlot, CompiledProgrammeWeek, ProgrammeIssue, WeeklyProgrammeInputDay, WeeklyRequirement } from './weeklyProgrammeTypes';
 
 const catalogue = new Map((catalogData as Exercise[]).map((exercise) => [exercise.id, exercise]));
 const routine = 'docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09';
 const running = 'docs/training/RUNNING_DESIGN.md: RD-004/RD-006';
+
+/** A well-formed rejected timeline entry is a barrier, never a load anchor.
+ * Invalid rows/identities cannot be excused by labelling them incomplete. */
+function hasValidHistoryStructure(exercise: Exercise, history?: ExercisePerformance): history is ExercisePerformance {
+  const evidence = history?.evidence;
+  const loading = getExerciseLoadingProfile(exercise);
+  if (!evidence || evidence.source !== PERFORMANCE_HISTORY_SOURCE || history.exerciseId !== exercise.id ||
+      typeof evidence.sessionId !== 'string' || !evidence.sessionId.trim() ||
+      typeof evidence.itemId !== 'string' || !evidence.itemId.trim() ||
+      typeof history.date !== 'string' || !Number.isFinite(Date.parse(history.date)) ||
+      typeof history.sessionComplete !== 'boolean' || evidence.loadUnit !== 'kg' ||
+      evidence.loadDisplayMode !== loading.loadDisplayMode || evidence.prescriptionType !== loading.prescriptionType ||
+      !positiveInteger(history.plannedSetCount ?? 0) || !Array.isArray(evidence.plannedSetIndices) ||
+      evidence.plannedSetIndices.length !== history.plannedSetCount ||
+      !Array.from(evidence.plannedSetIndices).every(positiveInteger) || new Set(evidence.plannedSetIndices).size !== history.plannedSetCount ||
+      !Array.isArray(history.sets) || history.sets.length > history.plannedSetCount! ||
+      new Set(history.sets.map(row => row?.setIndex)).size !== history.sets.length ||
+      !Array.from(history.sets).every(row => !!row && evidence.plannedSetIndices.includes(row.setIndex) &&
+        nonnegative(row.weight) && positiveInteger(row.reps) && typeof row.completedAt === 'string' &&
+        Number.isFinite(Date.parse(row.completedAt)) && Date.parse(row.completedAt) >= Date.parse(history.date) &&
+        (row.rpe == null || (Number.isFinite(row.rpe) && row.rpe >= 1 && row.rpe <= 10))) ||
+      !Array.isArray(evidence.reasons) || !evidence.reasons.every(reason => typeof reason === 'string') ||
+      new Set(evidence.reasons).size !== evidence.reasons.length) return false;
+  return true;
+}
+
+function isUnqualifiedHistory(exercise: Exercise, history: ExercisePerformance): boolean {
+  const evidence = history.evidence!;
+  const loading = getExerciseLoadingProfile(exercise);
+  if (!evidence.reasons.length) return false;
+  // Reconstruct the reasons we can verify from the projection. Skipped status
+  // has no separate projected field; its explicit canonical reason is retained.
+  const reasons: string[] = [];
+  if (!history.sessionComplete) reasons.push('session_unfinished');
+  if (evidence.reasons.includes('exercise_skipped_or_unknown')) reasons.push('exercise_skipped_or_unknown');
+  if (history.sets.length < history.plannedSetCount!) reasons.push('incomplete_or_invalid_sets');
+  const incomplete = reasons.length > 0;
+  if (loading.prescriptionType !== 'reps') reasons.push('unsupported_prescription_unit');
+  if (['assisted_bodyweight', 'unspecified'].includes(loading.loadDisplayMode)) reasons.push('unsupported_load_mode');
+  if (loading.loadDisplayMode === 'bodyweight' && history.sets.some(row => row.weight > 0)) reasons.push('external_load_on_bodyweight');
+  if (history.sets.some(row => row.weight !== history.sets[0].weight)) reasons.push('mixed_loads');
+  if (!['bodyweight', 'added_bodyweight'].includes(loading.loadDisplayMode) && history.sets.some(row => row.weight === 0)) reasons.push('uncalibrated_external_zero');
+  const duplicate = evidence.reasons.includes('duplicate_exercise_in_session');
+  if (duplicate) reasons.push('duplicate_exercise_in_session');
+  return evidence.status === (duplicate ? 'unsupported' : incomplete ? 'incomplete' : 'unsupported') &&
+    reasons.length === evidence.reasons.length && reasons.every(reason => evidence.reasons.includes(reason));
+}
+
+// Compare the contract fields, independent of object-property insertion order.
+// Never search recent history for an older success when the first entry differs.
+function historySignature(history: ExercisePerformance): unknown[] {
+  const evidence = history.evidence!;
+  return [history.exerciseId, history.date, history.plannedSetCount, history.sessionComplete,
+    history.sets.map(row => [row.setIndex, row.weight, row.reps, row.rpe ?? null, row.completedAt]),
+    evidence.source, evidence.status, [...evidence.reasons].sort(), evidence.sessionId, evidence.itemId,
+    evidence.loadUnit, evidence.loadDisplayMode, evidence.prescriptionType, [...evidence.plannedSetIndices].sort((a, b) => a - b)];
+}
 
 /** Trusted requirements captured before generation. Never reconstruct this input
  * from the final output being checked. No planner/compiler/builder is invoked. */
@@ -254,11 +312,15 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
           const baseline = profile.baselines?.[exercise.id] ?? 0;
           const ownBaseline = Number.isFinite(baseline) && baseline > 0;
           const history = profile.lastSessionPerformance?.[exercise.id];
-          const numericHistory = history?.exerciseId === exercise.id && Array.isArray(history.sets) && history.sets.length > 0 && history.sets.every((row) => !!row && nonnegative(row.weight) && positiveInteger(row.reps));
-          const ownEvidence = ownBaseline || numericHistory;
-          if (history && index === 0) {
-            if (!numericHistory) add('invalid_load_evidence', 'Exercise history has invalid numeric values or identity.', { dayKey, exerciseId: exercise.id });
-            else if (!ownBaseline) warning('history_evidence_unverified', 'Numeric history alone does not prove qualified progression evidence; R06 remains separate.', { dayKey, exerciseId: exercise.id });
+          const validHistoryStructure = hasValidHistoryStructure(exercise, history);
+          const recent = profile.recentSessionPerformance?.[exercise.id];
+          const consistentHistory = validHistoryStructure && (recent === undefined ||
+            (Array.isArray(recent) && hasValidHistoryStructure(exercise, recent[0]) && same(historySignature(history), historySignature(recent[0]))));
+          const qualifiedHistory = consistentHistory && isQualifiedPerformance(exercise, history);
+          const ownEvidence = ownBaseline || qualifiedHistory;
+          if (history !== undefined && index === 0) {
+            if (!consistentHistory || (!qualifiedHistory && !isUnqualifiedHistory(exercise, history))) add('invalid_load_evidence', 'Exercise history has invalid numeric values, identity, qualification metadata or last/recent consistency.', { dayKey, exerciseId: exercise.id });
+            else if (!qualifiedHistory && !ownBaseline) warning('history_evidence_unverified', 'Incomplete or unsupported history is a progression barrier, not qualified load evidence.', { dayKey, exerciseId: exercise.id });
           }
           if (loading.loadDisplayMode === 'bodyweight' && set.suggestedWeight !== 0) add('invalid_load_state', 'Pure bodyweight prescription carries external load.', { dayKey, exerciseId: item.exerciseId });
           if (slot && declaration.exposurePolicies[slot.slotId]?.loadPolicy === 'none' && !ownEvidence && loading.loadDisplayMode !== 'bodyweight' && set.suggestedWeight > 0) add('unanchored_external_load', 'No-inference exercise receives kilograms without its own evidence.', { dayKey, slotId: slot.slotId, exerciseId: item.exerciseId });

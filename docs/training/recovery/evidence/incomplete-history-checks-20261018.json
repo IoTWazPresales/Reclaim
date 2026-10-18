@@ -1,0 +1,126 @@
+{
+  "scope": "Scoped source correction only; no live writes, historical rewrites, EIF acceptance or R12",
+  "sourceParent": "41e8b008d704c5d5fb0bf6999fc78ed35b1cf9d3",
+  "isolatedConstruction": "git archive sourceParent, dependencies junction, then only corrected validator and test copied byte-for-byte",
+  "source": [
+    {
+      "path": "app/src/lib/training/weeklyProgrammeValidator.ts",
+      "workingAndIsolatedSha256": "b4730b3a791408cc6d2d971c4e1dab4998a173f13590a7badc98adfd3d54e3b4",
+      "stagedSha256": "44385538752ee04875656bf4e50deaa1f72354ae1d20ecca2ffc7b707bf67984",
+      "gitBlob": "eec80742f3dce8355e872565dbd164493fd52f2c",
+      "indexDiffersOnlyByCRLFNormalization": true
+    },
+    {
+      "path": "app/src/lib/training/__tests__/weeklyProgrammeValidator.test.ts",
+      "workingAndIsolatedSha256": "b8baba3afc339abe727f6dbad9f94e20f3f267e723c36582f109b5b49eefbd73",
+      "stagedSha256": "2227bf5deb8a65f2966f49250bab55e72ab2c7cc8eb1ef19dc10c7dc9f095b36",
+      "gitBlob": "5e041ad5cd93b483277d8a3f5a0c0a99111591a8",
+      "indexDiffersOnlyByCRLFNormalization": true
+    }
+  ],
+  "checks": [
+    {
+      "command": "npx vitest run src/lib/training/__tests__/weeklyProgrammeValidator.test.ts src/lib/training/__tests__/performanceHistory.test.ts --reporter=verbose",
+      "exitCode": 0,
+      "result": "156/156",
+      "logSha256": "5a500c965bd88d1a4087d1f0e709807fccb48160a49ac6784a54faaf9d114e90"
+    },
+    {
+      "command": "npm run typecheck (working tree)",
+      "exitCode": 0,
+      "result": "0 errors",
+      "logSha256": "cd35ebdba9e12b61678eec835bf92424979bd88f78501689ba82b1dffbf391cc"
+    },
+    {
+      "command": "npm run typecheck (isolated)",
+      "exitCode": 0,
+      "result": "0 errors",
+      "logSha256": "cd35ebdba9e12b61678eec835bf92424979bd88f78501689ba82b1dffbf391cc"
+    },
+    {
+      "command": "Git Bash npm run audit:training-dual-paths",
+      "exitCode": 0,
+      "result": "31/31",
+      "logSha256": "22ba892033cc12fb3737a268e09958ae0fc3aa8362c7911bbc12fe5240f2548f"
+    },
+    {
+      "command": "npm run med-catalog-qa -- --reporter=verbose",
+      "exitCode": 0,
+      "result": "357 rows / 0 governance issues; 1 test passes",
+      "logSha256": "19c6e87db82c19a9bf6c75767a74cac9220077f54b3191830b132e109c7507c4"
+    },
+    {
+      "command": "python -m pytest scripts/test_eif_node.py -q",
+      "exitCode": 0,
+      "result": "3 passed",
+      "logSha256": "c0748f0a5d8c43c5bf4d4eb80705f42a7d0ca6c0ca33794143a6cf5958b581c6"
+    },
+    {
+      "command": "node docs/training/recovery/evidence/replay-incomplete-history.cjs",
+      "exitCode": 0,
+      "result": "exact replay and all negative controls passed",
+      "logSha256": "b9a91df0d328ebaeab4bca42b2d81455ca74e3cc7f22f2bb48f22e5f7474cb65"
+    }
+  ],
+  "independentReview": {
+    "verdict": "APPROVED",
+    "rootAssertions": 55,
+    "isolatedAssertions": 55,
+    "receipt": "incomplete-history-review-20261018.md"
+  },
+  "fullSuiteIsolated": {
+    "command": "npm test -- --reporter=verbose",
+    "status": "INCOMPLETE_RUNNER_STALL",
+    "filesWithOutcomes": 64,
+    "passed": 663,
+    "failed": 4,
+    "failures": [
+      "src/lib/training/__tests__/routineVolumeMeasurement.test.ts > routine volume measurement harness > measures the two-pass TrainingScreen path across goals \u00d7 days \u00d7 equipment \u00d7 frequency",
+      "src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > clamps a new session when a tighter cap is supplied",
+      "src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > leaves a started session snapshot frozen when a later build is capped",
+      "src/lib/training/__tests__/runSession.test.ts > run route migration > stores the training session link as text and keeps the link on the same user"
+    ],
+    "logSha256": "d18be28de90319b2efaa1d900eaf3064af375b3ff76e1b33c48fc4e4ed17f42e",
+    "termination": "Owned runner stopped after over four minutes with no output; no completed-suite exit code asserted"
+  },
+  "supplementalEarlierCandidate": {
+    "status": "Historical earlier candidate; not final isolated-suite completion",
+    "source": {
+      "app/src/lib/training/weeklyProgrammeValidator.ts": "750dcf3f5b0d72b7c84c78c479b63c0229a33b4ae19487650a8cfdde67103a94",
+      "app/src/lib/training/__tests__/weeklyProgrammeValidator.test.ts": "f014fa580089ecea0da6d5bde4938e5e22960dab899bb015b2f20aa1eaa60b72"
+    },
+    "files": 200,
+    "failed": 4,
+    "failures": [
+      "src/lib/training/__tests__/routineVolumeMeasurement.test.ts > routine volume measurement harness > measures the two-pass TrainingScreen path across goals \u00d7 days \u00d7 equipment \u00d7 frequency",
+      "src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > clamps a new session when a tighter cap is supplied",
+      "src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > leaves a started session snapshot frozen when a later build is capped",
+      "src/lib/training/__tests__/runSession.test.ts > run route migration > stores the training session link as text and keeps the link on the same user"
+    ]
+  },
+  "fullSuiteWorkingTree": {
+    "command": "npm test -- --reporter=verbose",
+    "exitCode": 1,
+    "files": 200,
+    "passed": 1429,
+    "failed": 4,
+    "failures": [
+      "src/lib/training/__tests__/routineVolumeMeasurement.test.ts > routine volume measurement harness > measures the two-pass TrainingScreen path across goals \u00d7 days \u00d7 equipment \u00d7 frequency",
+      "src/lib/training/__tests__/smallMuscleVolume.test.ts > small-muscle weekly sets > a 50/50 advanced leg day does not put 8 working sets on one lift",
+      "src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > clamps a new session when a tighter cap is supplied",
+      "src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > leaves a started session snapshot frozen when a later build is capped"
+    ],
+    "logSha256": "af3bed0a9ff5e4f32cb4038fe10582c1f7f30d3a220636cd90d6722a91a016fc"
+  },
+  "fullSuiteIsGreen": false,
+  "unrelatedTrackedDirtyHashesPreserved": true,
+  "existingEngineAndMigrationEditsExcludedFromCommit": true,
+  "remainingGates": [
+    "Final isolated full-suite runner stalled; incomplete gate",
+    "Four established baseline assertions, unchanged expectations",
+    "Separate pre-existing working-tree engine failure",
+    "Android new-build/start/save visual and persistence journeys unverified",
+    "No EIF/node acceptance or R12"
+  ],
+  "earlierRunnerAttempts": "Superseded candidate/runner attempts retained locally: thread/worker stalls, catalogue worker-start timeout, and one cold-import mood timeout. Catalogue retry and supplementary mood retry passed; The working full suite completed; the final isolated full-suite stall and historical supplementary coverage are reported separately above."
+}

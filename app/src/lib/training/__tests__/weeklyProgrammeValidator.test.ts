@@ -11,6 +11,10 @@ import { getExerciseLoadingProfile } from '../exerciseLoadingProfile';
 import { BALANCED_WEEKLY_OBJECTIVES } from '../weeklyProgrammePolicy';
 import type { Exercise, SessionPlan, TrainingProfileSnapshot } from '../types';
 import type { TrainingProfileRow } from '../../api';
+import { completedPerformanceHistory, isQualifiedPerformance } from '../performanceHistory';
+import { deriveProgressionDecision, suggestLoading } from '../engine';
+import { historyItem } from './fixtures/performanceHistory';
+import type { ExercisePerformance, UserState } from '../types';
 
 const catalog = catalogData as Exercise[];
 const provenance = 'docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09';
@@ -53,6 +57,138 @@ function reviewedFixture() {
 type Fixture = ReturnType<typeof reviewedFixture>;
 const first = (fixture: Fixture) => fixture.generated.sessions[0].plan.exercises[0];
 const check = (fixture: Fixture) => validateProgrammeWeek(fixture.declaration, fixture.generated, fixture.profile);
+
+describe('history qualification at weekly validation', () => {
+  const id = 'dumbbell_flyes'; // No-inference slot: history must not invent an anchor.
+  function withHistory(empty = true) {
+    const f = reviewedFixture();
+    delete f.profile.baselines![id];
+    const item = historyItem(id);
+    if (empty) item.performed!.sets = [];
+    const history = completedPerformanceHistory([item], 3)[id][0];
+    f.profile.lastSessionPerformance = { [id]: history };
+    f.profile.recentSessionPerformance = { [id]: [history] };
+    f.generated.sessions[0].plan.exercises[1].plannedSets.forEach(set => { set.suggestedWeight = empty ? 0 : 10; });
+    return { f, history };
+  }
+  it('accepts an explicit empty incomplete barrier without validating its zero load', () => {
+    const { f, history } = withHistory(); const before = clone(f);
+    const result = check(f);
+    expect(isQualifiedPerformance(catalog.find(e => e.id === id)!, history)).toBe(false);
+    expect(result.status).toBe('unresolved');
+    expect(result.issues.filter(i => i.severity === 'error')).toEqual([]);
+    expect(result.issues.map(i => i.code)).toContain('load_requires_confirmation');
+    expect(result.issues.map(i => i.code)).toContain('history_evidence_unverified');
+    expect(f).toEqual(before);
+  });
+  it('does not let an incomplete barrier anchor positive external loads', () => {
+    const { f } = withHistory();
+    f.generated.sessions[0].plan.exercises[1].plannedSets.forEach(set => { set.suggestedWeight = 10; });
+    expect(check(f).issues.map(i => i.code)).toContain('unanchored_external_load');
+    expect(check(f).issues.map(i => i.code)).not.toContain('invalid_load_evidence');
+  });
+  it('accepts qualified canonical history as its own load evidence', () => {
+    const { f } = withHistory(false);
+    expect(check(f).status).toBe('valid');
+    expect(check(f).issues).toEqual([]);
+  });
+  it('keeps qualified last-only history compatible without requiring a recent map', () => {
+    const { f } = withHistory(false); delete f.profile.recentSessionPerformance;
+    expect(check(f).status).toBe('valid');
+  });
+  it.each(['empty_latest', 'item', 'session', 'date', 'sets', 'status', 'missing_first', 'malformed_recent'])('rejects last/recent %s mismatch without inheriting older load', kind => {
+    const { f, history } = withHistory(false); const latest = clone(history);
+    if (kind === 'item') latest.evidence!.itemId = 'other-item';
+    if (kind === 'session') latest.evidence!.sessionId = 'other-session';
+    if (kind === 'date') latest.date = '2026-09-30T10:00:00Z';
+    if (kind === 'sets') latest.sets[0].reps = 7;
+    if (kind === 'status') { latest.evidence!.status = 'incomplete'; latest.evidence!.reasons = ['exercise_skipped_or_unknown']; }
+    if (kind === 'empty_latest') { latest.sets = []; latest.evidence!.status = 'incomplete'; latest.evidence!.reasons = ['incomplete_or_invalid_sets']; }
+    f.profile.recentSessionPerformance![id] = kind === 'missing_first' ? [] : kind === 'malformed_recent' ? null as never : [latest, history];
+    expect(check(f).status).toBe('invalid');
+    expect(check(f).issues.map(i => i.code)).toContain('invalid_load_evidence');
+    expect(check(f).issues.map(i => i.code)).toContain('unanchored_external_load');
+    f.profile.baselines![id] = 100;
+    expect(check(f).issues.map(i => i.code)).toContain('invalid_load_evidence');
+  });
+  const bad: Array<[string, (h: ExercisePerformance) => void]> = [
+    ['missing evidence', h => { delete h.evidence; }],
+    ['wrong exercise', h => { h.exerciseId = 'leg_press'; }],
+    ['missing item identity', h => { h.evidence!.itemId = ''; }],
+    ['missing session identity', h => { h.evidence!.sessionId = ''; }],
+    ['wrong source', h => { h.evidence!.source = 'legacy' as never; }],
+    ['wrong unit', h => { h.evidence!.loadUnit = 'lb' as never; }],
+    ['wrong load convention', h => { h.evidence!.loadDisplayMode = 'total_bar'; }],
+    ['wrong prescription', h => { h.evidence!.prescriptionType = 'time_hold'; }],
+    ['invalid date', h => { h.date = 'invalid'; }],
+    ['missing completion metadata', h => { delete h.sessionComplete; }],
+    ['missing planned count', h => { delete h.plannedSetCount; }],
+    ['contradictory planned count', h => { h.plannedSetCount = 2; }],
+    ['duplicate planned indices', h => { h.evidence!.plannedSetIndices = [1, 1, 3]; }],
+    ['missing reasons', h => { h.evidence!.reasons = undefined as never; }],
+    ['empty reasons', h => { h.evidence!.reasons = []; }],
+    ['unrelated rejection reason', h => { h.evidence!.reasons = ['missing_identity']; }],
+    ['false qualified empty work', h => { h.evidence!.status = 'qualified'; h.evidence!.reasons = []; }],
+    ['false unsupported empty work', h => { h.evidence!.status = 'unsupported'; }],
+    ['contradictory unfinished reason', h => { h.evidence!.reasons.push('session_unfinished'); }],
+    ['NaN weight', h => { h.sets = [{ setIndex: 1, weight: NaN, reps: 8, completedAt: '2026-10-01T10:30:00Z' }]; }],
+    ['negative weight', h => { h.sets = [{ setIndex: 1, weight: -1, reps: 8, completedAt: '2026-10-01T10:30:00Z' }]; }],
+    ['infinite reps', h => { h.sets = [{ setIndex: 1, weight: 10, reps: Infinity, completedAt: '2026-10-01T10:30:00Z' }]; }],
+    ['null row', h => { h.sets = [null as never]; }],
+    ['missing set array', h => { h.sets = undefined as never; }],
+    ['sparse performed array', h => { h.sets = Array(1); }],
+    ['sparse planned indices', h => { h.evidence!.plannedSetIndices = [1, , 3] as number[]; }],
+    ['whitespace item identity', h => { h.evidence!.itemId = '  '; }],
+    ['object session identity', h => { h.evidence!.sessionId = {} as never; }],
+  ];
+  it.each(bad)('rejects %s even when a baseline exists', (_, mutate) => {
+    const { f, history } = withHistory(); mutate(history);
+    f.profile.baselines![id] = 100;
+    expect(check(f).issues.map(i => i.code)).toContain('invalid_load_evidence');
+    expect(check(f).status).toBe('invalid');
+  });
+  it('rejects numeric legacy and falsely qualified nonempty work', () => {
+    for (const mutate of [
+      (h: ExercisePerformance) => { delete h.evidence; },
+      (h: ExercisePerformance) => { h.evidence!.reasons = ['incomplete_or_invalid_sets']; },
+      (h: ExercisePerformance) => { h.sets[0].weight = NaN; },
+      (h: ExercisePerformance) => { h.exerciseId = 'leg_press'; },
+      (h: ExercisePerformance) => { h.evidence!.itemId = ' '; },
+      (h: ExercisePerformance) => { h.evidence!.sessionId = {} as never; },
+      (h: ExercisePerformance) => { h.sets.forEach(row => { row.completedAt = '2026-09-01T00:00:00Z'; }); },
+      (h: ExercisePerformance) => { h.sets = Array(1); h.plannedSetCount = 1; h.evidence!.plannedSetIndices = [1]; },
+    ]) {
+      const { f, history } = withHistory(false); mutate(history);
+      const result = check(f);
+      expect(result.issues.map(i => i.code)).toContain('invalid_load_evidence');
+      expect(result.issues.map(i => i.code)).toContain('unanchored_external_load');
+    }
+  });
+  it('retains structurally sound partial, unfinished, skipped and unsupported barriers', () => {
+    for (const kind of ['partial', 'unfinished', 'skipped', 'mixed', 'duplicate', 'empty_duplicate'] as const) {
+      const { f } = withHistory(); const item = historyItem(id);
+      if (kind === 'partial') item.performed!.sets!.pop();
+      if (kind === 'unfinished') item.training_sessions!.ended_at = null;
+      if (kind === 'skipped') item.skipped = true;
+      if (kind === 'mixed') item.performed!.sets![0].weight = 20;
+      if (kind === 'empty_duplicate') item.performed!.sets = [];
+      const items = kind.includes('duplicate') ? [item, { ...clone(item), id: 'other-item' }] : [item];
+      f.profile.lastSessionPerformance![id] = completedPerformanceHistory(items, 3)[id][0];
+      f.profile.recentSessionPerformance![id] = [f.profile.lastSessionPerformance![id]];
+      expect(check(f).issues.filter(i => i.severity === 'error')).toEqual([]);
+    }
+  });
+  it.each([6, 8])('empty latest work blocks older %i-rep progression/deload and load inheritance', reps => {
+    const item = historyItem('barbell_bench_press', '2026-10-03'); item.performed!.sets = [];
+    const recent = completedPerformanceHistory([item, historyItem(item.exercise_id, '2026-10-02', reps), historyItem(item.exercise_id, '2026-10-01', reps)], 3);
+    const user: UserState = { experienceLevel: 'intermediate', recentSessionPerformance: recent, lastSessionPerformance: { [item.exercise_id]: recent[item.exercise_id][0] } };
+    const exercise = catalog.find(e => e.id === item.exercise_id)!;
+    expect(deriveProgressionDecision(exercise, user, [6, 8])).toBeNull();
+    const { recentSessionPerformance, lastSessionPerformance, ...withoutHistory } = user;
+    expect(suggestLoading({ exercise, userState: user, goalWeights: goals, plannedReps: 7 })).toEqual(suggestLoading({ exercise, userState: withoutHistory, goalWeights: goals, plannedReps: 7 }));
+    expect(user.lastSessionPerformance![exercise.id].sets).toEqual([]);
+  });
+});
 const mutations: Array<[string, string, (fixture: Fixture) => void]> = [
   ['removed slot', 'missing_training_exposure', (f) => { f.generated.allocation.days[1].slots.shift(); }],
   ['removed final exercise', 'incomplete_allocation', (f) => { f.generated.sessions[0].plan.exercises.shift(); }],
@@ -169,12 +305,13 @@ describe('independent R05 whole-programme validation', () => {
     const f = reviewedFixture(); first(f).warmupSets = [{ weight: 5, reps: 5 }, { weight: 7.5, reps: 5 }];
     const result = check(f); expect(result.status).toBe('valid'); expect(result.coverage.reduce((sum, row) => sum + row.actualSets, 0)).toBe(37);
   });
-  it('detects unknown zero loads in later sets and leaves history qualification unresolved', () => {
+  it('detects unknown zero loads in later sets and rejects missing history qualification', () => {
     const f = reviewedFixture(); first(f).plannedSets[1].suggestedWeight = 0;
     expect(check(f).status).toBe('unresolved'); expect(check(f).issues.some((issue) => issue.code === 'load_requires_confirmation')).toBe(true);
     const history = reviewedFixture(); delete history.profile.baselines!.dumbbell_flyes;
     history.profile.lastSessionPerformance = { dumbbell_flyes: { exerciseId: 'dumbbell_flyes', date: '2026-10-14', sets: [{ setIndex: 1, weight: 10, reps: 12, completedAt: '2026-10-14' }] } };
-    expect(check(history).status).toBe('unresolved'); expect(check(history).issues.some((issue) => issue.code === 'history_evidence_unverified')).toBe(true);
+    expect(check(history).status).toBe('invalid'); expect(check(history).issues.some((issue) => issue.code === 'invalid_load_evidence')).toBe(true);
+    expect(check(history).issues.some((issue) => issue.code === 'unanchored_external_load')).toBe(true);
   });
   it('detects absent and duplicate entire weeks against independent declarations', () => {
     const f = reviewedFixture(); const declaration2 = { ...clone(f.declaration), weekIndex: 2 };
