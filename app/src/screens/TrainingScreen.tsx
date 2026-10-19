@@ -67,6 +67,7 @@ import TrainingHistoryView from '@/components/training/TrainingHistoryView';
 import SessionPreviewModal from '@/components/training/SessionPreviewModal';
 import GuidedPrepScreen from '@/components/training/GuidedPrepScreen';
 import WeekView from '@/components/training/WeekView';
+import WeeklyProgrammeReview from '@/components/training/WeeklyProgrammeReview';
 import FourWeekPreview from '@/components/training/FourWeekPreview';
 import TrainingAnalyticsScreen from './training/TrainingAnalyticsScreen';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
@@ -478,6 +479,7 @@ export default function TrainingScreen() {
     if (!program || programDaysWeekForUI.length === 0) {
       return {
         weeklySetsLine: null as string | null,
+        summaryEntries: undefined as Parameters<typeof weeklyProgrammeSummary>[0] | undefined,
         muscleSessionCounts: undefined as Record<string, number> | undefined,
         plansByDate: new Map<string, ReturnType<typeof buildProgramDaySession>>(),
       };
@@ -497,10 +499,12 @@ export default function TrainingScreen() {
       const proposal = weeks.get(day.week_index)?.get(day.day_index) ?? buildProgramDaySession(programDayInput(day, program.plan), snapshot, { adaptiveTrainingEnabled });
       plansByDate.set(String(day.date), proposal);
     }
+    const summaryEntries = frozenWeekQ.isSuccess ? orderedDays.map(day => ({
+      proposal: plansByDate.get(String(day.date))!, frozen: frozenWeekQ.data?.[day.id],
+    })) : undefined;
     return {
-      weeklySetsLine: frozenWeekQ.isSuccess ? weeklyProgrammeSummary(orderedDays.map(day => ({
-        proposal: plansByDate.get(String(day.date))!, frozen: frozenWeekQ.data?.[day.id],
-      }))) : 'Weekly recorded work unavailable',
+      summaryEntries,
+      weeklySetsLine: summaryEntries ? weeklyProgrammeSummary(summaryEntries) : 'Weekly recorded work unavailable',
       muscleSessionCounts,
       plansByDate,
     };
@@ -1566,6 +1570,13 @@ export default function TrainingScreen() {
                   </Button>
                 </View>
               </View>
+
+              <WeeklyProgrammeReview entries={weekSessionVolume.summaryEntries} />
+              {weekSessionVolume.weeklySetsLine ? (
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.sm }}>
+                  {weekSessionVolume.weeklySetsLine}
+                </Text>
+              ) : null}
 
               {programDaysWeekQ.isLoading ? (
                 <View style={{ paddingVertical: 16 }}>

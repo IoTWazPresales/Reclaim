@@ -1,3 +1,16 @@
+## 2026-10-19 - TrainingScreen weekly review status
+
+Current-programme weekly selector results now appear with supplied status and
+once-per-week severity counts, unresolved weight-confirmation guidance, explicit
+missing/legacy states and separate frozen/completed historical prescriptions.
+Partial missing diagnostics qualify the available result. Existing volume,
+daily feasibility, Start and Session Preview stay unchanged. Separate source/UI
+reviewers approve; focused29, types, dual31, catalogue357/0, wrapper3 pass.
+Full1458 pass/4 established mixed-tree failures; gate remains failing. Evidence: `docs/training/recovery/evidence/weekly-review-status-20261019.md`.
+Android visual acceptance remains UNABLE_TO_VERIFY; no Android, blocked-operation
+retry, live data, scientific change, EIF acceptance or R12. Stop after scoped
+commit/push; preserve unrelated work.
+
 ## 2026-10-19 - Incomplete-history correction revalidated
 
 Existing pushed correction 2480d09 and tests unchanged. Exact captured replay is

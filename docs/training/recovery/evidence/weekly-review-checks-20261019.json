@@ -1,0 +1,78 @@
+{
+  "date": "2026-10-19",
+  "base_commit": "8786903",
+  "branch": "fix/training-confident-ux",
+  "scope": "Weekly summary source only; no Android/live/EIF transition/R12",
+  "source_sha256": {
+    "app/src/screens/TrainingScreen.tsx": "434905acb803796837310271e1014e9d47d21b62ef2d98a8ba31cd8e82596316",
+    "app/src/components/training/WeeklyProgrammeReview.tsx": "dfe8b9fd87105f2cd1017407bc597d0e9a4b16577c1bc381f3fbaf5bef2164c9",
+    "app/src/components/training/__tests__/WeeklyProgrammeReview.test.tsx": "e4c93a06abaaa6e557e2272df5c61e15935e20cbe8a2a797b7a0a2f631ea2f78"
+  },
+  "checks": [
+    {
+      "check": "focused_initial",
+      "command": "npx vitest run src/components/training/__tests__/WeeklyProgrammeReview.test.tsx src/components/training/__tests__/SessionPreviewModal.test.tsx src/lib/training/__tests__/weeklyDiagnosticsTransport.test.ts --pool=forks --maxWorkers=1 --reporter=verbose",
+      "exit_code": null,
+      "result": "Stalled after preview; identified owned process tree stopped, not a pass",
+      "local_log": "app/weekly-review-focused.local.txt",
+      "sha256": "151bf94795c24e9c6428b15a4b3a7066bc4df66db64ed770351f5d99d5d169b4"
+    },
+    {
+      "check": "focused_final",
+      "command": "npx vitest run src/components/training/__tests__/WeeklyProgrammeReview.test.tsx src/components/training/__tests__/SessionPreviewModal.test.tsx src/lib/training/__tests__/weeklyDiagnosticsTransport.test.ts --pool=forks --maxWorkers=1 --reporter=verbose",
+      "exit_code": 0,
+      "result": "3 files, 29 tests passed",
+      "local_log": "app/weekly-review-focused-final.local.txt",
+      "sha256": "e50633efbb1082306ce3e58d1de707823044eb1d6e9bc30590f4cdacb7aeee24"
+    },
+    {
+      "check": "typecheck",
+      "command": "npm run typecheck",
+      "exit_code": 0,
+      "result": "Zero errors",
+      "local_log": "app/weekly-review-types.local.txt",
+      "sha256": "cd35ebdba9e12b61678eec835bf92424979bd88f78501689ba82b1dffbf391cc"
+    },
+    {
+      "check": "dual_path",
+      "command": "Git Bash: cd /c/Reclaim/app && npm run audit:training-dual-paths",
+      "exit_code": 0,
+      "result": "31 passed, zero failed",
+      "local_log": "app/weekly-review-dual.local.txt",
+      "sha256": "0dd8080c5e0bde3107071dfa1f145f876ad93f92ff87b4e949a572755b35748b"
+    },
+    {
+      "check": "catalogue",
+      "command": "npm run med-catalog-qa",
+      "exit_code": 0,
+      "result": "357 rows, zero issues, CLI test passed",
+      "local_log": "app/weekly-review-catalogue.local.txt",
+      "sha256": "97b6ab98802732cec46202049c20d63ff4092fecbc4ab4a88c0c25dccbcbe9f7"
+    },
+    {
+      "check": "full",
+      "command": "npm test -- --reporter=verbose",
+      "exit_code": 1,
+      "result": "203 files, 1458 tests passed, 4 documented mixed-tree failures; failing gate",
+      "local_log": "app/weekly-review-full.local.txt",
+      "sha256": "0b7fb090aeab249af682579b7454d0b86e34bd134778385096778102ed554689"
+    },
+    {
+      "check": "ui_independent",
+      "command": "npx vitest run src/components/training/__tests__/WeeklyProgrammeReview.test.tsx --pool=forks --maxWorkers=1 --reporter=verbose",
+      "exit_code": 0,
+      "result": "9 tests passed",
+      "local_log": "app/weekly-review-ui-independent.local.txt",
+      "sha256": "79075ea4e95f9b8bc098fa4f62b705b610b17c16693251cfad1ca24c92b50106"
+    },
+    {
+      "check": "wrapper",
+      "command": "python -m pytest scripts/test_eif_node.py -q",
+      "exit_code": 0,
+      "result": "3 passed in 17.09s; tool stdout, no local log; no ledger mutation"
+    }
+  ],
+  "review": "Separate source and UI reviewers approve exact source hashes. Actual Android visual acceptance UNABLE_TO_VERIFY.",
+  "timeout": "Repository testTimeout 30000 unchanged",
+  "raw_logs_published": false
+}
