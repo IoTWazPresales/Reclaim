@@ -1623,8 +1623,16 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       const budget = Math.ceil(weeklySmallTarget / sessions);
       const shortfall = Math.min(MAX_SETS_ON_ONE_EXERCISE, budget) - direct[0].plannedSets.length;
       if (shortfall <= 0) continue;
+      // Keep the existing direct-work priority treatment, but reserve total room
+      // before appending so later muscles see every set already allocated.
+      const extraSets = takeSets(planned.priority, shortfall, true);
+      noteMuscleSets(planned.exercise, planned.intents[0], extraSets, smallMuscleSets);
+      if (extraSets < shortfall) {
+        planned.decisionTrace.selectionReason +=
+          ` Small-muscle top-up limited by session-total cap (${shortfall - extraSets} sets unallocated).`;
+      }
       const pattern = direct[0].plannedSets[direct[0].plannedSets.length - 1];
-      for (let extra = 0; extra < shortfall; extra += 1) {
+      for (let extra = 0; extra < extraSets; extra += 1) {
         direct[0].plannedSets.push({
           ...pattern,
           setIndex: direct[0].plannedSets.length + 1,

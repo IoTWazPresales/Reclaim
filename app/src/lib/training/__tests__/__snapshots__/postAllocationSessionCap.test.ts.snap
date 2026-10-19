@@ -1,0 +1,309 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`post-allocation session-total cap > preserves ordinary prescriptions for {"build_muscle":0.5,"build_strength":0.5} 1`] = `
+[
+  {
+    "exerciseId": "dumbbell_bench_press",
+    "priority": "primary",
+    "sets": [
+      "{"setIndex":1,"targetReps":7,"suggestedWeight":60,"restSeconds":135}",
+      "{"setIndex":2,"targetReps":7,"suggestedWeight":60,"restSeconds":135}",
+      "{"setIndex":3,"targetReps":7,"suggestedWeight":60,"restSeconds":135}",
+      "{"setIndex":4,"targetReps":7,"suggestedWeight":60,"restSeconds":135}",
+    ],
+    "warmupSets": [
+      {
+        "reps": 5,
+        "weight": 24,
+      },
+      {
+        "reps": 5,
+        "weight": 36,
+      },
+      {
+        "reps": 5,
+        "weight": 48,
+      },
+    ],
+  },
+  {
+    "exerciseId": "dumbbell_shoulder_press",
+    "priority": "primary",
+    "sets": [
+      "{"setIndex":1,"targetReps":7,"suggestedWeight":40,"restSeconds":135}",
+      "{"setIndex":2,"targetReps":7,"suggestedWeight":40,"restSeconds":135}",
+      "{"setIndex":3,"targetReps":7,"suggestedWeight":40,"restSeconds":135}",
+      "{"setIndex":4,"targetReps":7,"suggestedWeight":40,"restSeconds":135}",
+    ],
+    "warmupSets": undefined,
+  },
+  {
+    "exerciseId": "pull_ups",
+    "priority": "primary",
+    "sets": [
+      "{"setIndex":1,"targetReps":7,"suggestedWeight":0,"restSeconds":135}",
+      "{"setIndex":2,"targetReps":7,"suggestedWeight":0,"restSeconds":135}",
+      "{"setIndex":3,"targetReps":7,"suggestedWeight":0,"restSeconds":135}",
+      "{"setIndex":4,"targetReps":7,"suggestedWeight":0,"restSeconds":135}",
+    ],
+    "warmupSets": undefined,
+  },
+  {
+    "exerciseId": "one_arm_row",
+    "priority": "primary",
+    "sets": [
+      "{"setIndex":1,"targetReps":7,"suggestedWeight":50,"restSeconds":135}",
+      "{"setIndex":2,"targetReps":7,"suggestedWeight":50,"restSeconds":135}",
+      "{"setIndex":3,"targetReps":7,"suggestedWeight":50,"restSeconds":135}",
+      "{"setIndex":4,"targetReps":7,"suggestedWeight":50,"restSeconds":135}",
+    ],
+    "warmupSets": undefined,
+  },
+  {
+    "exerciseId": "diamond_push_ups",
+    "priority": "isolation",
+    "sets": [
+      "{"setIndex":1,"targetReps":12,"suggestedWeight":0,"restSeconds":55}",
+      "{"setIndex":2,"targetReps":12,"suggestedWeight":0,"restSeconds":55}",
+      "{"setIndex":3,"targetReps":12,"suggestedWeight":0,"restSeconds":55}",
+      "{"setIndex":4,"targetReps":12,"suggestedWeight":0,"restSeconds":55}",
+      "{"setIndex":5,"targetReps":12,"suggestedWeight":0,"restSeconds":55}",
+    ],
+    "warmupSets": undefined,
+  },
+  {
+    "exerciseId": "lateral_raises",
+    "priority": "isolation",
+    "sets": [
+      "{"setIndex":1,"targetReps":12,"suggestedWeight":12,"restSeconds":55}",
+      "{"setIndex":2,"targetReps":12,"suggestedWeight":12,"restSeconds":55}",
+      "{"setIndex":3,"targetReps":12,"suggestedWeight":12,"restSeconds":55}",
+      "{"setIndex":4,"targetReps":12,"suggestedWeight":12,"restSeconds":55}",
+      "{"setIndex":5,"targetReps":12,"suggestedWeight":12,"restSeconds":55}",
+    ],
+    "warmupSets": undefined,
+  },
+  {
+    "exerciseId": "dumbbell_curl",
+    "priority": "isolation",
+    "sets": [
+      "{"setIndex":1,"targetReps":12,"suggestedWeight":15,"restSeconds":55}",
+      "{"setIndex":2,"targetReps":12,"suggestedWeight":15,"restSeconds":55}",
+      "{"setIndex":3,"targetReps":12,"suggestedWeight":15,"restSeconds":55}",
+      "{"setIndex":4,"targetReps":12,"suggestedWeight":15,"restSeconds":55}",
+      "{"setIndex":5,"targetReps":12,"suggestedWeight":15,"restSeconds":55}",
+    ],
+    "warmupSets": undefined,
+  },
+  {
+    "exerciseId": "hanging_leg_raise",
+    "priority": "accessory",
+    "sets": [
+      "{"setIndex":1,"targetReps":9,"suggestedWeight":0,"restSeconds":90}",
+      "{"setIndex":2,"targetReps":9,"suggestedWeight":0,"restSeconds":90}",
+      "{"setIndex":3,"targetReps":9,"suggestedWeight":0,"restSeconds":90}",
+    ],
+    "warmupSets": undefined,
+  },
+]
+`;
+
+exports[`post-allocation session-total cap > preserves ordinary prescriptions for {"build_muscle":1} 1`] = `
+[
+  {
+    "exerciseId": "dumbbell_bench_press",
+    "priority": "primary",
+    "sets": [
+      "{"setIndex":1,"targetReps":9,"suggestedWeight":60,"restSeconds":90}",
+      "{"setIndex":2,"targetReps":9,"suggestedWeight":60,"restSeconds":90}",
+      "{"setIndex":3,"targetReps":9,"suggestedWeight":60,"restSeconds":90}",
+    ],
+    "warmupSets": [
+      {
+        "reps": 5,
+        "weight": 24,
+      },
+      {
+        "reps": 5,
+        "weight": 36,
+      },
+      {
+        "reps": 5,
+        "weight": 48,
+      },
+    ],
+  },
+  {
+    "exerciseId": "dumbbell_shoulder_press",
+    "priority": "primary",
+    "sets": [
+      "{"setIndex":1,"targetReps":9,"suggestedWeight":40,"restSeconds":90}",
+      "{"setIndex":2,"targetReps":9,"suggestedWeight":40,"restSeconds":90}",
+      "{"setIndex":3,"targetReps":9,"suggestedWeight":40,"restSeconds":90}",
+    ],
+    "warmupSets": undefined,
+  },
+  {
+    "exerciseId": "pull_ups",
+    "priority": "primary",
+    "sets": [
+      "{"setIndex":1,"targetReps":9,"suggestedWeight":0,"restSeconds":90}",
+      "{"setIndex":2,"targetReps":9,"suggestedWeight":0,"restSeconds":90}",
+      "{"setIndex":3,"targetReps":9,"suggestedWeight":0,"restSeconds":90}",
+    ],
+    "warmupSets": undefined,
+  },
+  {
+    "exerciseId": "one_arm_row",
+    "priority": "primary",
+    "sets": [
+      "{"setIndex":1,"targetReps":9,"suggestedWeight":50,"restSeconds":90}",
+      "{"setIndex":2,"targetReps":9,"suggestedWeight":50,"restSeconds":90}",
+      "{"setIndex":3,"targetReps":9,"suggestedWeight":50,"restSeconds":90}",
+    ],
+    "warmupSets": undefined,
+  },
+  {
+    "exerciseId": "diamond_push_ups",
+    "priority": "isolation",
+    "sets": [
+      "{"setIndex":1,"targetReps":15,"suggestedWeight":0,"restSeconds":45}",
+      "{"setIndex":2,"targetReps":15,"suggestedWeight":0,"restSeconds":45}",
+      "{"setIndex":3,"targetReps":15,"suggestedWeight":0,"restSeconds":45}",
+      "{"setIndex":4,"targetReps":15,"suggestedWeight":0,"restSeconds":45}",
+      "{"setIndex":5,"targetReps":15,"suggestedWeight":0,"restSeconds":45}",
+    ],
+    "warmupSets": undefined,
+  },
+  {
+    "exerciseId": "lateral_raises",
+    "priority": "isolation",
+    "sets": [
+      "{"setIndex":1,"targetReps":15,"suggestedWeight":12,"restSeconds":45}",
+      "{"setIndex":2,"targetReps":15,"suggestedWeight":12,"restSeconds":45}",
+      "{"setIndex":3,"targetReps":15,"suggestedWeight":12,"restSeconds":45}",
+      "{"setIndex":4,"targetReps":15,"suggestedWeight":12,"restSeconds":45}",
+      "{"setIndex":5,"targetReps":15,"suggestedWeight":12,"restSeconds":45}",
+    ],
+    "warmupSets": undefined,
+  },
+  {
+    "exerciseId": "dumbbell_curl",
+    "priority": "isolation",
+    "sets": [
+      "{"setIndex":1,"targetReps":15,"suggestedWeight":15,"restSeconds":45}",
+      "{"setIndex":2,"targetReps":15,"suggestedWeight":15,"restSeconds":45}",
+      "{"setIndex":3,"targetReps":15,"suggestedWeight":15,"restSeconds":45}",
+      "{"setIndex":4,"targetReps":15,"suggestedWeight":15,"restSeconds":45}",
+      "{"setIndex":5,"targetReps":15,"suggestedWeight":15,"restSeconds":45}",
+    ],
+    "warmupSets": undefined,
+  },
+  {
+    "exerciseId": "hanging_leg_raise",
+    "priority": "accessory",
+    "sets": [
+      "{"setIndex":1,"targetReps":11,"suggestedWeight":0,"restSeconds":60}",
+      "{"setIndex":2,"targetReps":11,"suggestedWeight":0,"restSeconds":60}",
+    ],
+    "warmupSets": undefined,
+  },
+]
+`;
+
+exports[`post-allocation session-total cap > preserves ordinary prescriptions for {"build_strength":1} 1`] = `
+[
+  {
+    "exerciseId": "dumbbell_bench_press",
+    "priority": "primary",
+    "sets": [
+      "{"setIndex":1,"targetReps":4,"suggestedWeight":60,"restSeconds":180}",
+      "{"setIndex":2,"targetReps":4,"suggestedWeight":60,"restSeconds":180}",
+      "{"setIndex":3,"targetReps":4,"suggestedWeight":60,"restSeconds":180}",
+      "{"setIndex":4,"targetReps":4,"suggestedWeight":60,"restSeconds":180}",
+    ],
+    "warmupSets": [
+      {
+        "reps": 5,
+        "weight": 24,
+      },
+      {
+        "reps": 5,
+        "weight": 36,
+      },
+      {
+        "reps": 5,
+        "weight": 48,
+      },
+    ],
+  },
+  {
+    "exerciseId": "dumbbell_shoulder_press",
+    "priority": "primary",
+    "sets": [
+      "{"setIndex":1,"targetReps":4,"suggestedWeight":40,"restSeconds":180}",
+      "{"setIndex":2,"targetReps":4,"suggestedWeight":40,"restSeconds":180}",
+      "{"setIndex":3,"targetReps":4,"suggestedWeight":40,"restSeconds":180}",
+      "{"setIndex":4,"targetReps":4,"suggestedWeight":40,"restSeconds":180}",
+    ],
+    "warmupSets": undefined,
+  },
+  {
+    "exerciseId": "pull_ups",
+    "priority": "primary",
+    "sets": [
+      "{"setIndex":1,"targetReps":4,"suggestedWeight":0,"restSeconds":180}",
+      "{"setIndex":2,"targetReps":4,"suggestedWeight":0,"restSeconds":180}",
+      "{"setIndex":3,"targetReps":4,"suggestedWeight":0,"restSeconds":180}",
+      "{"setIndex":4,"targetReps":4,"suggestedWeight":0,"restSeconds":180}",
+    ],
+    "warmupSets": undefined,
+  },
+  {
+    "exerciseId": "one_arm_row",
+    "priority": "primary",
+    "sets": [
+      "{"setIndex":1,"targetReps":4,"suggestedWeight":50,"restSeconds":180}",
+      "{"setIndex":2,"targetReps":4,"suggestedWeight":50,"restSeconds":180}",
+      "{"setIndex":3,"targetReps":4,"suggestedWeight":50,"restSeconds":180}",
+      "{"setIndex":4,"targetReps":4,"suggestedWeight":50,"restSeconds":180}",
+    ],
+    "warmupSets": undefined,
+  },
+  {
+    "exerciseId": "diamond_push_ups",
+    "priority": "isolation",
+    "sets": [
+      "{"setIndex":1,"targetReps":10,"suggestedWeight":0,"restSeconds":60}",
+    ],
+    "warmupSets": undefined,
+  },
+  {
+    "exerciseId": "lateral_raises",
+    "priority": "isolation",
+    "sets": [
+      "{"setIndex":1,"targetReps":10,"suggestedWeight":12,"restSeconds":60}",
+    ],
+    "warmupSets": undefined,
+  },
+  {
+    "exerciseId": "dumbbell_curl",
+    "priority": "isolation",
+    "sets": [
+      "{"setIndex":1,"targetReps":10,"suggestedWeight":15,"restSeconds":60}",
+      "{"setIndex":2,"targetReps":10,"suggestedWeight":15,"restSeconds":60}",
+    ],
+    "warmupSets": undefined,
+  },
+  {
+    "exerciseId": "hanging_leg_raise",
+    "priority": "accessory",
+    "sets": [
+      "{"setIndex":1,"targetReps":6,"suggestedWeight":0,"restSeconds":120}",
+      "{"setIndex":2,"targetReps":6,"suggestedWeight":0,"restSeconds":120}",
+      "{"setIndex":3,"targetReps":6,"suggestedWeight":0,"restSeconds":120}",
+    ],
+    "warmupSets": undefined,
+  },
+]
+`;
