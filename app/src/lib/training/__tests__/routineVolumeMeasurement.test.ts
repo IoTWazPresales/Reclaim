@@ -302,7 +302,7 @@ describe('routine volume measurement harness', () => {
     push('## History production fetch share');
     push('');
     push(`Seed id count: **${seed.length}** (\`${seed.join('`, `')}\`).`);
-    push('Share below is sets whose exercise id is in that seed (the only ids `loadTrainingPerformanceSeed` fetches).');
+    push('Share below is sets whose exercise id is in this historical seed subset; `loadTrainingPerformanceSeed` now defaults to the full catalogue.');
     push('');
 
     type Row = {
@@ -395,7 +395,7 @@ describe('routine volume measurement harness', () => {
     push(`| Claim | Result |`);
     push(`|---|---|`);
     push(`| Weeks 1–4 fingerprint identical (empty history) | **${identicalWeeks}/${rows.length}** scenarios identical |`);
-    push(`| History seed id count | **${seed.length}** (expected 18) |`);
+    push(`| History seed id count | **${seed.length}** (expected 31) |`);
     push(`| Share of weekly sets whose ids are in the seed | **${(seedShare * 100).toFixed(1)}%** |`);
     push(`| UI weekly-sets line omits Core | **${coreDrop}/${rows.length}** scenarios have no \`Core\` token |`);
     push(`| Isolation/accessory tier in a required compound slot | **${isoAny}/${rows.length}** scenarios had ≥1 hit |`);
@@ -538,7 +538,11 @@ describe('routine volume measurement harness', () => {
 
     expect(capBreaches).toEqual([]);
     expect(identicalWeeks).toBe(rows.length);
-    expect(seed).toHaveLength(18);
+    // 3d61eae added 13 isolation/accessory IDs to the original 18.
+    expect(seed).toHaveLength(31);
+    expect(new Set(seed).size).toBe(31);
+    const catalogueIds = listExercises().map((exercise) => exercise.id);
+    expect(seed.filter((id) => !catalogueIds.includes(id))).toEqual([]);
     expect(disposition.unknown).toEqual([]);
     expect(disposition.nonRegional).toEqual(['cardiovascular', 'full_body']);
     expect(muscleRank).toEqual(strengthRank);
