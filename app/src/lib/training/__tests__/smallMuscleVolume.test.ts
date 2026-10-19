@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildSession, getExerciseById, isCompoundExercise } from '../engine';
+import { evaluateExerciseEligibility } from '../exerciseEligibility';
 import { setsForSmallMuscle, smallMuscleOf, weeklySmallMuscleSetTarget } from '../smallMuscleVolume';
 
 const muscleHeavy = { build_muscle: 0.51, build_strength: 0.47, lose_fat: 0.02, get_fitter: 0 };
@@ -55,12 +56,14 @@ describe('small-muscle weekly sets', () => {
     expect(sets).toBeLessThanOrEqual(16);
   });
 
-  it('a 50/50 advanced leg day does not put 8 working sets on one lift', () => {
+  // Both catalogue equipment aliases must satisfy the same carry prescription.
+  it.each(['dumbbells', 'dumbbell'])('a 50/50 advanced leg day does not put 8 working sets on one lift (%s)', (dumbbellEquipment) => {
+    const goals = { build_muscle: 0.5, build_strength: 0.5, lose_fat: 0, get_fitter: 0 };
     const session = buildSession({
       template: 'legs',
-      goals: { build_muscle: 0.5, build_strength: 0.5, lose_fat: 0, get_fitter: 0 },
+      goals,
       constraints: {
-        availableEquipment: ['barbell', 'dumbbells', 'bench', 'rack', 'cable_machine', 'leg_extension_machine', 'leg_curl_machine'],
+        availableEquipment: ['barbell', dumbbellEquipment, 'bench', 'rack', 'cable_machine', 'leg_extension_machine', 'leg_curl_machine'],
         injuries: [],
         forbiddenMovements: [],
         timeBudgetMinutes: 75,
@@ -87,7 +90,17 @@ describe('small-muscle weekly sets', () => {
     expect(quadIsolation?.plannedSets.length).toBe(4);
     expect(hamIsolation?.exercise.id).toBe('leg_curls');
     expect(hamIsolation?.plannedSets.length).toBe(4);
-    const carry = session.exercises.find((item) => item.exercise.id === 'farmer_walk');
-    expect(carry?.plannedSets.length).toBe(3);
+    const carries = session.exercises.filter((item) => item.intents.includes('carry'));
+    expect(carries).toHaveLength(1);
+    const carry = carries[0];
+    expect(carry.exercise.intents).toContain('carry');
+    expect(evaluateExerciseEligibility(carry.exercise, {
+      goals,
+      equipment_access: session.constraints.availableEquipment,
+      constraints: session.constraints,
+      baselines: session.userState.estimated1RM,
+      experienceLevel: session.userState.experienceLevel,
+    }, { selectionIntent: 'carry' }).eligible).toBe(true);
+    expect(carry.plannedSets).toHaveLength(3);
   });
 });
