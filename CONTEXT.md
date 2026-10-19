@@ -1,3 +1,14 @@
+## 2026-10-19 - Incomplete-history correction revalidated
+
+Existing pushed correction 2480d09 and tests unchanged. Exact captured replay is
+byte-identical to committed evidence: four invalid weeks become unresolved, zero
+hard errors and 20 warnings/week; all five negative controls reject. Fresh separate
+review approves, focused156/probes12 pass; types/dual31/catalogue357/0/wrapper3 pass.
+Full1449 pass/4 documented mixed-tree failures; gate remains failing. Evidence:
+`docs/training/recovery/evidence/incomplete-history-revalidation-20261019.md`.
+No product, live-data, saved/guided session, policy, EIF acceptance or R12 changes.
+Stop after scoped revalidation; preserve unrelated work.
+
 ## 2026-10-19 - Session preview programme warnings (source only)
 
 Preview now reads the existing weekly diagnostic result with distinct status and
