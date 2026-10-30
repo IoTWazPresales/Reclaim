@@ -1,3 +1,19 @@
+## 2026-10-30 - Preserved engine eligibility resolution
+
+The preserved engine edit routes scoring eligibility through committed R03.
+Six controlled fixtures against HEAD reproduce all selection changes using only
+in-memory equipment-alias normalization; ranking, dosage, catalogue and tests
+are unchanged. Focused231 pass/expected isolation-cap assertion remains; types,
+dual31 and catalogue357/0 pass. Full suite INCOMPLETE due to repeated runner
+stalls/IPC crashes; no passing full-suite claim. Exact attempts and source diff:
+`docs/training/recovery/evidence/preserved-engine-eligibility-20261030.md`.
+Route migration B is left uncommitted: read-only applied SQL verification is
+unavailable, and its actual diff also includes four RLS policy changes. Never
+apply/re-apply it as verification. The committed runSession migration assertion
+also depends on B, so an A-only branch retains that unmet source contract.
+No live writes, Android, EIF acceptance or R12.
+Stop after publishing A; existing unrelated work remains preserved.
+
 ## 2026-10-19 - TrainingScreen weekly review status
 
 Current-programme weekly selector results now appear with supplied status and

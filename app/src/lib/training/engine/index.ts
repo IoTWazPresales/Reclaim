@@ -21,6 +21,7 @@ import { setsForMajorPattern, setsForSmallMuscle, smallMuscleOf, weeklySmallMusc
 import { warmupSetsForWorkingWeight } from '../warmupSets';
 import { buildBalancedProgramSession } from '../balancedHypertrophy';
 import { buildAllocatedProgramSession } from '../allocatedProgramSession';
+import { evaluateExerciseEligibility } from '../exerciseEligibility';
 import type {
   Exercise,
   MovementIntent,
@@ -352,8 +353,15 @@ function scoreExercise(
   }
 
   // Equipment availability (Task 1 - use new hasEquipment helper)
-  if (!hasEquipment(exercise, constraints.availableEquipment)) {
-    return { exerciseId: exercise.id, score: 0, reasons: ['Required equipment not available'] };
+  const eligibility = evaluateExerciseEligibility(exercise, {
+    goals: goalWeights as TrainingProfileSnapshot['goals'],
+    equipment_access: constraints.availableEquipment,
+    constraints,
+    baselines: userState.estimated1RM,
+    experienceLevel: userState.experienceLevel,
+  }, { allowEnteredRackException: true });
+  if (!eligibility.eligible) {
+    return { exerciseId: exercise.id, score: 0, reasons: eligibility.reasons };
   }
   score += 50;
   reasons.push('Equipment available');
