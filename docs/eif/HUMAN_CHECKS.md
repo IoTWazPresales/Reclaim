@@ -1,5 +1,20 @@
 # Human checks — PRG-20260917T222550
 
+## Run-routes migration-history drift - BLOCKER (2026-10-30)
+
+The operator's reviewer verified read-only live state through the Supabase
+connector for project `bgtosdgrvjwlpqxqjvdf` on 2026-10-30. The preserved B source
+matches all supplied type/policy clauses. Remote migration history contains only
+two `meds_catalog_match_key` entries; run_routes was applied outside tracking.
+**No `supabase db push` until a separately approved `migration repair` task.**
+Do not use migration apply/re-apply as verification. Repair was not run.
+
+A separately approved task must compare complete local/remote migration history,
+confirm which versions were actually applied, propose the exact history repair,
+and verify the repaired history before considering any later deployment.
+This manual blocker is not EIF registration, node acceptance or deployment approval.
+Sanitized provenance/comparison: [B evidence](../training/recovery/evidence/run-routes-migration-source-B-20261030.md).
+
 ## Session preview programme warnings — UNABLE_TO_VERIFY, unregistered (2026-10-19)
 
 Source/UI review is approved; actual Android visual approval remains pending.

@@ -1,3 +1,14 @@
+## 2026-10-30 - Run-routes migration source B
+
+The operator-supplied authoritative read-only Supabase review matches every
+supplied type and policy clause in the preserved migration B diff. Sanitized
+comparison: `docs/training/recovery/evidence/run-routes-migration-source-B-20261030.md`.
+Remote migration history contains only two meds_catalog_match_key entries;
+run_routes was applied outside tracking. No `supabase db push` until a separately
+approved `migration repair` task. No repair, SQL execution or live writes here.
+This supersedes the earlier B verification blocker; history drift remains open.
+Stop after scoped B commit/push; preserve unrelated work.
+
 ## 2026-10-30 - Preserved engine eligibility resolution
 
 The preserved engine edit routes scoring eligibility through committed R03.

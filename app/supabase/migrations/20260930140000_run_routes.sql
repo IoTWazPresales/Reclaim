@@ -12,7 +12,8 @@ create table if not exists public.run_homes (
 create table if not exists public.run_sessions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
-  training_session_id uuid references public.training_sessions (id) on delete set null,
+  -- training_sessions.id is text (`session_<millis>`), not uuid.
+  training_session_id text references public.training_sessions (id) on delete set null,
   started_at timestamptz not null,
   ended_at timestamptz,
   created_at timestamptz not null default now()
@@ -56,11 +57,33 @@ create policy "Users can view own run sessions"
   using (auth.uid() = user_id);
 create policy "Users can insert own run sessions"
   on public.run_sessions for insert
-  with check (auth.uid() = user_id);
+  with check (
+    auth.uid() = user_id
+    and (
+      training_session_id is null
+      or exists (
+        select 1
+        from public.training_sessions ts
+        where ts.id = training_session_id
+          and ts.user_id = auth.uid()
+      )
+    )
+  );
 create policy "Users can update own run sessions"
   on public.run_sessions for update
   using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  with check (
+    auth.uid() = user_id
+    and (
+      training_session_id is null
+      or exists (
+        select 1
+        from public.training_sessions ts
+        where ts.id = training_session_id
+          and ts.user_id = auth.uid()
+      )
+    )
+  );
 create policy "Users can delete own run sessions"
   on public.run_sessions for delete
   using (auth.uid() = user_id);
@@ -70,11 +93,27 @@ create policy "Users can view own run routes"
   using (auth.uid() = user_id);
 create policy "Users can insert own run routes"
   on public.run_routes for insert
-  with check (auth.uid() = user_id);
+  with check (
+    auth.uid() = user_id
+    and exists (
+      select 1
+      from public.run_sessions rs
+      where rs.id = run_session_id
+        and rs.user_id = auth.uid()
+    )
+  );
 create policy "Users can update own run routes"
   on public.run_routes for update
   using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  with check (
+    auth.uid() = user_id
+    and exists (
+      select 1
+      from public.run_sessions rs
+      where rs.id = run_session_id
+        and rs.user_id = auth.uid()
+    )
+  );
 create policy "Users can delete own run routes"
   on public.run_routes for delete
   using (auth.uid() = user_id);
