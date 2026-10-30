@@ -1,5 +1,33 @@
 # Reclaim training routine / generator audit (AS-IS)
 
+## Approved policy update (2026-10-30; implementation pending)
+
+The [resolved operator decisions](../eif/phase2-controls/DECISIONS_PENDING.md#resolved-operator-decisions--2026-10-30)
+are recorded verbatim and take precedence over conflicting earlier policy below
+for new builds. Dated audit sections remain historical source observations,
+not evidence that the approved update has been implemented.
+
+D-P2-01 uses the most recent evidence: newer R06-qualified history supersedes a
+baseline ceiling with the Epley estimate from the best recent qualified set at
+target reps; a baseline entered after the last qualified session wins. Without
+qualified history the baseline ceiling stays unchanged. Existing double-progression
+increments remain, and the user-entered baseline is never overwritten.
+
+The approved v2 binding limits are 5 sets per exercise, 10 per owner-muscle per
+session (heavy plus follow-up), 24 working sets and a 60-minute session estimate,
+plus user-supplied tighter hard caps. Direct small-muscle work counts toward both
+session and muscle totals. The per-priority isolation cap and 120-set session total
+are no longer binding for new builds. Report shortfalls. Frozen and historical
+sessions retain v1 rules; started/guided prescriptions are never rewritten.
+
+No fractional credit contributes to prescriptions. Secondary involvement is
+recorded for recovery/fatigue only; D-P2-04 remains open for future cited changes.
+Weekly targets are totals regardless of frequency: frequency distributes rather
+than multiplies, and volume increases require progression evidence. Earlier
+frequency-dependent doses or once-weekly examples exceeding v2 session caps below
+do not override these decisions; constrained work must be reported as shortfall.
+These are operator policy choices, not new claims of scientific or clinical efficacy.
+
 ## Balanced week (2026-10-09)
 
 Named strength days (the 2- through 6-day labels from `twicePerMuscleSplit`) are built from one owner per exercise. A bench set is chest. A row or pulldown set is back. It is not also a shoulder set and not also an arm set. Direct curls, pushdowns, raises, face pulls, and calf raises are the only sets those muscles get.

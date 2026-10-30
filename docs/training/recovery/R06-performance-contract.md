@@ -3,6 +3,17 @@
 Scope: R06 only, based on committed R02 setup and R04 allocated-day interfaces.
 This is a source contract, not N-0070 acceptance or Android verification.
 
+## Approved ceiling policy update — 2026-10-30
+
+D-P2-01 is **RESOLVED** by [operator decision 1](../../eif/phase2-controls/DECISIONS_PENDING.md#resolved-operator-decisions--2026-10-30):
+most recent evidence wins. Qualified history as defined below, newer than the
+baseline, supersedes the baseline ceiling. The new ceiling is the Epley estimate
+from the best recent qualified set, at target reps. A baseline entered after the
+last qualified session wins; without qualified history the baseline ceiling is
+unchanged. Keep the existing double-progression increment and never overwrite the
+user-entered baseline. This changes the approved new-build policy, not qualification
+or frozen prescriptions. Engine implementation and verification remain pending.
+
 ## Source and identity
 
 `getRecentExercisePerformances`, both last-performance APIs and the planning seed
@@ -57,10 +68,11 @@ and load convention. Last/recent maps must agree before a decision can be made.
 Only consecutive, distinct, newest-first qualified sessions are considered for
 stagnation. Increasing total repetitions at the same uniform load and working-set
 count breaks the hold streak even below the top of the current rep range. A load
-or work-count change breaks comparability. Existing numerical policy is retained:
+or work-count change breaks comparability. The original R06 checkpoint retained:
 exercise increments, RPE threshold, bodyweight rule, two-hold deload, rounding,
 minimums and the exercise-specific Epley baseline ceiling. See the accepted policy
-in `docs/training/ROUTINE_AUDIT.md`; R06 does not approve new scientific numbers.
+in `docs/training/ROUTINE_AUDIT.md`. The approved ceiling update above supersedes
+the baseline-only policy for new builds; R06 qualification remains unchanged.
 
 Explanations use the final saved weight and rep target after the ceiling/load
 adjustment. Rounded increases report the actual kg delta; deload wording identifies
@@ -69,7 +81,7 @@ does not claim a rep increment or added load was saved. Allocated, historical
 balanced and generic required/optional prescription paths share this explanation.
 Internal decision IDs are kept in evidence, not product copy.
 
-## Pending ceiling example (D-P2-01 remains unresolved)
+## Historical v1 ceiling example (policy superseded 2026-10-30)
 
 The tested bench timeline has three complete sessions: 80, 82.5 and 85 kg, each
 three sets of 12 repetitions. Existing double progression proposes 87.5 kg. With
@@ -77,7 +89,9 @@ that exercise's retained estimated 1RM of 80 kg and a new target of 10 reps, the
 existing rounded Epley ceiling applies 60 kg. The explanation explicitly says
 60 kg for 10 reps per set, identifies the proposed 87.5 kg and the saved-baseline
 limit. It does not promise +2.5 kg or replace the old baseline with recent history.
-Allowing later qualified history to override that ceiling still requires approval.
+This is retained evidence of the original implementation, not the approved new-build
+policy. D-P2-01 now approves the history override above; implementation and
+verification of that update remain pending.
 
 ## Limits
 

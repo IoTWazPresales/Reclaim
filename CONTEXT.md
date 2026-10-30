@@ -1,3 +1,15 @@
+## 2026-10-30 - Operator training policy decisions resolved
+
+Decisions 1–4 are recorded verbatim as resolved in
+`docs/eif/phase2-controls/DECISIONS_PENDING.md`: most recent qualified evidence
+versus baseline; v2 cap precedence for new builds; no fractional prescription
+credit; frequency distributes weekly totals, with increases from progression
+evidence only. D-P2-04 remains open for future cited changes. ROUTINE_AUDIT and
+R06 now distinguish the approved update from historical implementation.
+Documentation only; engine/tests/frozen sessions unchanged. Implementation and
+v2 verification remain pending. Baseline source 623d0c0; prior reported suite
+1477 passed / 1 known isolation-cap failure. No EIF acceptance or live operations.
+
 ## 2026-10-30 - Run-routes migration source B
 
 The operator-supplied authoritative read-only Supabase review matches every
