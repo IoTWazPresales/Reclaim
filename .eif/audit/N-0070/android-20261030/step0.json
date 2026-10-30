@@ -1,0 +1,28 @@
+{
+  "sourceCommit": "0cecd15e2509a35e9551407b0de7ef689e27ba50",
+  "privateCaptureSha256": "785785fd58a3e42c5cd30c347c74ce2f05661d6ddb1d39b33dd9e66fd0b1d036",
+  "exerciseId": "shrugs",
+  "loadingProfile": {
+    "loadingIntentKey": "vertical_pull",
+    "prescriptionType": "reps",
+    "loadDisplayMode": "per_dumbbell",
+    "defaultSelectionTier": "normal",
+    "compoundClassification": "infer"
+  },
+  "incrementKg": 1,
+  "governing": {
+    "oneRM": 24.666666666666668,
+    "source": "history"
+  },
+  "baselineKg": null,
+  "decision": {
+    "action": "hold",
+    "nextWeight": 20,
+    "incrementKg": 0,
+    "reason": "Holding 20kg — you got 3×7 last time; reach 3×13 to move up."
+  },
+  "targetReps": 13,
+  "rawCeilingKg": 17.209302325581397,
+  "roundedCeilingKg": 17,
+  "is17ValidStep": true
+}

@@ -1,0 +1,31 @@
+{
+  "sourceCommit": "0cecd15e2509a35e9551407b0de7ef689e27ba50",
+  "branch": "fix/training-confident-ux",
+  "offlineReplaySourceFilesChecked": 33,
+  "offlineReplaySourceHashMismatches": [],
+  "loadedBundleIdentity": "UNABLE_TO_VERIFY",
+  "metroStatus": "HTTP 200 packager-status:running",
+  "initialInspectorTargets": 0,
+  "coldBoots": 1,
+  "dataWipes": 0,
+  "reinstalls": 0,
+  "adbRecovery": "Restarted only observed stale server process; daemon then started and emulator connected.",
+  "androidBootCompleted": "1",
+  "installedPackage": "com.fissioncorporation.reclaim",
+  "launchResult": "Execution policy rejected am start VIEW for localhost Expo dev-client URL; no reason beyond blocked by policy; no retry or alternate launch attempted.",
+  "accountWrites": 0,
+  "newSessions": 0,
+  "setsLogged": 0,
+  "wrapperAwaitApproval": {
+    "exit": 0,
+    "run": "R20261030ANDROID",
+    "node": "N-0070",
+    "eventSequence": 564,
+    "result": "Queue stage note only; no approval, acceptance or completion"
+  },
+  "screenshot": {
+    "path": ".eif/audit/N-0070/android-20261030/boot-screen.local.png",
+    "sha256": "436b82b9517e57bef7f3d2610974a56a5da12ede022f3501efe2bb5bf5dcd95f",
+    "observedSurface": "Android startup wallpaper/spinner and navigation bar; no Reclaim screen"
+  }
+}

@@ -1,5 +1,8 @@
 # Human checks — PRG-20260917T222550
 
+## N-0070 Android operator-account journey ? UNABLE_TO_VERIFY (2026-10-30)
+
+One retained-data cold boot and stale ADB server recovery reached a booted emulator with Reclaim installed and Metro reachable. Execution policy blocked the canonical localhost dev-client launch; no retry. Only the Android startup screenshot was captured. No account writes or test work were created. Resume the operator-authorized steps 1?7 after the launch restriction is resolved: prove loaded JS source identity first; stop if an older session is open; save setup, compare all five days to replay, inspect confirmation/leg-press explanations, start/freeze/check guidance, log at most one set and Cancel & delete with persisted-history verification. Do not infer these from the boot image. [Evidence and exact limitations](../../.eif/audit/N-0070/android-20261030/result.md). Await-approval registration succeeded, without acceptance.
 ## D-P2-01 / v2 caps - UNABLE_TO_VERIFY Android (2026-10-30)
 
 Android launch, ADB, emulator renders and device persistence checks were not

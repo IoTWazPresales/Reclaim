@@ -1,5 +1,10 @@
 # Awaiting visual approval — PRG-20260917T222550
 
+## N-0070 operator-account Android attempt ? 2026-10-30
+
+**UNABLE_TO_VERIFY product visuals and acceptance.** Source `0cecd15`; step 0 confirms history governs shrugs at 17 kg per dumbbell on the valid 1 kg step. One cold boot recovered Android; execution policy rejected the documented app-launch command. No retry or account write occurred. The only screenshot is Android startup, not a Reclaim render. No weekly status/counts, five-day parity, confirmation/leg-press screen, frozen session, guidance, persistence or deletion was verified.
+
+Wrapper `await-approval N-0070 --renders .eif/audit/N-0070/android-20261030` succeeded under `R20261030ANDROID` (stage note sequence 564). This queue registration grants no approval or node acceptance. Review the [attempt and limitations](../../.eif/audit/N-0070/android-20261030/result.md); product visual approval remains pending an executable Android journey.
 ## D-P2-01 / v2 cap precedence - Android approval pending (2026-10-30)
 
 Source implementation only on `fix/training-confident-ux`, new policy

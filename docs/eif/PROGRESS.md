@@ -10,6 +10,12 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **Android operator-account attempt, 2026-10-30 ? N-0070 remains open:** At source `0cecd15`, executed step-0 probe confirms qualified history, no own shrug baseline, kg per dumbbell and valid 1 kg rounding to 17 kg. One cold boot, stale ADB server recovery and localhost reverse reached booted Android with Reclaim installed; execution policy blocked canonical dev-client launch. No retry/account write/source change/migration/EIF acceptance/R12. Loaded bundle identity and Android steps 2?7 UNABLE_TO_VERIFY. Only startup screenshot retained. Await-approval wrapper succeeded (run R20261030ANDROID, sequence 564); operator review pending. [Evidence](../../.eif/audit/N-0070/android-20261030/result.md). Resume only this bounded Android journey once launch is executable; no programme was replaced and no test sessions/sets were created.
+
+| Work item | Source checkpoint | Runtime/acceptance state |
+| --- | --- | --- |
+| N-0070 Android operator-account verification | 0cecd15; step-0 probe passed | Launch blocked by execution policy; queue registered; no acceptance |
+
 - **Resolved D-P2-01 and v2 caps, 2026-10-30:** Source implementation for new builds on baseline `1e18694`; policy `weekly-20261030-v3`, supported historical replay unchanged. Baseline edit timestamps stay in existing JSON; entered baselines remain intact. Cap shortfalls reach existing weekly diagnostics. Captured replay: shrugs 3 x 13 changes 20 -> 17 kg in every week; 68 sets/week and 20 warnings/week (19 confirmation) unchanged. Separate source review reports no blockers. Final full gate 1492 tests / 205 files / zero failures; types, dual31, catalogue357/0 and focused gates pass. Exact gates and inventory: `docs/training/recovery/evidence/resolved-policy-implementation-20261030.md`. Android approval pending in AWAITING_APPROVAL; no Android/live writes/migration/EIF acceptance/R12. Stop after scoped commit/push; preserve unrelated work.
 
 | Work item | Source checkpoint | Runtime/acceptance state |
@@ -755,3 +761,4 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-10-18T14:40:07Z` run `R20261018R02CORRECTION` — node.stage_note N-0070 HUMAN_CHECK steps=visual-steps.md
 - `2026-10-18T14:40:12Z` run `R20261018R02CORRECTION` — node.stage_note N-0070 AWAITING_APPROVAL renders=.eif/audit/N-0070/R02/correction-20261018 (UNABLE_TO_VERIFY — no PNG/JPEG image artifacts)
 - `2026-10-18T14:40:16Z` run `R20261018R02CORRECTION` — node.lease.release N-0070 lease released
+- `2026-10-30T15:59:13Z` run `R20261030ANDROID` — node.stage_note N-0070 AWAITING_APPROVAL renders=.eif/audit/N-0070/android-20261030; image artifacts=[{"path": ".eif/audit/N-0070/android-20261030/boot-screen.local.png", "sha256": "436b82b9517e57bef7f3d2610974a56a5da12ede022f3501efe2bb5bf5dcd95f"}]; authenticity and visual quality UNVERIFIED
