@@ -59,6 +59,12 @@ const first = (fixture: Fixture) => fixture.generated.sessions[0].plan.exercises
 const check = (fixture: Fixture) => validateProgrammeWeek(fixture.declaration, fixture.generated, fixture.profile);
 
 describe('history qualification at weekly validation', () => {
+  it('retains cap shortfalls in the weekly diagnostics used by preview and review', () => {
+    const f = reviewedFixture();
+    f.generated.sessions[0].plan.programmeValidation = { policyVersion: WEEKLY_POLICY_VERSION, status: 'feasible',
+      issues: [{ code: 'volume_cap_shortfall', severity: 'warning', message: '2 direct working sets unallocated under the user cap.' }] };
+    expect(check(f).issues).toContainEqual(expect.objectContaining({ code: 'volume_cap_shortfall', severity: 'warning', dayKey: '1', message: '2 direct working sets unallocated under the user cap.' }));
+  });
   const id = 'dumbbell_flyes'; // No-inference slot: history must not invent an anchor.
   function withHistory(empty = true) {
     const f = reviewedFixture();

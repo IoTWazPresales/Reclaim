@@ -240,7 +240,7 @@ describe('R10 programme evolution and effective work', () => {
     }
     captures.push({ scenario: `goal-${JSON.stringify(goals)}-baseline-reps-${baselineReps}`, policyStatus: f.plan.weeks[0].compilation?.policyStatus });
   });
-  it('qualified 80 kg achievement recommends 82.5 but retained ceiling applies 80 with explicit reason (D-P2-01 remains pending)', () => {
+  it('qualified 80 kg achievement proposes 82.5 while its history ceiling at the same reps governs the applied 80', () => {
     const bench = getExerciseById('barbell_bench_press')!;
     const history = completedPerformanceHistory([historyItem(bench.id, '2026-10-13', 9, 80)], 3);
     const user = { experienceLevel: 'advanced' as const, estimated1RM: { [bench.id]: 104 }, recentSessionPerformance: history, lastSessionPerformance: { [bench.id]: history[bench.id][0] } };
@@ -248,7 +248,8 @@ describe('R10 programme evolution and effective work', () => {
     expect(recommendation?.nextWeight).toBe(82.5);
     const weight = suggestLoading({ exercise: bench, userState: user, goalWeights: { build_muscle: 0.5, build_strength: 0.5, lose_fat: 0, get_fitter: 0 }, plannedReps: 9 });
     expect(weight).toBe(80);
-    expect(explainAppliedProgression(bench, user, [5, 9], weight, 9)).toContain('your saved exercise baseline limits it');
+    expect(explainAppliedProgression(bench, user, [5, 9], weight, 9)).toContain('Most recent qualified history governs');
+    expect(explainAppliedProgression(bench, user, [5, 9], weight, 9)).toContain('qualified history limits it');
     expect(explainAppliedProgression(bench, user, [5, 9], weight, 9)).toContain('82.5kg');
   });
 

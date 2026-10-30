@@ -164,6 +164,7 @@ export function buildFourWeekPlan(
     experienceLevel: profile.constraints?.experienceLevel,
     trainingMode: mode,
     baselineInputs: profile.constraints?.baselineInputs,
+    baselineUpdatedAt: profile.constraints?.baselineUpdatedAt,
     runningGoal: profile.constraints?.runningGoal,
     runningDistanceKm: profile.constraints?.runningDistanceKm,
   };

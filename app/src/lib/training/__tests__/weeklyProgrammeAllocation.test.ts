@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { WEEKLY_POLICY_VERSION, LEGACY_WEEKLY_POLICY_VERSION } from '../weeklyProgrammeTypes';
 import { writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { buildFourWeekPlan } from '../programPlanner';
@@ -110,13 +111,21 @@ describe('R04 declared weekly objectives constrain real planner sessions', () =>
     expect(unknown.plannedSets[0].suggestedWeight).toBe(0);
   });
 
-  it('reports saved cap conflicts rather than trimming required exposures', () => {
+  it('reports saved v1 cap conflicts without changing historical replay', () => {
     const day = build(base, 5).weeks[0].days[1];
     const allocation = structuredClone(day.allocation!);
+    allocation.policyVersion = LEGACY_WEEKLY_POLICY_VERSION;
     allocation.slots.forEach((slot) => { slot.setCount = 10; });
     const session = buildProgramDaySession({ label: day.label, template_key: day.template, intents: day.intents, allocation }, base);
     expect(session.programmeValidation!.issues.some((issue) => issue.code === 'allocation_budget_exceeded')).toBe(true);
     expect(session.exercises.reduce((total, item) => total + item.plannedSets.length, 0)).toBe(allocation.slots.length * 10);
+    expect(session.estimatedDurationMinutes).toBe(10 + allocation.slots.filter(s => s.exerciseId).reduce((n, s) => n + (s.compound ? 8 : 3), 0));
+    allocation.policyVersion = WEEKLY_POLICY_VERSION;
+    const capped = buildProgramDaySession({ label: day.label, template_key: day.template, intents: day.intents, allocation }, base);
+    expect(capped.exercises.reduce((n, ex) => n + ex.plannedSets.length, 0)).toBeLessThanOrEqual(24);
+    expect(capped.exercises.every(ex => ex.plannedSets.length <= 5)).toBe(true);
+    expect(capped.programmeValidation!.issues.some(i => i.code === 'volume_cap_shortfall')).toBe(true);
+
   });
 
   for (const n of [2, 3, 4, 5, 6]) {

@@ -98,8 +98,10 @@ describe('weekly volume model', () => {
     expect(openCounts.total).toBeGreaterThan(5);
     expect(openCounts.primary).toBeLessThanOrEqual(25);
     expect(openCounts.accessory).toBeLessThanOrEqual(15);
-    expect(openCounts.isolation).toBeLessThanOrEqual(10);
-    expect(openCounts.total).toBeLessThanOrEqual(120);
+    expect(openCounts.isolation).toBeGreaterThan(10);
+    expect(open.exercises.every(ex => ex.plannedSets.length <= 5)).toBe(true);
+    expect(open.estimatedDurationMinutes).toBeLessThanOrEqual(60);
+    expect(openCounts.total).toBeLessThanOrEqual(24);
 
     const capped = buildSession({
       template: 'upper',

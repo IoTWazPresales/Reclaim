@@ -6,7 +6,7 @@
  * otherwise unchanged here.
  */
 import { buildSessionFromProgramDay } from './engine';
-import { WEEKLY_POLICY_VERSION } from './weeklyProgrammeTypes';
+import { supportsWeeklyPolicy } from './weeklyProgrammeTypes';
 import type {
   DecisionTrace,
   ExercisePriority,
@@ -41,7 +41,7 @@ export function resolveProgramDayAllocation(
   const week = plan?.weeks?.find(entry => entry.weekIndex === day.week_index);
   const allocation = week?.days?.[day.day_index ?? 0]?.allocation;
   const versioned = !!plan?.programme || plan?.weeks?.some(entry => Object.values(entry.days).some(value => value.allocation));
-  if (versioned && (!allocation || allocation.policyVersion !== WEEKLY_POLICY_VERSION ||
+  if (versioned && (!allocation || !supportsWeeklyPolicy(allocation.policyVersion) ||
     (plan?.programme && plan.programme.policyVersion !== allocation.policyVersion) || allocation.dayKey !== String(day.day_index))) {
     throw new Error('Saved weekly allocation is missing or unsupported. Review training setup before starting.');
   }

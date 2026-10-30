@@ -1,7 +1,10 @@
 import type { ExercisePriority, MovementIntent, SessionTemplate } from './types';
 import type { Dose, LoadPolicy } from './balancedHypertrophy';
 
-export const WEEKLY_POLICY_VERSION = 'weekly-20261014-v2' as const;
+export const LEGACY_WEEKLY_POLICY_VERSION = 'weekly-20261014-v2' as const;
+export const WEEKLY_POLICY_VERSION = 'weekly-20261030-v3' as const;
+export type WeeklyPolicyVersion = typeof WEEKLY_POLICY_VERSION | typeof LEGACY_WEEKLY_POLICY_VERSION;
+export const supportsWeeklyPolicy = (version: string) => version === WEEKLY_POLICY_VERSION || version === LEGACY_WEEKLY_POLICY_VERSION;
 export type ProgrammeIssue = {
   code: string;
   severity: 'error' | 'warning';
@@ -37,7 +40,7 @@ export type AllocatedSlot = {
   candidateExerciseIds: string[];
 };
 export type AllocatedProgrammeDay = {
-  policyVersion: typeof WEEKLY_POLICY_VERSION;
+  policyVersion: WeeklyPolicyVersion;
   strategyId: string;
   dayKey: string;
   slots: AllocatedSlot[];
@@ -51,7 +54,7 @@ export type WeeklyProgrammeInputDay = {
   scheduledRun?: boolean;
 };
 export type CompiledProgrammeWeek = {
-  policyVersion: typeof WEEKLY_POLICY_VERSION;
+  policyVersion: WeeklyPolicyVersion;
   strategyId: string;
   policyStatus: 'accepted' | 'legacy_pending_review';
   requirements: WeeklyRequirement[];

@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { epleyWorkingWeightCeiling } from '../progression';
 import { completedPerformanceHistory, isQualifiedPerformance } from '../performanceHistory';
-import { deriveProgressionDecision, explainAppliedProgression, getExerciseById, suggestLoading } from '../engine';
+import { buildSession, deriveProgressionDecision, explainAppliedProgression, getExerciseById, suggestLoading } from '../engine';
 import { historyItem } from './fixtures/performanceHistory';
 import { buildProgramDaySession } from '../buildProgramDaySession';
+import { programmeWeekProposal } from '../programmeWeekProposal';
 import { buildFourWeekPlan } from '../programPlanner';
 import type { TrainingProfileSnapshot, UserState } from '../types';
 
@@ -105,18 +107,62 @@ describe('canonical history to decision', () => {
     expect(deriveProgressionDecision(bench, user, [6, 8])).toBeNull();
   });
 
-  it('preserves D-P2-01 ceiling over several ended sessions and describes actual prescribed work', () => {
+  it('applies newer qualified evidence without changing the progression increment', () => {
     const user = state([historyItem(bench.id, '2026-10-01', 12, 80), historyItem(bench.id, '2026-10-02', 12, 82.5), historyItem(bench.id, '2026-10-03', 12, 85)]);
     user.estimated1RM = { [bench.id]: 80 };
     const proposed = deriveProgressionDecision(bench, user, [8, 12]);
     const applied = suggestLoading({ exercise: bench, userState: user, goalWeights: goals, plannedReps: 10 });
     expect(proposed?.nextWeight).toBe(87.5);
-    expect(applied).toBe(60);
+    expect(applied).toBe(87.5);
+    expect(user.estimated1RM[bench.id]).toBe(80);
     const reason = explainAppliedProgression(bench, user, [8, 12], applied, 10);
-    expect(reason).toContain('Prescribed 60kg for 10 reps per set');
+    expect(reason).toContain('Prescribed 87.5kg for 10 reps per set');
     expect(reason).toContain('87.5kg');
-    expect(reason).toContain('your saved exercise baseline limits it');
-    expect(reason).not.toContain('+2.5kg');
+    expect(reason).toContain('Most recent qualified history governs');
+    expect(reason).toContain('+2.5kg');
+  });
+
+  it('uses a newer baseline, or a baseline with no history, and preserves v1 replay', () => {
+    const user = state([historyItem(bench.id, '2026-10-03', 12, 85)]);
+    user.estimated1RM = { [bench.id]: 80 };
+    const load = () => suggestLoading({ exercise: bench, userState: user, goalWeights: goals, plannedReps: 10 });
+    user.baselineUpdatedAt = { [bench.id]: '2026-10-04T00:00:00Z' };
+    expect(load()).toBe(60);
+    expect(explainAppliedProgression(bench, user, [8, 12], load(), 10)).toContain('baseline governs');
+    user.baselineUpdatedAt[bench.id] = '2026-10-01T00:00:00Z';
+    expect(load()).toBe(87.5);
+    user.prescriptionPolicy = 'v1';
+    expect(load()).toBe(60);
+    delete user.prescriptionPolicy;
+    delete user.lastSessionPerformance;
+    delete user.recentSessionPerformance;
+    expect(load()).toBe(60);
+  });
+
+  it('uses both original load ceiling and caps on direct v1 replay builds', () => {
+    const user = state([historyItem(bench.id, '2026-10-03', 12, 85)]);
+    user.estimated1RM = { [bench.id]: 80 };
+    const session = buildSession({ template: 'push', goals, prescriptionPolicy: 'v1', userState: user,
+      constraints: { availableEquipment: ['barbell', 'bench', 'rack', 'floor'], injuries: [], forbiddenMovements: [], timeBudgetMinutes: 60 } });
+    const work = session.exercises.find(ex => ex.exerciseId === bench.id)!;
+    expect(work.plannedSets[0].suggestedWeight).toBe(epleyWorkingWeightCeiling(80, work.plannedSets[0].targetReps, 2.5));
+    expect(work.decisionTrace.progressionReason).toContain('your saved exercise baseline limits it');
+    expect(user.prescriptionPolicy).toBeUndefined();
+  });
+
+  it('ignores leftover edit timestamps when the baseline has been cleared', () => {
+    const user = state([historyItem(bench.id, '2026-10-03', 8, 100)]);
+    user.baselineUpdatedAt = { [bench.id]: '2026-10-04T00:00:00Z' };
+    const load = suggestLoading({ exercise: bench, userState: user, goalWeights: goals, plannedReps: 12 });
+    expect(load).toBe(epleyWorkingWeightCeiling(100 * (1 + 8 / 30), 12, 2.5));
+    expect(explainAppliedProgression(bench, user, [8, 12], load, 12)).toContain('Most recent qualified history governs');
+  });
+
+  it('cannot inherit history with a different load unit', () => {
+    const user = state([historyItem(bench.id, '2026-10-03', 12, 85)]);
+    user.estimated1RM = { [bench.id]: 80 };
+    (user.lastSessionPerformance![bench.id].evidence! as any).loadUnit = 'lb';
+    expect(suggestLoading({ exercise: bench, userState: user, goalWeights: goals, plannedReps: 10 })).toBe(60);
   });
 
   it('passes qualification and the applied reason through the committed R04 allocated-day path', () => {
@@ -129,6 +175,8 @@ describe('canonical history to decision', () => {
     const work = session.exercises.find(ex => ex.exerciseId === bench.id)!;
     expect(work).toBeTruthy();
     expect(work.decisionTrace.progressionReason).toContain(`Prescribed ${work.plannedSets[0].suggestedWeight}kg for ${work.plannedSets[0].targetReps} reps per set`);
-    expect(work.decisionTrace.progressionReason).toContain('your saved exercise baseline limits it');
+    expect(work.decisionTrace.progressionReason).toContain('Most recent qualified history governs');
+    const proposals = programmeWeekProposal(plan, 1, profile);
+    expect([...proposals.values()][0].weeklyValidation!.issues.some(i => i.code === 'baseline_ceiling_exceeded' && i.exerciseId === bench.id)).toBe(false);
   });
 });

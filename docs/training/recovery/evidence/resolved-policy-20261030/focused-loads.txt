@@ -1,0 +1,37 @@
+
+ RUN  v4.0.8 <workspace>/app
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ✓ src/lib/training/__tests__/experienceLevelLoads.test.ts > experience level and Epley ceilings > treats a missing or unknown level as beginner and keeps a stored level 2ms
+ ✓ src/lib/training/__tests__/experienceLevelLoads.test.ts > experience level and Epley ceilings > uses beginner loads when the program snapshot omits experience 16ms
+ ✓ src/lib/training/__tests__/experienceLevelLoads.test.ts > experience level and Epley ceilings > replays the v1 baseline ceiling without inheriting another exercise baseline 3ms
+ ✓ src/lib/training/__tests__/experienceLevelLoads.test.ts > experience level and Epley ceilings > writes experienceLevel onto the profile constraints and the program snapshot 4ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > uses frozen working sets without a set-log replica and does not mutate stored rows 7ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects unfinished latest work instead of falling back to older success 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects partial latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects skipped latest work instead of falling back to older success 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects missing_plan latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects missing_performed latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects duplicate latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects extra latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects missing_timestamp latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects mixed latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects invalid_rpe latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects external_zero latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects missing_weight latest work instead of falling back to older success 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > does not skip an incomplete session to construct two stagnant sessions 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > recognizes improving reps below the top and preserves the two-hold deload 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects mismatched exercise, unit, source, duplicate sessions and legacy numeric input 17ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > distinguishes bodyweight zero, assistance and carry/time units 2ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > reports rounded increments and deload targets without promising an unapplied change 2ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects a recent incomplete session even when a caller passes an older successful last map 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > applies newer qualified evidence without changing the progression increment 2ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > uses a newer baseline, or a baseline with no history, and preserves v1 replay 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > uses both original load ceiling and caps on direct v1 replay builds 15ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > cannot inherit history with a different load unit 0ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > passes qualification and the applied reason through the committed R04 allocated-day path 30ms
+
+ Test Files  2 passed (2)
+      Tests  28 passed (28)
+   Start at  17:14:26
+   Duration  3.28s (transform 585ms, setup 196ms, collect 691ms, tests 112ms, environment 0ms, prepare 223ms)

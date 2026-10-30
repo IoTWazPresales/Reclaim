@@ -1,0 +1,20 @@
+INCOMPLETE: manually stopped after more than two minutes without output; no report/exit success. Retrying the same canonical shard before proceeding.
+
+
+ RUN  v4.0.8 <workspace>/app
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+stdout | src/lib/mood/__tests__/moodOutbox.test.ts > moodOutbox > dedupes append by localId
+[Reclaim] [moodOutbox] Migrated legacy AsyncStorage pending mood rows to localData { count: 1 }
+
+stdout | src/lib/mood/__tests__/moodOutbox.test.ts > moodOutbox > dedupes append by localId
+[Reclaim] [moodOutbox] Migrated legacy AsyncStorage pending mood rows to localData { count: 1 }
+
+ ✓ src/lib/mood/__tests__/moodOutbox.test.ts > moodOutbox > dedupes append by localId 2785ms
+stdout | src/lib/mood/__tests__/moodOutbox.test.ts > moodOutbox > migrates legacy AsyncStorage when localData has no pending rows
+[Reclaim] [moodOutbox] Migrated legacy AsyncStorage pending mood rows to localData { count: 1 }
+
+ ✓ src/lib/mood/__tests__/moodOutbox.test.ts > moodOutbox > loads canonical localData when AsyncStorage key is missing 15ms
+ ✓ src/lib/mood/__tests__/moodOutbox.test.ts > moodOutbox > returns empty when intentional empty array and aligns legacy AsyncStorage 9ms
+ ✓ src/lib/mood/__tests__/moodOutbox.test.ts > moodOutbox > prefers localData canonical rows over stale legacy AsyncStorage 9ms
+ ✓ src/lib/mood/__tests__/moodOutbox.test.ts > moodOutbox > migrates legacy AsyncStorage when localData has no pending rows 10ms

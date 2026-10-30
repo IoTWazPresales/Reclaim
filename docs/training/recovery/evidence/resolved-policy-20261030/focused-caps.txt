@@ -1,0 +1,45 @@
+
+ RUN  v4.0.8 <workspace>/app
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ✓ src/lib/training/__tests__/resolvedPolicy.test.ts > resolved v2 prescription contract > limits one exercise and the combined owner dose and reports every withheld set 8ms
+ ✓ src/lib/training/__tests__/resolvedPolicy.test.ts > resolved v2 prescription contract > combines heavy and follow-up chest work under one owner ceiling 1ms
+ ✓ src/lib/training/__tests__/resolvedPolicy.test.ts > resolved v2 prescription contract > retains eedb704 session cap 2 with hard priority caps 22ms
+ ✓ src/lib/training/__tests__/resolvedPolicy.test.ts > resolved v2 prescription contract > retains eedb704 session cap 5 with hard priority caps 15ms
+ ✓ src/lib/training/__tests__/resolvedPolicy.test.ts > resolved v2 prescription contract > retains eedb704 session cap 0 with hard priority caps 8ms
+ ✓ src/lib/training/__tests__/resolvedPolicy.test.ts > resolved v2 prescription contract > ignores the old isolation default but keeps tighter explicit caps and session/time limits 31ms
+ ✓ src/lib/training/__tests__/resolvedPolicy.test.ts > resolved v2 prescription contract > persists baseline edit time in existing JSON and leaves the entered value untouched 3ms
+ ✓ src/lib/training/__tests__/resolvedPolicy.test.ts > resolved v2 prescription contract > compound secondary biceps involvement does not reduce the direct curl requirement 10ms
+ ✓ src/lib/training/__tests__/resolvedPolicy.test.ts > resolved v2 prescription contract > frequency distributes the same direct weekly target and secondary involvement never earns prescription credit 1ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > 2 days preserve declared doses and trace sessions across weeks 1–4 81ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > 3 days preserve declared doses and trace sessions across weeks 1–4 47ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > 4 days preserve declared doses and trace sessions across weeks 1–4 48ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > 5 days preserve declared doses and trace sessions across weeks 1–4 74ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > 6 days preserve declared doses and trace sessions across weeks 1–4 57ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > retains objectives when an entire calendar exposure day is absent 13ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > keeps prescription unchanged for translations, duplicated labels and whitespace 16ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > applies all approved goal blends and injury constraints across 2–6 days 225ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > reports the phase-one five-day floor-only fixture without dropping objectives 9ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > uses available dumbbell alternatives and applies dislikes and forbidden movements 13ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > retains entered rack exception and exercise-specific load policy 17ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > reports saved v1 cap conflicts without changing historical replay 7ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > preserves accepted running/hybrid placement for 2 days 11ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > preserves accepted running/hybrid placement for 3 days 12ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > preserves accepted running/hybrid placement for 4 days 15ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > preserves accepted running/hybrid placement for 5 days 14ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > preserves accepted running/hybrid placement for 6 days 14ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > flags pending legacy policies without disabling accepted session generation 95ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > does not alias future weeks or alter persisted started/guided snapshots 14ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > fails closed for unsupported policy and unavailable materialized exercise 10ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > captures complete plans, diagnostic outcomes and objective policy hash when requested 0ms
+ ✓ src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > reads the written caps and no muscle band 4ms
+ ✓ src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > credits 1.0 per primary tag and 0.5 per secondary tag 1ms
+ ✓ src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > sums a week of plans with the same credit 1ms
+ ✓ src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > keeps a new set inside the role cap and the session total 1ms
+ ✓ src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > clamps a new session when a tighter cap is supplied 27ms
+ ✓ src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > leaves a started session snapshot frozen when a later build is capped 9ms
+
+ Test Files  3 passed (3)
+      Tests  36 passed (36)
+   Start at  17:23:26
+   Duration  12.27s (transform 1.11s, setup 380ms, collect 1.37s, tests 944ms, environment 1ms, prepare 591ms)

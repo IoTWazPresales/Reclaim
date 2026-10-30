@@ -47,6 +47,7 @@ import {
   mapExerciseIdToBaselineKey,
   denormalizeEquipmentId,
 } from '@/lib/training/setupMappings';
+import { mapBaselineKeyToExerciseId } from '@/lib/training/setupMappings';
 import { prepareTrainingSetup, type TrainingSetupDraft } from '@/lib/training/setupDraft';
 import { estimate1RM } from '@/lib/training/progression';
 import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
@@ -185,9 +186,10 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
   const [runningDistanceKm, setRunningDistanceKm] = useState('');
   const [baselines, setBaselines] = useState<Record<string, number>>({});
   // Store reps per baseline exercise (default 5)
+  const [baselineUpdatedAt, setBaselineUpdatedAt] = useState<Record<string, string>>({});
   const [baselineReps, setBaselineReps] = useState<Record<string, number>>({});
   const setupDraft: TrainingSetupDraft = {
-    goals, selectedWeekdays, equipment, constraints, baselines, baselineReps,
+    goals, selectedWeekdays, equipment, constraints, baselines, baselineReps, baselineUpdatedAt,
     muscleFrequency, experienceLevel, includeSkillWork, trainingMode, runningGoal, runningDistanceKm,
   };
   
@@ -326,6 +328,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
           hydratedReps[setupKey] = defaultReps;
         }
       }
+      setBaselineUpdatedAt(profile.constraints?.baselineUpdatedAt ?? {});
       setBaselines(hydratedBaselines);
       setBaselineReps(hydratedReps);
     }
@@ -520,6 +523,8 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
   }, []);
 
   const updateBaseline = useCallback((exerciseId: string, value: string) => {
+    const id = mapBaselineKeyToExerciseId(exerciseId);
+    if (id) setBaselineUpdatedAt(prev => ({ ...prev, [id]: new Date().toISOString() }));
     const num = parseFloat(value);
     setBaselines((prev) => ({
       ...prev,
@@ -528,6 +533,8 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
   }, []);
 
   const updateBaselineReps = useCallback((exerciseId: string, reps: number) => {
+    const id = mapBaselineKeyToExerciseId(exerciseId);
+    if (id) setBaselineUpdatedAt(prev => ({ ...prev, [id]: new Date().toISOString() }));
     setBaselineReps((prev) => ({
       ...prev,
       [exerciseId]: reps,

@@ -1,0 +1,8 @@
+
+ RUN  v4.0.8 <workspace>/app
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ✓ src/lib/health/__tests__/healthConnectPermissionUse.test.ts > Health Connect + location permission use (N-0036) > declared plugin reads equal connect-time requested records 4ms
+ ✓ src/lib/health/__tests__/healthConnectPermissionUse.test.ts > Health Connect + location permission use (N-0036) > every declared/requested Health Connect record is actually used in product source 522ms
+ ✓ src/lib/health/__tests__/healthConnectPermissionUse.test.ts > Health Connect + location permission use (N-0036) > declared writes equal insertRecords / requestPermission write types 1357ms
+ ✓ src/lib/health/__tests__/healthConnectPermissionUse.test.ts > Health Connect + location permission use (N-0036) > run location permissions are declared and used together 946ms

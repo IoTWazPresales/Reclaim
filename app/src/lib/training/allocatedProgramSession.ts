@@ -5,11 +5,12 @@ import { evaluateExerciseEligibility } from './exerciseEligibility';
 import { getWeightStep } from './progression';
 import { warmupSetsForWorkingWeight } from './warmupSets';
 import type { AllocatedProgrammeDay, ProgrammeIssue } from './weeklyProgrammeTypes';
-import { WEEKLY_POLICY_VERSION } from './weeklyProgrammeTypes';
+import { WEEKLY_POLICY_VERSION, supportsWeeklyPolicy } from './weeklyProgrammeTypes';
+import { capNewSession } from './sessionCapPolicy';
 import { isBalancedDayStrategyId } from './weeklyProgramme';
 import type { Exercise, ExercisePriority, PlannedExercise, SessionPlan, SessionTemplate, TrainingProfileSnapshot } from './types';
 
-/** Materialize an already allocated day. It cannot add, trim or reallocate dose. */
+/** Materialize an allocation; v2 withholds over-cap sets with explicit diagnostics. */
 export function buildAllocatedProgramSession(input: {
   allocation: AllocatedProgrammeDay;
   label: string;
@@ -22,7 +23,7 @@ export function buildAllocatedProgramSession(input: {
   const { profile, allocation } = input;
   const issues: ProgrammeIssue[] = [...allocation.issues];
   const exercises: PlannedExercise[] = [];
-  if (allocation.policyVersion !== WEEKLY_POLICY_VERSION) issues.push({ code: 'unsupported_policy_version', severity: 'error', message: 'This programme policy version is not supported by this build.' });
+  if (!supportsWeeklyPolicy(allocation.policyVersion)) issues.push({ code: 'unsupported_policy_version', severity: 'error', message: 'This programme policy version is not supported by this build.' });
   if (!isBalancedDayStrategyId(allocation.strategyId)) issues.push({ code: 'unsupported_day_strategy', severity: 'error', message: 'No approved daily placement exists for this strategy identifier.' });
   for (const slot of allocation.slots) {
     if (!Number.isInteger(slot.setCount) || slot.setCount <= 0 || slot.setCount > SESSION_SET_CAP || !Number.isFinite(slot.reps) || slot.reps <= 0 || !Number.isFinite(slot.restSeconds) || slot.restSeconds < 0) {
@@ -66,13 +67,17 @@ export function buildAllocatedProgramSession(input: {
       10 + allocation.slots.reduce((total, slot) => total + (slot.compound ? 8 : 3), 0) > SESSION_MINUTE_CAP) {
     issues.push({ code: 'allocation_budget_exceeded', severity: 'error', message: 'Saved weekly requirements exceed the accepted session budget; no sets were silently trimmed.' });
   }
+  const capped = allocation.policyVersion === WEEKLY_POLICY_VERSION
+    ? capNewSession(exercises, undefined, SESSION_MINUTE_CAP, exercises.map(ex => allocation.slots.find(s => s.exerciseId === ex.exerciseId)!.owner), exercises.map(ex => allocation.slots.find(s => s.exerciseId === ex.exerciseId)!.compound ? 8 : 3))
+    : { exercises, issues: [], estimatedDurationMinutes: 10 + allocation.slots.filter(slot => slot.exerciseId).reduce((n, slot) => n + (slot.compound ? 8 : 3), 0) };
+  issues.push(...capped.issues);
   return {
     id: `session_${Date.now()}`, template: input.template, goals: profile.goals,
     constraints: { availableEquipment: profile.equipment_access, injuries: profile.constraints?.injuries ?? [], forbiddenMovements: (profile.constraints?.forbiddenMovements ?? []) as SessionPlan['constraints']['forbiddenMovements'], preferences: profile.constraints?.preferences, timeBudgetMinutes: SESSION_MINUTE_CAP },
     userState: { experienceLevel: profile.experienceLevel ?? 'beginner', estimated1RM: profile.baselines, performanceHistory: profile.performanceHistory, lastSessionPerformance: profile.lastSessionPerformance, recentSessionPerformance: profile.recentSessionPerformance },
-    exercises,
+    exercises: capped.exercises,
     // Existing estimate retained; not a proof of actual completion time.
-    estimatedDurationMinutes: 10 + allocation.slots.filter((slot) => slot.exerciseId).reduce((sum, slot) => sum + (slot.compound ? 8 : 3), 0),
+    estimatedDurationMinutes: capped.estimatedDurationMinutes,
     createdAt: new Date().toISOString(), sessionLabel: input.label, weekIndex: input.weekIndex,
     programmeValidation: { policyVersion: allocation.policyVersion, status: issues.some((issue) => issue.severity === 'error') ? 'infeasible' : 'feasible', issues },
   };

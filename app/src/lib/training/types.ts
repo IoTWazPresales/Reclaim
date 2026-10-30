@@ -101,6 +101,9 @@ export interface UserState {
   /** Recent per-session history (newest first) — enables hold-streak / deload detection. */
   recentSessionPerformance?: Record<string, ExercisePerformance[]>;
   estimated1RM?: Record<string, number>;
+  baselineUpdatedAt?: Record<string, string>;
+  /** Historical replay opts into the original ceiling and caps. */
+  prescriptionPolicy?: 'v1' | 'v2';
   fatigueProxy?: number; // 0-1, higher = more fatigued
 }
 
@@ -276,9 +279,10 @@ export interface BuildSessionInput {
    */
   adaptiveTrainingEnabled?: boolean;
   /**
-   * Set-count ceilings. Omitted on a product build, which reads rules.v1.json
-   * volumeCaps (priority 25/15/10 and session total 120). Not a muscle/week band.
+   * Optional tighter user ceilings. New builds also enforce v2 exercise,
+   * owner-muscle, 24-set and 60-minute limits; v1 replay reads rules.v1.json.
    */
+  prescriptionPolicy?: 'v1' | 'v2';
   volumeCaps?: {
     perPriority: { primary: number; accessory: number; isolation: number };
     perSessionTotal: number;
@@ -381,6 +385,7 @@ export interface TrainingProfileSnapshot {
     preferences?: TrainingConstraints['preferences'];
   };
   baselines?: Record<string, number>;
+  baselineUpdatedAt?: Record<string, string>;
   /** Entered setup values; baselines remain the canonical estimated 1RM input. */
   baselineInputs?: Record<string, { weightKg: number; reps: number }>;
   lastSessionPerformance?: UserState['lastSessionPerformance'];

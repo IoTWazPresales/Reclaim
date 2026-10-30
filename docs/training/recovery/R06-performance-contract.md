@@ -1,5 +1,14 @@
 # R06 performance-history and progression boundary
 
+## Implemented new-build ceiling - 2026-10-30
+
+D-P2-01 now governs new builds under `weekly-20261030-v3`; supported historical
+policy replay retains the original ceiling. Qualification and increments are
+unchanged. Existing JSON holds per-exercise baseline edit timestamps; a newer
+baseline wins and entered values are never overwritten. See the
+[implementation and replay evidence](evidence/resolved-policy-implementation-20261030.md).
+Earlier implementation-pending language below is retained as the prior checkpoint.
+
 Scope: R06 only, based on committed R02 setup and R04 allocated-day interfaces.
 This is a source contract, not N-0070 acceptance or Android verification.
 

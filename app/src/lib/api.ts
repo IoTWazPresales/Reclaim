@@ -2700,6 +2700,7 @@ export type TrainingProfileRow = {
     /** Kilometres the person typed for a custom distance. Not a pace. */
     runningDistanceKm?: number;
     baselineInputs?: Record<string, { weightKg: number; reps: number }>;
+    baselineUpdatedAt?: Record<string, string>;
   };
   baselines?: Record<string, number>;
   created_at: string;

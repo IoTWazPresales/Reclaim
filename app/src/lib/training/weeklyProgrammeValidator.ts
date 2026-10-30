@@ -1,3 +1,4 @@
+import { prescriptionOwner } from './sessionCapPolicy';
 import catalogData from './catalog/exercises.v1.json';
 import { SESSION_SET_CAP, SESSION_MINUTE_CAP } from './balancedHypertrophy';
 import { evaluateExerciseEligibility } from './exerciseEligibility';
@@ -6,7 +7,7 @@ import { isQualifiedPerformance, PERFORMANCE_HISTORY_SOURCE } from './performanc
 import { getPrimarySlotRoleTier, PrimarySlotRoleTier } from './exerciseSessionRole';
 import { epleyWorkingWeightCeiling, getWeightStep } from './progression';
 import { isNonLegTrainingTemplate } from './trainingMode';
-import { WEEKLY_POLICY_VERSION } from './weeklyProgrammeTypes';
+import { WEEKLY_POLICY_VERSION, supportsWeeklyPolicy } from './weeklyProgrammeTypes';
 import type { Exercise, ExercisePerformance, PlannedExercise, PlannedSet, SessionPlan, TrainingProfileSnapshot } from './types';
 import type { AllocatedSlot, CompiledProgrammeWeek, ProgrammeIssue, WeeklyProgrammeInputDay, WeeklyRequirement } from './weeklyProgrammeTypes';
 
@@ -147,7 +148,7 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
   if (![declaration.policyStatus, week.policyStatus].every((status) => status === 'accepted' || status === 'legacy_pending_review')) add('invalid_policy_status', 'Policy status is not a supported accepted/unresolved state.');
   if (!/^balanced-v1:[2-6]$/.test(declaration.strategyId) && declaration.strategyId !== 'running-v1' && !(declaration.strategyId === 'legacy-intents-v1' && declaration.policyStatus === 'legacy_pending_review')) add('unsupported_strategy', 'No approved weekly strategy exists for this identifier.');
   if (!positiveInteger(declaration.weekIndex) || declaration.weekIndex > 4 || generated.weekIndex !== declaration.weekIndex) add('week_identity_mismatch', 'Generated week does not match a declared week 1–4.');
-  if (declaration.policyVersion !== WEEKLY_POLICY_VERSION || week.policyVersion !== declaration.policyVersion || week.strategyId !== declaration.strategyId) add('policy_identity_mismatch', 'Policy/version differs from the approved declaration.');
+  if (!supportsWeeklyPolicy(declaration.policyVersion) || week.policyVersion !== declaration.policyVersion || week.strategyId !== declaration.strategyId) add('policy_identity_mismatch', 'Policy/version differs from the approved declaration.');
   if (typeof declaration.provenance !== 'string' || !declaration.provenance.trim()) add('declaration_provenance_missing', 'Approved requirements need explicit provenance.');
   if (declaration.policyStatus !== 'accepted' || week.policyStatus !== 'accepted') warning('policy_unresolved', 'Legacy weekly targets remain pending review; structural checks cannot validate their scientific target.');
   if (week.status === 'infeasible') add('compiler_infeasible', 'Allocation is marked infeasible; final sessions cannot make it valid.');
@@ -199,6 +200,9 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
     if (session.plan.weekIndex !== undefined && session.plan.weekIndex !== declaration.weekIndex) add('week_identity_mismatch', 'Final session belongs to a different week.', { dayKey: session.dayKey });
     if ((session.kind === 'run') !== (session.plan.template === 'run') || session.kind === 'strength' && expectedDay?.template !== session.plan.template) add('session_template_mismatch', 'Actual session type differs from its declared placement.', { dayKey: session.dayKey });
     if (session.plan.programmeValidation?.status === 'infeasible' || session.plan.programmeValidation?.issues.some((issue) => issue.severity === 'error')) add('session_infeasible', 'Final session carries an allocation error.', { dayKey: session.dayKey });
+    if (declaration.policyVersion === WEEKLY_POLICY_VERSION) for (const issue of session.plan.programmeValidation?.issues ?? []) {
+      if (issue.code === 'volume_cap_shortfall') warning(issue.code, issue.message, { dayKey: session.dayKey, provenance: routine });
+    }
   }
 
   const slots: Array<{ dayKey: string; slot: AllocatedSlot }> = [];
@@ -260,6 +264,7 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
       continue;
     }
     const usedExercises = new Set<string>();
+    const ownerSets = new Map<string, number>();
     let workingSets = 0;
     let restSeconds = 0;
     let estimateMinutes = 10; // Existing 10 + 8 compound / 3 isolation estimate; not measured duration.
@@ -300,6 +305,12 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
           if (!alternative || !slot.candidateExerciseIds.includes(id) || !evaluateExerciseEligibility(alternative, profile, eligibilityOptions(slot)).eligible || !alternative.intents.includes(slot.intent) || !ownsSlot(alternative, slot) || !fitsPrescription(alternative, slot)) add('ineligible_final_alternative', 'Final offered alternative violates the selected slot or user constraints.', { dayKey, slotId: slot.slotId, exerciseId: id });
         }
       }
+      if (declaration.policyVersion === WEEKLY_POLICY_VERSION) {
+        const owner = slot?.owner ?? prescriptionOwner(item);
+        ownerSets.set(owner, (ownerSets.get(owner) ?? 0) + item.plannedSets.length);
+        if (item.plannedSets.length > 5) add('exercise_set_budget', 'Actual exercise exceeds the v2 five-set cap.', { dayKey, exerciseId: item.exerciseId });
+        if (ownerSets.get(owner)! > 10) add('owner_muscle_set_budget', 'Actual owner-muscle work exceeds the v2 ten-set session cap.', { dayKey, exerciseId: item.exerciseId });
+      }
       if (!item.plannedSets.length) add('invalid_prescription', 'Final exercise has no working sets.', { dayKey, exerciseId: item.exerciseId });
       item.plannedSets.forEach((set, index) => {
         workingSets++;
@@ -325,7 +336,27 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
           if (loading.loadDisplayMode === 'bodyweight' && set.suggestedWeight !== 0) add('invalid_load_state', 'Pure bodyweight prescription carries external load.', { dayKey, exerciseId: item.exerciseId });
           if (slot && declaration.exposurePolicies[slot.slotId]?.loadPolicy === 'none' && !ownEvidence && loading.loadDisplayMode !== 'bodyweight' && set.suggestedWeight > 0) add('unanchored_external_load', 'No-inference exercise receives kilograms without its own evidence.', { dayKey, slotId: slot.slotId, exerciseId: item.exerciseId });
           if (loading.loadDisplayMode !== 'bodyweight' && !['added_bodyweight', 'assisted_bodyweight'].includes(loading.loadDisplayMode) && set.suggestedWeight === 0) warning('load_requires_confirmation', 'External-load zero is unspecified load, not validated bodyweight work.', { dayKey, exerciseId: item.exerciseId });
-          if (baseline > 0 && Number.isFinite(baseline) && positiveInteger(set.targetReps) && set.suggestedWeight > epleyWorkingWeightCeiling(baseline, set.targetReps, getWeightStep(exercise))) add('baseline_ceiling_exceeded', 'Actual load exceeds accepted exercise-specific baseline ceiling; D-P2-01 remains pending.', { dayKey, exerciseId: item.exerciseId, provenance: routine });
+          // Independently check D-P2-01 using the qualified, consecutive recent
+          // evidence window. Keep v1 replay's original baseline-only ceiling.
+          let ceiling1RM = baseline;
+          let historyGoverns = false;
+          const baselineAt = ownBaseline ? profile.baselineUpdatedAt?.[exercise.id] : undefined;
+          const historyAvailable = !profile.performanceHistory || profile.performanceHistory.status === 'available' && profile.performanceHistory.requestedExerciseIds.includes(exercise.id);
+          if (declaration.policyVersion === WEEKLY_POLICY_VERSION && qualifiedHistory && historyAvailable &&
+              (!ownBaseline || !baselineAt || Number.isFinite(Date.parse(baselineAt)) && Date.parse(history!.date) > Date.parse(baselineAt))) {
+            let best = 0;
+            let newer = Infinity;
+            const seen = new Set<string>();
+            for (const entry of recent ?? [history!]) {
+              if (!isQualifiedPerformance(exercise, entry) || Date.parse(entry.date) >= newer || seen.has(entry.evidence!.sessionId)) break;
+              newer = Date.parse(entry.date);
+              seen.add(entry.evidence!.sessionId);
+              if (baselineAt && newer <= Date.parse(baselineAt)) break;
+              for (const performed of entry.sets) best = Math.max(best, performed.weight * (1 + performed.reps / 30));
+            }
+            if (best > 0) { ceiling1RM = best; historyGoverns = true; }
+          }
+          if (ceiling1RM > 0 && Number.isFinite(ceiling1RM) && positiveInteger(set.targetReps) && set.suggestedWeight > epleyWorkingWeightCeiling(ceiling1RM, set.targetReps, getWeightStep(exercise))) add(historyGoverns ? 'history_ceiling_exceeded' : 'baseline_ceiling_exceeded', 'Actual load exceeds the governing exercise-specific evidence ceiling.', { dayKey, exerciseId: item.exerciseId, provenance: routine });
         }
       });
       // Existing ROUTINE_AUDIT warm-up policy, independently evaluated from

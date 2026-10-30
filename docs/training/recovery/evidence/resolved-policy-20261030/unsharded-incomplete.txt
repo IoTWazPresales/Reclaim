@@ -1,0 +1,34 @@
+INCOMPLETE: unsharded npm test -- --reporter=verbose was stopped after output ceased. No full-suite pass claimed. Canonical sequential shards used instead.
+
+
+> reclaim-app@0.1.0 test
+> vitest run --reporter=verbose
+
+
+ RUN  v4.0.8 <workspace>/app
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > uses frozen working sets without a set-log replica and does not mutate stored rows 15ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects unfinished latest work instead of falling back to older success 5ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects partial latest work instead of falling back to older success 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects skipped latest work instead of falling back to older success 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects missing_plan latest work instead of falling back to older success 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects missing_performed latest work instead of falling back to older success 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects duplicate latest work instead of falling back to older success 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects extra latest work instead of falling back to older success 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects missing_timestamp latest work instead of falling back to older success 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects mixed latest work instead of falling back to older success 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects invalid_rpe latest work instead of falling back to older success 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects external_zero latest work instead of falling back to older success 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects missing_weight latest work instead of falling back to older success 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > does not skip an incomplete session to construct two stagnant sessions 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > recognizes improving reps below the top and preserves the two-hold deload 2ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects mismatched exercise, unit, source, duplicate sessions and legacy numeric input 34ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > distinguishes bodyweight zero, assistance and carry/time units 10ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > reports rounded increments and deload targets without promising an unapplied change 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > rejects a recent incomplete session even when a caller passes an older successful last map 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > applies newer qualified evidence without changing the progression increment 6ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > uses a newer baseline, or a baseline with no history, and preserves v1 replay 4ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > uses both original load ceiling and caps on direct v1 replay builds 56ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > cannot inherit history with a different load unit 1ms
+ ✓ src/lib/training/__tests__/performanceHistory.test.ts > canonical history to decision > passes qualification and the applied reason through the committed R04 allocated-day path 39ms

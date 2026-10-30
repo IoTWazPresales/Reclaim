@@ -21,6 +21,8 @@ import { setsForMajorPattern, setsForSmallMuscle, smallMuscleOf, weeklySmallMusc
 import { warmupSetsForWorkingWeight } from '../warmupSets';
 import { buildBalancedProgramSession } from '../balancedHypertrophy';
 import { buildAllocatedProgramSession } from '../allocatedProgramSession';
+import { capNewSession } from '../sessionCapPolicy';
+import { WEEKLY_POLICY_VERSION } from '../weeklyProgrammeTypes';
 import { evaluateExerciseEligibility } from '../exerciseEligibility';
 import type {
   Exercise,
@@ -889,13 +891,35 @@ export function deriveProgressionDecision(
  * Suggest loading (weight) for an exercise with progression logic
  * Task 4: Fix vertical pull, use priority for rep ranges, fix bodyweight vs machine defaults
  */
+export function governingLoadEvidence(exercise: Exercise, userState: UserState, plannedReps: number): { oneRM?: number; source: 'baseline' | 'history' | 'default' } {
+  const baseline = userState.estimated1RM?.[exercise.id];
+  const fallback = { oneRM: baseline, source: baseline ? 'baseline' as const : 'default' as const };
+  if (userState.prescriptionPolicy === 'v1' || !deriveProgressionDecision(exercise, userState, [plannedReps, plannedReps])) return fallback;
+  const last = userState.lastSessionPerformance![exercise.id];
+  const baselineAt = baseline && baseline > 0 ? userState.baselineUpdatedAt?.[exercise.id] : undefined;
+  // Undated legacy baselines predate timestamped qualified evidence. Invalid
+  // supplied timestamps fail conservatively to the baseline; ties favor it too.
+  if (baseline && baselineAt && (!Number.isFinite(Date.parse(baselineAt)) || Date.parse(baselineAt) >= Date.parse(last.date))) return fallback;
+  let oneRM = 0;
+  let newer = Infinity;
+  const seen = new Set<string>();
+  for (const entry of userState.recentSessionPerformance?.[exercise.id] ?? [last]) {
+    if (!isQualifiedPerformance(exercise, entry) || Date.parse(entry.date) >= newer || seen.has(entry.evidence!.sessionId)) break;
+    newer = Date.parse(entry.date);
+    seen.add(entry.evidence!.sessionId);
+    if (baselineAt && newer <= Date.parse(baselineAt)) break;
+    for (const set of entry.sets) oneRM = Math.max(oneRM, set.weight * (1 + set.reps / 30));
+  }
+  return oneRM > 0 ? { oneRM, source: 'history' } : fallback;
+}
+
 function capAtExerciseEpleyCeiling(
   weight: number,
   exercise: Exercise,
   userState: UserState,
   plannedReps: number,
 ): number {
-  const oneRM = userState.estimated1RM?.[exercise.id];
+  const oneRM = governingLoadEvidence(exercise, userState, plannedReps).oneRM;
   if (!oneRM || oneRM <= 0 || isBodyweightExercise(exercise)) return weight;
   const ceiling = epleyWorkingWeightCeiling(oneRM, plannedReps, getWeightStep(exercise));
   if (ceiling <= 0) return weight;
@@ -907,12 +931,14 @@ export function explainAppliedProgression(exercise: Exercise, userState: UserSta
   if (!decision) {
     const status = userState.performanceHistory?.status;
     return status === 'unavailable' ? 'Performance history unavailable; this prescription uses baseline/default loading, not earned progression.' :
-      userState.lastSessionPerformance?.[exercise.id] ? 'Recent work is not qualified for progression; this prescription uses baseline/default loading.' : undefined;
+      userState.lastSessionPerformance?.[exercise.id] ? 'Recent work is not qualified for progression; this prescription uses baseline/default loading.' : userState.estimated1RM?.[exercise.id] && userState.prescriptionPolicy !== 'v1' ? 'Your saved exercise baseline governs the load ceiling; no qualified history is available.' : undefined;
   }
-  const planned = `Prescribed ${appliedWeight}kg for ${appliedReps} reps per set.`;
+  const source = governingLoadEvidence(exercise, userState, appliedReps).source;
+  const governed = userState.prescriptionPolicy === 'v1' ? '' : source === 'history' ? ' Most recent qualified history governs the load ceiling.' : source === 'baseline' ? ' Your saved exercise baseline governs the load ceiling.' : '';
+  const planned = `Prescribed ${appliedWeight}kg for ${appliedReps} reps per set.${governed}`;
   if (appliedWeight !== decision.nextWeight) {
     const ceiling = capAtExerciseEpleyCeiling(decision.nextWeight, exercise, userState, appliedReps);
-    return `${planned} Qualified history proposed ${decision.nextWeight}kg; ${ceiling < decision.nextWeight ? 'your saved exercise baseline limits it' : 'the current load adjustment limits it'}.`;
+    return `${planned} Qualified history proposed ${decision.nextWeight}kg; ${ceiling < decision.nextWeight ? source === 'history' ? 'qualified history limits it' : 'your saved exercise baseline limits it' : 'the current load adjustment limits it'}.`;
   }
   // Existing bodyweight policy suggests future work; it does not change the saved rep target or add kg.
   if (decision.action === 'add_weight' || decision.action === 'progress_reps') return `Bodyweight prescription: ${appliedReps} reps per set, no added load. ${decision.action === 'add_weight' ? 'Qualified history supports considering added weight on a future build.' : 'Continue building repetitions within the prescribed work.'}`;
@@ -1059,8 +1085,8 @@ export function suggestLoading(input: SuggestLoadingInput): number {
  * Build a complete session plan
  */
 export function buildSession(input: BuildSessionInput): SessionPlan {
-  const { template, goals, constraints, userState, weeklyMuscleSessionCounts, adaptiveTrainingEnabled } =
-    input;
+  const { template, goals, constraints, weeklyMuscleSessionCounts, adaptiveTrainingEnabled } = input;
+  const userState: UserState = { ...input.userState, prescriptionPolicy: input.prescriptionPolicy ?? 'v2' };
   const adaptiveOn = adaptiveTrainingEnabled === true;
   if (template === 'run') {
     throw new Error('Run sessions are not lifting templates. See RUNNING_DESIGN.md.');
@@ -1119,17 +1145,20 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     }
   };
 
-  const volumeCaps = input.volumeCaps ?? volumeCapsFromRules(rules);
+  const v2 = input.prescriptionPolicy !== 'v1';
+  const volumeCaps = input.volumeCaps ?? (v2 ? { perPriority: { primary: 24, accessory: 24, isolation: 24 }, perSessionTotal: 24 } : volumeCapsFromRules(rules));
   const sessionSetCounts: SessionSetCounts = { primary: 0, accessory: 0, isolation: 0, total: 0 };
+  const allocationIssues: import('../weeklyProgrammeTypes').ProgrammeIssue[] = [];
   const takeSets = (priority: ExercisePriority, proposed: number, directSmallMuscle = false): number => {
-    const allowed = directSmallMuscle
+    const allowed = directSmallMuscle && (!v2 || !input.volumeCaps)
       ? Math.max(
           0,
           Math.min(Math.floor(proposed), Math.floor(volumeCaps.perSessionTotal - sessionSetCounts.total)),
         )
       : setsAllowedByVolumeCaps(priority, proposed, sessionSetCounts, volumeCaps);
+    if (v2 && allowed < proposed) allocationIssues.push({ code: 'volume_cap_shortfall', severity: 'warning', message: `${proposed - allowed} ${priority} working sets unallocated under the session or user cap.` });
     if (allowed > 0) {
-      if (!directSmallMuscle) sessionSetCounts[priority] += allowed;
+      if (!directSmallMuscle || v2) sessionSetCounts[priority] += allowed;
       sessionSetCounts.total += allowed;
     }
     return allowed;
@@ -1658,7 +1687,8 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       planned.exercise, userState, getRepRange(planned.priority, goals), firstSet.suggestedWeight, firstSet.targetReps,
     );
   }
-  const orderedExercises = sortPlannedExercisesCoachOrder(exercises, template, constraints);
+  const capResult = v2 ? capNewSession(exercises, input.volumeCaps, constraints.timeBudgetMinutes) : { exercises, issues: [] };
+  const orderedExercises = sortPlannedExercisesCoachOrder(capResult.exercises, template, constraints);
   for (const ex of orderedExercises) {
     if (!isCompoundExercise(ex.exercise)) continue;
     const working = ex.plannedSets[0]?.suggestedWeight ?? 0;
@@ -1680,6 +1710,7 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     constraints,
     userState,
     exercises: orderedExercises,
+    ...(v2 ? { programmeValidation: { policyVersion: WEEKLY_POLICY_VERSION, status: capResult.issues.some(issue => issue.severity === 'error') ? 'infeasible' as const : 'feasible' as const, issues: [...allocationIssues, ...capResult.issues] } } : {}),
     estimatedDurationMinutes,
     createdAt: new Date().toISOString(),
     ...(skippedRequiredIntents.size > 0
@@ -1820,6 +1851,7 @@ export function buildSessionFromProgramDay(
     avoidExerciseIds?: string[];
   },
 ): SessionPlan {
+  const policy = programDay.allocation?.policyVersion === WEEKLY_POLICY_VERSION ? 'v2' : 'v1';
   if (programDay.template_key === 'run') {
     const weekIndex = acceptedProgramWeekIndex(programDay.weekIndex);
     // RUNNING_DESIGN.md RD-006: 20 minutes, then 30 minutes from week 3.
@@ -1835,7 +1867,7 @@ export function buildSessionFromProgramDay(
       },
       userState: {
         experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel),
-        estimated1RM: profileSnapshot.baselines || {},
+        baselineUpdatedAt: profileSnapshot.baselineUpdatedAt, prescriptionPolicy: policy, estimated1RM: profileSnapshot.baselines || {},
       },
       exercises: [],
       estimatedDurationMinutes: runTargetMinutes(weekIndex),
@@ -1858,7 +1890,7 @@ export function buildSessionFromProgramDay(
     weekIndex,
     profile: profileSnapshot,
     loading: (exercise, plannedReps, priority) => {
-      const userState: UserState = { experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel), estimated1RM: profileSnapshot.baselines || {}, performanceHistory: profileSnapshot.performanceHistory, lastSessionPerformance: profileSnapshot.lastSessionPerformance, recentSessionPerformance: profileSnapshot.recentSessionPerformance };
+      const userState: UserState = { experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel), baselineUpdatedAt: profileSnapshot.baselineUpdatedAt, prescriptionPolicy: policy, estimated1RM: profileSnapshot.baselines || {}, performanceHistory: profileSnapshot.performanceHistory, lastSessionPerformance: profileSnapshot.lastSessionPerformance, recentSessionPerformance: profileSnapshot.recentSessionPerformance };
       const weight = suggestLoading({ exercise, plannedReps, priority, goalWeights: profileSnapshot.goals, userState });
       return { weight, reason: explainAppliedProgression(exercise, userState, getRepRange(priority, profileSnapshot.goals), weight, plannedReps) };
     },
@@ -1871,12 +1903,12 @@ export function buildSessionFromProgramDay(
       label: programDay.label, intents: programDay.intents, template: programDay.template_key,
       weekIndex, profile: profileSnapshot, avoidExerciseIds: options?.avoidExerciseIds,
       explainLoading: (exercise, reps, priority, weight) => explainAppliedProgression(exercise, {
-        experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel), estimated1RM: profileSnapshot.baselines,
+        experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel), baselineUpdatedAt: profileSnapshot.baselineUpdatedAt, prescriptionPolicy: policy, estimated1RM: profileSnapshot.baselines,
         performanceHistory: profileSnapshot.performanceHistory, lastSessionPerformance: profileSnapshot.lastSessionPerformance, recentSessionPerformance: profileSnapshot.recentSessionPerformance,
       }, getRepRange(priority, profileSnapshot.goals), weight, reps),
       suggestLoading: (exercise, plannedReps, priority) => suggestLoading({
         exercise, plannedReps, priority, goalWeights: profileSnapshot.goals,
-        userState: { experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel), estimated1RM: profileSnapshot.baselines || {}, performanceHistory: profileSnapshot.performanceHistory, lastSessionPerformance: profileSnapshot.lastSessionPerformance, recentSessionPerformance: profileSnapshot.recentSessionPerformance },
+        userState: { experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel), baselineUpdatedAt: profileSnapshot.baselineUpdatedAt, prescriptionPolicy: policy, estimated1RM: profileSnapshot.baselines || {}, performanceHistory: profileSnapshot.performanceHistory, lastSessionPerformance: profileSnapshot.lastSessionPerformance, recentSessionPerformance: profileSnapshot.recentSessionPerformance },
       }),
     });
     if (legacy) return { ...legacy, programmeValidation: { policyVersion: 'legacy-balanced-v1', status: legacy.programmeValidation?.status ?? 'legacy', issues: [...(legacy.programmeValidation?.issues ?? []), { code: 'weekly_context_missing', severity: 'warning', message: 'Historical saved-day prescription; rebuild to obtain versioned weekly requirements.' }] } };
@@ -1886,6 +1918,7 @@ export function buildSessionFromProgramDay(
   const hasIntentOverrides = Array.isArray(programDay.intents) && programDay.intents.length > 0;
   const profilePrefs = profileSnapshot.constraints?.preferences ?? {};
   const input: BuildSessionInput = {
+    prescriptionPolicy: policy,
     template: programDay.template_key,
     goals: profileSnapshot.goals,
     constraints: {
@@ -1904,7 +1937,7 @@ export function buildSessionFromProgramDay(
     },
     userState: {
       experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel),
-      estimated1RM: profileSnapshot.baselines || {},
+      baselineUpdatedAt: profileSnapshot.baselineUpdatedAt, prescriptionPolicy: policy, estimated1RM: profileSnapshot.baselines || {},
       performanceHistory: profileSnapshot.performanceHistory, lastSessionPerformance: profileSnapshot.lastSessionPerformance,
       recentSessionPerformance: profileSnapshot.recentSessionPerformance,
     },
@@ -1926,7 +1959,7 @@ export function buildSessionFromProgramDay(
     programmeValidation: {
       policyVersion: programDay.allocation?.policyVersion ?? 'legacy-intents-v1',
       status: programDay.allocation?.issues.some((issue) => issue.severity === 'error') ? 'infeasible' : 'legacy',
-      issues: programDay.allocation?.issues ?? [{ code: 'weekly_context_missing', severity: 'warning', message: 'Legacy intent prescription; a complete weekly allocation was not supplied.' }],
+      issues: [...(plan.programmeValidation?.issues ?? []), ...(programDay.allocation?.issues ?? [{ code: 'weekly_context_missing', severity: 'warning', message: 'Legacy intent prescription; a complete weekly allocation was not supplied.' }])],
     },
     ...(weekIndex !== undefined ? { weekIndex } : {}),
   };

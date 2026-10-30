@@ -1,0 +1,25 @@
+{
+  "normalization": "LF for committed source comparison",
+  "files": {
+    "app/src/components/training/OutcomePreviewPanel.tsx": "502e7b68eb2757db74f6afaa3746fb9d2aadd9af66314ded29bce4b72e271d50",
+    "app/src/lib/api.ts": "16b74d7b296736f8360d7374c1e59830ce5a39645ae30ea949f12a0b646ad01f",
+    "app/src/lib/training/__tests__/experienceLevelLoads.test.ts": "810a95b5e98b11205efae777f15e00815b387a5b05e0f5ebdaa466aff9722ddd",
+    "app/src/lib/training/__tests__/performanceHistory.test.ts": "704f919dbd31f4b3a1aa14db139dab06a0b5816978231d2d48bc750ad0c315f4",
+    "app/src/lib/training/__tests__/postAllocationSessionCap.test.ts": "6b4ceab962608ddc66c03a382c432364f4b1f0cd64f75420c225a5ce2d53b7c2",
+    "app/src/lib/training/__tests__/programmeAcceptance.test.ts": "a24485899be2184aa761c8d40203d985ddad3ff9f2d29ddd3907c0e9fa113da7",
+    "app/src/lib/training/__tests__/resolvedPolicy.test.ts": "ef54d783540ae83928cca352193fcba862f7fa3f345a9a365d8f622ef92a0d1d",
+    "app/src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts": "0f5882a4ba45fa58b1b242a7a2187e45db0c5ec0d25a6f569fb570c67df00889",
+    "app/src/lib/training/__tests__/weeklyProgrammeValidator.test.ts": "b6633a9dbdde7a239d5e64b081eff58ab638ced12daf8c255c4b0a37e04ec9dd",
+    "app/src/lib/training/__tests__/weeklyVolumeModel.test.ts": "e36d71922f7408179688f7a0a078f54a41ba42e6b9fc8eadd1b07b289537119f",
+    "app/src/lib/training/allocatedProgramSession.ts": "b18b9abeb179f634d30501be2739eca353323eaad17ce242bd01edde5a03565b",
+    "app/src/lib/training/buildProgramDaySession.ts": "9e008e74adf78d3e21720255dfc7ef55610b85a1c9bfbf1665ffc2e2396bd30f",
+    "app/src/lib/training/engine/index.ts": "1a1a98c4c49958e7bfcc20a493ed0e98f9de9cda54ed4065f9c56eeeb706833f",
+    "app/src/lib/training/programPlanner.ts": "32baf732e3c4694655a401e474a8af24168d942f07da799e0f32d6d360c3f13f",
+    "app/src/lib/training/sessionCapPolicy.ts": "4c81d7569772f4c96af7219306043b5217a67bf9fb6e99416a3f5dd033ec5bd5",
+    "app/src/lib/training/setupDraft.ts": "ca80c04bfe242a282567db8fd088874659baf12d9772186c3f3ae54c7c3cc6c1",
+    "app/src/lib/training/types.ts": "44ee0ef7d86d82d21ef5ae959fa7dafb01fa435e3d13c94446bde89b42cc0a02",
+    "app/src/lib/training/weeklyProgrammeTypes.ts": "50256c439bc58e77c5e8cc11bbfafda63903fc16648749881e5c052273c0c095",
+    "app/src/lib/training/weeklyProgrammeValidator.ts": "e69baec33e5a54d5ae3f4ea2400745796fd622229b0444ef7c0a7219e44bbbb3",
+    "app/src/screens/training/TrainingSetupScreen.tsx": "00dab66739a300f6a5c57587421e5855bba93b47806fb00866693c561a146c63"
+  }
+}

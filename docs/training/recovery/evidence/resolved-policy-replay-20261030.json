@@ -1,0 +1,3402 @@
+{
+  "scope": "Offline captured-profile replay; new builds only; no Android/live/EIF acceptance/R12",
+  "baseline": "1e18694",
+  "privateCaptureSha256": "785785fd58a3e42c5cd30c347c74ce2f05661d6ddb1d39b33dd9e66fd0b1d036",
+  "sourceHashes": {
+    "before": {
+      "app/src/lib/training/programmeWeekProposal.ts": "c813bc6ec7be52f0f3118bd92f5d940e0a1ed31866ce8b003546b73d3353f8dd",
+      "app/src/lib/training/programPlanner.ts": "fee7e95b691ff79b49e73797aecda7fa4e80c6d2bf3d5f8aa703014fc61510ce",
+      "app/src/lib/training/weeklyProgrammeTypes.ts": "26f34f5edbaaafa80d782cea7b19a2655f7c258791d599dfcbded565774d1d48",
+      "app/src/lib/training/trainingMode.ts": "4f9b4346dcc598dadbf8838ea01d645299a88078bed37d30066a7fff43d55e40",
+      "app/src/lib/training/dateUtils.ts": "c00eb7ea3f49b7412a1ce1188fc7ee6857e04f131bf2b054be5940dcbb3dffe9",
+      "app/src/lib/training/weeklyProgramme.ts": "ee108accd0e07fd7d8c8d07e9099b38597a8fd7dda32a59ff350377fdcf6c159",
+      "app/src/lib/training/buildProgramDaySession.ts": "0a7ff84409799d212dd9210e7b943ff7e527fc7dcfdcfcf33e0e82421b7c533c",
+      "app/src/lib/training/catalog/exercises.v1.json": "f9f0009298c27a60b29462678c31f77b36a247aa0ff794d0b6fdb952704c1070",
+      "app/src/lib/training/balancedHypertrophy.ts": "7918d30d831dfd37c5f1ee5a200dc0ae339a271198da1d701dd200a3c2f9c970",
+      "app/src/lib/training/exerciseLoadingProfile.ts": "237cb111aeee40f4489197869ea09d24ad5de04997f1f2d3a6cdd03fadb3a34f",
+      "app/src/lib/training/programmeProjection.ts": "10a8c26701d8505b406570038095f080602f4ea4d8d8976f4d7357b700f87b7f",
+      "app/src/lib/training/weeklyProgrammePolicy.ts": "ad94a32967777495e46e374a1b4ae6acace90f65e1b185ee7362b2246f6c6ef7",
+      "app/src/lib/training/weeklyVolumeSummary.ts": "38a23055b7d620820e044e85f23765a4010ab032a7ae0dec02f41ad67b04563a",
+      "app/src/lib/training/weeklyProgrammeValidator.ts": "44385538752ee04875656bf4e50deaa1f72354ae1d20ecca2ffc7b707bf67984",
+      "app/src/lib/training/engine/index.ts": "6bcbab0e51fedc02e17b09b03f58c2711911746cf7214b879df804b5f42062a5",
+      "app/src/lib/training/muscleTaxonomy.ts": "69e87d7115a5ec985b85bb0cd313a50808b1d0147d68d856736533b66cba2c99",
+      "app/src/lib/training/performanceHistory.ts": "6bb9ad11222994cf603321d9f2799670130df614e8e1b05d1eb3cc2fe44996fb",
+      "app/src/lib/training/exerciseEligibility.ts": "8f7cb3ca7d2ca365b58b1852d8ac068841976a1fdc0406365e2a74c63c4de036",
+      "app/src/lib/training/rules/rules.v1.json": "9d9baf1de1427501d2a735794ab2ade654d14f24f4c63361d25cff0e25a4be30",
+      "app/src/lib/training/progression.ts": "3746aadb8159b3b4b5d4cf97f3bfe8d5ed12fd338f13521c3eefdc91693333bf",
+      "app/src/lib/training/warmupSets.ts": "e3c82a4d1745bcb599b0e67defee2468dbb576a7b671f68ad9e3310ca8940f91",
+      "app/src/lib/training/exerciseSessionRole.ts": "825cc737a437129a99b55e2b7362fcffd504d69b2c52bbf873395c4fb4787d1f",
+      "app/src/lib/training/catalog/exerciseCues.v1.json": "f7eddbe019c27782b81d367093a6a80811049bfed924429bdd7563ecf4cd6636",
+      "app/src/lib/training/experienceLevel.ts": "8fdf3e64253f64200d03e0d7d97b848e67ce15e92f0ee8bbecda9def1ee78051",
+      "app/src/lib/training/adaptiveLoadBias.ts": "809a92f039d9bdeb8c393d649ca743124de932daf938d059a1cfaa269d878991",
+      "app/src/lib/training/anchorLoad.ts": "f9bf57680ebe7b22c824f08b55627932fafff6c6bc9e9da724cb640fac008a69",
+      "app/src/lib/training/runGuidance.ts": "8587c822053aefafb8e034886cc30a0308c3c895ad1a66e49ed2604ab5afdeb4",
+      "app/src/lib/training/loadDisplayFormat.ts": "84561ad9577b1c4794700cc3e399abee7fbbffc748aceaff9a619906ddb90017",
+      "app/src/lib/training/exerciseSelectionRank.ts": "f3fd3ce40d031cf621a6df382676581c355c58fdb4af0562ba85dea5ed74da66",
+      "app/src/lib/training/weeklyVolumeModel.ts": "f2e05a193930b0f52dc9918a22835963a23b2630f7a929484c9bfb42e031e464",
+      "app/src/lib/training/allocatedProgramSession.ts": "169c15587ee6db7b96158b013baaa96723ed762e0150cabf3f37b39ffb140961",
+      "app/src/lib/training/smallMuscleVolume.ts": "2e9292a5abfd6a585b4504655ca6b1d61fd01f073ed247f05422c1ecd7a8eafd"
+    },
+    "after": {
+      "app/src/lib/training/programmeWeekProposal.ts": "c813bc6ec7be52f0f3118bd92f5d940e0a1ed31866ce8b003546b73d3353f8dd",
+      "app/src/lib/training/programPlanner.ts": "32baf732e3c4694655a401e474a8af24168d942f07da799e0f32d6d360c3f13f",
+      "app/src/lib/training/weeklyProgramme.ts": "00ca80d15c73478195d01435d2832dbdb506b64860747f5b55ee7bf846cca680",
+      "app/src/lib/training/dateUtils.ts": "9e859cbd885d69616479acc8c677c8a4faaddd3a192b17ccd67ed60b33cf242b",
+      "app/src/lib/training/weeklyProgrammeTypes.ts": "50256c439bc58e77c5e8cc11bbfafda63903fc16648749881e5c052273c0c095",
+      "app/src/lib/training/trainingMode.ts": "8be76aac718edb4f9bd17a97accf85a5609bda674032a1998477f919f9028c84",
+      "app/src/lib/training/buildProgramDaySession.ts": "9e008e74adf78d3e21720255dfc7ef55610b85a1c9bfbf1665ffc2e2396bd30f",
+      "app/src/lib/training/catalog/exercises.v1.json": "f9f0009298c27a60b29462678c31f77b36a247aa0ff794d0b6fdb952704c1070",
+      "app/src/lib/training/weeklyProgrammePolicy.ts": "90838908fb43287a13a456c41ab60ffb57890809129dd7bc84522891fcc8df5f",
+      "app/src/lib/training/programmeProjection.ts": "1fe8edf9c96be3e9876b8ece74a025700ca73b6cede866f668dfeefdc9add27a",
+      "app/src/lib/training/weeklyVolumeSummary.ts": "408919da492b05bad2312581ce8bc749157d1d875d001d570f3009a70734b036",
+      "app/src/lib/training/balancedHypertrophy.ts": "fffdd582a0200fbfcd1dbcc5468a906bb41384121c1e22c97bf9bfc9a1f1dcbc",
+      "app/src/lib/training/weeklyProgrammeValidator.ts": "ad4e20f6e449b0c47a39238a7d232ade1645571cfb88832e01bc46e8f31ccf17",
+      "app/src/lib/training/exerciseLoadingProfile.ts": "237cb111aeee40f4489197869ea09d24ad5de04997f1f2d3a6cdd03fadb3a34f",
+      "app/src/lib/training/exerciseSessionRole.ts": "979b28f7886fd7ef72afe395005598ab025ab0e06c231cf5972f00ef21c89982",
+      "app/src/lib/training/exerciseEligibility.ts": "8f7cb3ca7d2ca365b58b1852d8ac068841976a1fdc0406365e2a74c63c4de036",
+      "app/src/lib/training/engine/index.ts": "91f2ade763a5f8c4694510ce4defd3bd6f215b285a7ff20c30e43c644774f4ca",
+      "app/src/lib/training/muscleTaxonomy.ts": "9b6d31ab63f4bee28e4e941e1e4c0997aedc14c501c7b5e056c1c646c4449898",
+      "app/src/lib/training/exerciseSelectionRank.ts": "4160ce759730759e6d01f3c3748ca2519de41b13b5b67c0ea5eb04c487ff1669",
+      "app/src/lib/training/warmupSets.ts": "dd988506e7b0763815bea394b9f92c049fb6f4cf906dcb474c9148ada99b9e0a",
+      "app/src/lib/training/performanceHistory.ts": "4f7d07adc8e386882890b1b0b5ded5de244954c70b13482572292873a882b3ae",
+      "app/src/lib/training/sessionCapPolicy.ts": "d89231094eea20ad051a15fccc487ecc141c44af56bd7c63349da70626ed5074",
+      "app/src/lib/training/rules/rules.v1.json": "fa8b0de1dbc54333313696df3b852df95202d844316c4e7fba4b8a7b4c3202b9",
+      "app/src/lib/training/progression.ts": "80a859449e89c04795e9c38a5f06a8cd3d8f2c611f6194fddeb416dd1c1a2712",
+      "app/src/lib/training/experienceLevel.ts": "bb6baea619014a324efe98ef55d403915b39a7e76847940cdd60ccb5ba4a4403",
+      "app/src/lib/training/catalog/exerciseCues.v1.json": "f7eddbe019c27782b81d367093a6a80811049bfed924429bdd7563ecf4cd6636",
+      "app/src/lib/training/runGuidance.ts": "e9e4a9ba33a66830e70dc3492f134a8632f74d119f27b783d42fd2ca04ba1df7",
+      "app/src/lib/training/loadDisplayFormat.ts": "84561ad9577b1c4794700cc3e399abee7fbbffc748aceaff9a619906ddb90017",
+      "app/src/lib/training/adaptiveLoadBias.ts": "8ac5a65ca727d3486a265f0fd4bfb83f789b9c9b1de5e69a82f0c00b67f3674e",
+      "app/src/lib/training/anchorLoad.ts": "12348d1c631973f908eb5f06e93b7b7f8ee6181cbc255445e74ae99393f6b59e",
+      "app/src/lib/training/weeklyVolumeModel.ts": "ab4c2338a261f770b25b2f3f25754c8297d9f8c75af9250c78be56677f4b50f5",
+      "app/src/lib/training/allocatedProgramSession.ts": "0b67ffc5dc1aeec3d30b354dbe2412d3f593ac82ac09db88f7bfa900bc2572ed",
+      "app/src/lib/training/smallMuscleVolume.ts": "e62c654eda7bcd9fce1b716d14f795a4e2dcd5211bd1c211103bd45d90231926"
+    }
+  },
+  "before": [
+    {
+      "week": 1,
+      "policyVersion": "weekly-20261014-v2",
+      "status": "unresolved",
+      "warnings": {
+        "load_requires_confirmation": 19,
+        "history_evidence_unverified": 1
+      },
+      "loadRequiresConfirmation": 19,
+      "days": [
+        {
+          "day": 1,
+          "estimatedMinutes": 43,
+          "workingSets": 14,
+          "exercises": [
+            {
+              "exerciseId": "barbell_bench_press",
+              "sets": 3,
+              "loadsKg": [
+                100,
+                100,
+                100
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "dumbbell_flyes",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "barbell_row",
+              "sets": 3,
+              "loadsKg": [
+                62.5,
+                62.5,
+                62.5
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "lat_pulldown",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "lateral_raises",
+              "sets": 3,
+              "loadsKg": [
+                16,
+                16,
+                16
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "barbell_curl",
+              "sets": 3,
+              "loadsKg": [
+                25,
+                25,
+                25
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 2,
+          "estimatedMinutes": 45,
+          "workingSets": 11,
+          "exercises": [
+            {
+              "exerciseId": "squat",
+              "sets": 3,
+              "loadsKg": [
+                85,
+                85,
+                85
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "hack_squat",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "loadsKg": [
+                95,
+                95,
+                95
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "romanian_deadlift",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "calf_raises",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 3,
+          "estimatedMinutes": 38,
+          "workingSets": 16,
+          "exercises": [
+            {
+              "exerciseId": "barbell_bench_press",
+              "sets": 3,
+              "loadsKg": [
+                100,
+                100,
+                100
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "cable_chest_flyes",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "overhead_press",
+              "sets": 3,
+              "loadsKg": [
+                75,
+                75,
+                75
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "lateral_raises",
+              "sets": 3,
+              "loadsKg": [
+                16,
+                16,
+                16
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "tricep_pushdown",
+              "sets": 3,
+              "loadsKg": [
+                40,
+                40,
+                40
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "face_pulls",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 4,
+          "estimatedMinutes": 35,
+          "workingSets": 13,
+          "exercises": [
+            {
+              "exerciseId": "pull_ups",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "barbell_row",
+              "sets": 1,
+              "loadsKg": [
+                60
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "dumbbell_curl",
+              "sets": 3,
+              "loadsKg": [
+                15,
+                15,
+                15
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "rear_delt_flyes",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "shrugs",
+              "sets": 3,
+              "loadsKg": [
+                20,
+                20,
+                20
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 5,
+          "estimatedMinutes": 48,
+          "workingSets": 14,
+          "exercises": [
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "loadsKg": [
+                95,
+                95,
+                95
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "romanian_deadlift",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "squat",
+              "sets": 3,
+              "loadsKg": [
+                85,
+                85,
+                85
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "leg_press",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "calf_raises",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "overhead_tricep_extension",
+              "sets": 3,
+              "loadsKg": [
+                40,
+                40,
+                40
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        }
+      ]
+    },
+    {
+      "week": 2,
+      "policyVersion": "weekly-20261014-v2",
+      "status": "unresolved",
+      "warnings": {
+        "load_requires_confirmation": 19,
+        "history_evidence_unverified": 1
+      },
+      "loadRequiresConfirmation": 19,
+      "days": [
+        {
+          "day": 1,
+          "estimatedMinutes": 43,
+          "workingSets": 14,
+          "exercises": [
+            {
+              "exerciseId": "barbell_bench_press",
+              "sets": 3,
+              "loadsKg": [
+                100,
+                100,
+                100
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "dumbbell_flyes",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "barbell_row",
+              "sets": 3,
+              "loadsKg": [
+                62.5,
+                62.5,
+                62.5
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "lat_pulldown",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "lateral_raises",
+              "sets": 3,
+              "loadsKg": [
+                16,
+                16,
+                16
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "barbell_curl",
+              "sets": 3,
+              "loadsKg": [
+                25,
+                25,
+                25
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 2,
+          "estimatedMinutes": 45,
+          "workingSets": 11,
+          "exercises": [
+            {
+              "exerciseId": "squat",
+              "sets": 3,
+              "loadsKg": [
+                85,
+                85,
+                85
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "hack_squat",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "loadsKg": [
+                95,
+                95,
+                95
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "romanian_deadlift",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "calf_raises",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 3,
+          "estimatedMinutes": 38,
+          "workingSets": 16,
+          "exercises": [
+            {
+              "exerciseId": "barbell_bench_press",
+              "sets": 3,
+              "loadsKg": [
+                100,
+                100,
+                100
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "cable_chest_flyes",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "overhead_press",
+              "sets": 3,
+              "loadsKg": [
+                75,
+                75,
+                75
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "lateral_raises",
+              "sets": 3,
+              "loadsKg": [
+                16,
+                16,
+                16
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "tricep_pushdown",
+              "sets": 3,
+              "loadsKg": [
+                40,
+                40,
+                40
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "face_pulls",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 4,
+          "estimatedMinutes": 35,
+          "workingSets": 13,
+          "exercises": [
+            {
+              "exerciseId": "pull_ups",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "barbell_row",
+              "sets": 1,
+              "loadsKg": [
+                60
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "dumbbell_curl",
+              "sets": 3,
+              "loadsKg": [
+                15,
+                15,
+                15
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "rear_delt_flyes",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "shrugs",
+              "sets": 3,
+              "loadsKg": [
+                20,
+                20,
+                20
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 5,
+          "estimatedMinutes": 48,
+          "workingSets": 14,
+          "exercises": [
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "loadsKg": [
+                95,
+                95,
+                95
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "romanian_deadlift",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "squat",
+              "sets": 3,
+              "loadsKg": [
+                85,
+                85,
+                85
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "leg_press",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "calf_raises",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "overhead_tricep_extension",
+              "sets": 3,
+              "loadsKg": [
+                40,
+                40,
+                40
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        }
+      ]
+    },
+    {
+      "week": 3,
+      "policyVersion": "weekly-20261014-v2",
+      "status": "unresolved",
+      "warnings": {
+        "load_requires_confirmation": 19,
+        "history_evidence_unverified": 1
+      },
+      "loadRequiresConfirmation": 19,
+      "days": [
+        {
+          "day": 1,
+          "estimatedMinutes": 43,
+          "workingSets": 14,
+          "exercises": [
+            {
+              "exerciseId": "barbell_bench_press",
+              "sets": 3,
+              "loadsKg": [
+                100,
+                100,
+                100
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "dumbbell_flyes",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "barbell_row",
+              "sets": 3,
+              "loadsKg": [
+                62.5,
+                62.5,
+                62.5
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "lat_pulldown",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "lateral_raises",
+              "sets": 3,
+              "loadsKg": [
+                16,
+                16,
+                16
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "barbell_curl",
+              "sets": 3,
+              "loadsKg": [
+                25,
+                25,
+                25
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 2,
+          "estimatedMinutes": 45,
+          "workingSets": 11,
+          "exercises": [
+            {
+              "exerciseId": "squat",
+              "sets": 3,
+              "loadsKg": [
+                85,
+                85,
+                85
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "hack_squat",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "loadsKg": [
+                95,
+                95,
+                95
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "romanian_deadlift",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "calf_raises",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 3,
+          "estimatedMinutes": 38,
+          "workingSets": 16,
+          "exercises": [
+            {
+              "exerciseId": "barbell_bench_press",
+              "sets": 3,
+              "loadsKg": [
+                100,
+                100,
+                100
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "cable_chest_flyes",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "overhead_press",
+              "sets": 3,
+              "loadsKg": [
+                75,
+                75,
+                75
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "lateral_raises",
+              "sets": 3,
+              "loadsKg": [
+                16,
+                16,
+                16
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "tricep_pushdown",
+              "sets": 3,
+              "loadsKg": [
+                40,
+                40,
+                40
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "face_pulls",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 4,
+          "estimatedMinutes": 35,
+          "workingSets": 13,
+          "exercises": [
+            {
+              "exerciseId": "pull_ups",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "barbell_row",
+              "sets": 1,
+              "loadsKg": [
+                60
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "dumbbell_curl",
+              "sets": 3,
+              "loadsKg": [
+                15,
+                15,
+                15
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "rear_delt_flyes",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "shrugs",
+              "sets": 3,
+              "loadsKg": [
+                20,
+                20,
+                20
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 5,
+          "estimatedMinutes": 48,
+          "workingSets": 14,
+          "exercises": [
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "loadsKg": [
+                95,
+                95,
+                95
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "romanian_deadlift",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "squat",
+              "sets": 3,
+              "loadsKg": [
+                85,
+                85,
+                85
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "leg_press",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "calf_raises",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "overhead_tricep_extension",
+              "sets": 3,
+              "loadsKg": [
+                40,
+                40,
+                40
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        }
+      ]
+    },
+    {
+      "week": 4,
+      "policyVersion": "weekly-20261014-v2",
+      "status": "unresolved",
+      "warnings": {
+        "load_requires_confirmation": 19,
+        "history_evidence_unverified": 1
+      },
+      "loadRequiresConfirmation": 19,
+      "days": [
+        {
+          "day": 1,
+          "estimatedMinutes": 43,
+          "workingSets": 14,
+          "exercises": [
+            {
+              "exerciseId": "barbell_bench_press",
+              "sets": 3,
+              "loadsKg": [
+                100,
+                100,
+                100
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "dumbbell_flyes",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "barbell_row",
+              "sets": 3,
+              "loadsKg": [
+                62.5,
+                62.5,
+                62.5
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "lat_pulldown",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "lateral_raises",
+              "sets": 3,
+              "loadsKg": [
+                16,
+                16,
+                16
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "barbell_curl",
+              "sets": 3,
+              "loadsKg": [
+                25,
+                25,
+                25
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 2,
+          "estimatedMinutes": 45,
+          "workingSets": 11,
+          "exercises": [
+            {
+              "exerciseId": "squat",
+              "sets": 3,
+              "loadsKg": [
+                85,
+                85,
+                85
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "hack_squat",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "loadsKg": [
+                95,
+                95,
+                95
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "romanian_deadlift",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "calf_raises",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 3,
+          "estimatedMinutes": 38,
+          "workingSets": 16,
+          "exercises": [
+            {
+              "exerciseId": "barbell_bench_press",
+              "sets": 3,
+              "loadsKg": [
+                100,
+                100,
+                100
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "cable_chest_flyes",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "overhead_press",
+              "sets": 3,
+              "loadsKg": [
+                75,
+                75,
+                75
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "lateral_raises",
+              "sets": 3,
+              "loadsKg": [
+                16,
+                16,
+                16
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "tricep_pushdown",
+              "sets": 3,
+              "loadsKg": [
+                40,
+                40,
+                40
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "face_pulls",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 4,
+          "estimatedMinutes": 35,
+          "workingSets": 13,
+          "exercises": [
+            {
+              "exerciseId": "pull_ups",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "barbell_row",
+              "sets": 1,
+              "loadsKg": [
+                60
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "dumbbell_curl",
+              "sets": 3,
+              "loadsKg": [
+                15,
+                15,
+                15
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "rear_delt_flyes",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "shrugs",
+              "sets": 3,
+              "loadsKg": [
+                20,
+                20,
+                20
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 5,
+          "estimatedMinutes": 48,
+          "workingSets": 14,
+          "exercises": [
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "loadsKg": [
+                95,
+                95,
+                95
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "romanian_deadlift",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "squat",
+              "sets": 3,
+              "loadsKg": [
+                85,
+                85,
+                85
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "leg_press",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "calf_raises",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "overhead_tricep_extension",
+              "sets": 3,
+              "loadsKg": [
+                40,
+                40,
+                40
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        }
+      ]
+    }
+  ],
+  "after": [
+    {
+      "week": 1,
+      "policyVersion": "weekly-20261030-v3",
+      "status": "unresolved",
+      "warnings": {
+        "load_requires_confirmation": 19,
+        "history_evidence_unverified": 1
+      },
+      "loadRequiresConfirmation": 19,
+      "days": [
+        {
+          "day": 1,
+          "estimatedMinutes": 43,
+          "workingSets": 14,
+          "exercises": [
+            {
+              "exerciseId": "barbell_bench_press",
+              "sets": 3,
+              "loadsKg": [
+                100,
+                100,
+                100
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "dumbbell_flyes",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "barbell_row",
+              "sets": 3,
+              "loadsKg": [
+                62.5,
+                62.5,
+                62.5
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "lat_pulldown",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "lateral_raises",
+              "sets": 3,
+              "loadsKg": [
+                16,
+                16,
+                16
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "barbell_curl",
+              "sets": 3,
+              "loadsKg": [
+                25,
+                25,
+                25
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 2,
+          "estimatedMinutes": 45,
+          "workingSets": 11,
+          "exercises": [
+            {
+              "exerciseId": "squat",
+              "sets": 3,
+              "loadsKg": [
+                85,
+                85,
+                85
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "hack_squat",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "loadsKg": [
+                95,
+                95,
+                95
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "romanian_deadlift",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "calf_raises",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 3,
+          "estimatedMinutes": 38,
+          "workingSets": 16,
+          "exercises": [
+            {
+              "exerciseId": "barbell_bench_press",
+              "sets": 3,
+              "loadsKg": [
+                100,
+                100,
+                100
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "cable_chest_flyes",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "overhead_press",
+              "sets": 3,
+              "loadsKg": [
+                75,
+                75,
+                75
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "lateral_raises",
+              "sets": 3,
+              "loadsKg": [
+                16,
+                16,
+                16
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "tricep_pushdown",
+              "sets": 3,
+              "loadsKg": [
+                40,
+                40,
+                40
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "face_pulls",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 4,
+          "estimatedMinutes": 35,
+          "workingSets": 13,
+          "exercises": [
+            {
+              "exerciseId": "pull_ups",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "barbell_row",
+              "sets": 1,
+              "loadsKg": [
+                60
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "dumbbell_curl",
+              "sets": 3,
+              "loadsKg": [
+                15,
+                15,
+                15
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "rear_delt_flyes",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "shrugs",
+              "sets": 3,
+              "loadsKg": [
+                17,
+                17,
+                17
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 5,
+          "estimatedMinutes": 48,
+          "workingSets": 14,
+          "exercises": [
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "loadsKg": [
+                95,
+                95,
+                95
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "romanian_deadlift",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "squat",
+              "sets": 3,
+              "loadsKg": [
+                85,
+                85,
+                85
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "leg_press",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "calf_raises",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "overhead_tricep_extension",
+              "sets": 3,
+              "loadsKg": [
+                40,
+                40,
+                40
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        }
+      ]
+    },
+    {
+      "week": 2,
+      "policyVersion": "weekly-20261030-v3",
+      "status": "unresolved",
+      "warnings": {
+        "load_requires_confirmation": 19,
+        "history_evidence_unverified": 1
+      },
+      "loadRequiresConfirmation": 19,
+      "days": [
+        {
+          "day": 1,
+          "estimatedMinutes": 43,
+          "workingSets": 14,
+          "exercises": [
+            {
+              "exerciseId": "barbell_bench_press",
+              "sets": 3,
+              "loadsKg": [
+                100,
+                100,
+                100
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "dumbbell_flyes",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "barbell_row",
+              "sets": 3,
+              "loadsKg": [
+                62.5,
+                62.5,
+                62.5
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "lat_pulldown",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "lateral_raises",
+              "sets": 3,
+              "loadsKg": [
+                16,
+                16,
+                16
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "barbell_curl",
+              "sets": 3,
+              "loadsKg": [
+                25,
+                25,
+                25
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 2,
+          "estimatedMinutes": 45,
+          "workingSets": 11,
+          "exercises": [
+            {
+              "exerciseId": "squat",
+              "sets": 3,
+              "loadsKg": [
+                85,
+                85,
+                85
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "hack_squat",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "loadsKg": [
+                95,
+                95,
+                95
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "romanian_deadlift",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "calf_raises",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 3,
+          "estimatedMinutes": 38,
+          "workingSets": 16,
+          "exercises": [
+            {
+              "exerciseId": "barbell_bench_press",
+              "sets": 3,
+              "loadsKg": [
+                100,
+                100,
+                100
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "cable_chest_flyes",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "overhead_press",
+              "sets": 3,
+              "loadsKg": [
+                75,
+                75,
+                75
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "lateral_raises",
+              "sets": 3,
+              "loadsKg": [
+                16,
+                16,
+                16
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "tricep_pushdown",
+              "sets": 3,
+              "loadsKg": [
+                40,
+                40,
+                40
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "face_pulls",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 4,
+          "estimatedMinutes": 35,
+          "workingSets": 13,
+          "exercises": [
+            {
+              "exerciseId": "pull_ups",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "barbell_row",
+              "sets": 1,
+              "loadsKg": [
+                60
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "dumbbell_curl",
+              "sets": 3,
+              "loadsKg": [
+                15,
+                15,
+                15
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "rear_delt_flyes",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "shrugs",
+              "sets": 3,
+              "loadsKg": [
+                17,
+                17,
+                17
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 5,
+          "estimatedMinutes": 48,
+          "workingSets": 14,
+          "exercises": [
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "loadsKg": [
+                95,
+                95,
+                95
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "romanian_deadlift",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "squat",
+              "sets": 3,
+              "loadsKg": [
+                85,
+                85,
+                85
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "leg_press",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "calf_raises",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "overhead_tricep_extension",
+              "sets": 3,
+              "loadsKg": [
+                40,
+                40,
+                40
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        }
+      ]
+    },
+    {
+      "week": 3,
+      "policyVersion": "weekly-20261030-v3",
+      "status": "unresolved",
+      "warnings": {
+        "load_requires_confirmation": 19,
+        "history_evidence_unverified": 1
+      },
+      "loadRequiresConfirmation": 19,
+      "days": [
+        {
+          "day": 1,
+          "estimatedMinutes": 43,
+          "workingSets": 14,
+          "exercises": [
+            {
+              "exerciseId": "barbell_bench_press",
+              "sets": 3,
+              "loadsKg": [
+                100,
+                100,
+                100
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "dumbbell_flyes",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "barbell_row",
+              "sets": 3,
+              "loadsKg": [
+                62.5,
+                62.5,
+                62.5
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "lat_pulldown",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "lateral_raises",
+              "sets": 3,
+              "loadsKg": [
+                16,
+                16,
+                16
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "barbell_curl",
+              "sets": 3,
+              "loadsKg": [
+                25,
+                25,
+                25
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 2,
+          "estimatedMinutes": 45,
+          "workingSets": 11,
+          "exercises": [
+            {
+              "exerciseId": "squat",
+              "sets": 3,
+              "loadsKg": [
+                85,
+                85,
+                85
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "hack_squat",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "loadsKg": [
+                95,
+                95,
+                95
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "romanian_deadlift",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "calf_raises",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 3,
+          "estimatedMinutes": 38,
+          "workingSets": 16,
+          "exercises": [
+            {
+              "exerciseId": "barbell_bench_press",
+              "sets": 3,
+              "loadsKg": [
+                100,
+                100,
+                100
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "cable_chest_flyes",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "overhead_press",
+              "sets": 3,
+              "loadsKg": [
+                75,
+                75,
+                75
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "lateral_raises",
+              "sets": 3,
+              "loadsKg": [
+                16,
+                16,
+                16
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "tricep_pushdown",
+              "sets": 3,
+              "loadsKg": [
+                40,
+                40,
+                40
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "face_pulls",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 4,
+          "estimatedMinutes": 35,
+          "workingSets": 13,
+          "exercises": [
+            {
+              "exerciseId": "pull_ups",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "barbell_row",
+              "sets": 1,
+              "loadsKg": [
+                60
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "dumbbell_curl",
+              "sets": 3,
+              "loadsKg": [
+                15,
+                15,
+                15
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "rear_delt_flyes",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "shrugs",
+              "sets": 3,
+              "loadsKg": [
+                17,
+                17,
+                17
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 5,
+          "estimatedMinutes": 48,
+          "workingSets": 14,
+          "exercises": [
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "loadsKg": [
+                95,
+                95,
+                95
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "romanian_deadlift",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "squat",
+              "sets": 3,
+              "loadsKg": [
+                85,
+                85,
+                85
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "leg_press",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "calf_raises",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "overhead_tricep_extension",
+              "sets": 3,
+              "loadsKg": [
+                40,
+                40,
+                40
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        }
+      ]
+    },
+    {
+      "week": 4,
+      "policyVersion": "weekly-20261030-v3",
+      "status": "unresolved",
+      "warnings": {
+        "load_requires_confirmation": 19,
+        "history_evidence_unverified": 1
+      },
+      "loadRequiresConfirmation": 19,
+      "days": [
+        {
+          "day": 1,
+          "estimatedMinutes": 43,
+          "workingSets": 14,
+          "exercises": [
+            {
+              "exerciseId": "barbell_bench_press",
+              "sets": 3,
+              "loadsKg": [
+                100,
+                100,
+                100
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "dumbbell_flyes",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "barbell_row",
+              "sets": 3,
+              "loadsKg": [
+                62.5,
+                62.5,
+                62.5
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "lat_pulldown",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "lateral_raises",
+              "sets": 3,
+              "loadsKg": [
+                16,
+                16,
+                16
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "barbell_curl",
+              "sets": 3,
+              "loadsKg": [
+                25,
+                25,
+                25
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 2,
+          "estimatedMinutes": 45,
+          "workingSets": 11,
+          "exercises": [
+            {
+              "exerciseId": "squat",
+              "sets": 3,
+              "loadsKg": [
+                85,
+                85,
+                85
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "hack_squat",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "loadsKg": [
+                95,
+                95,
+                95
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "romanian_deadlift",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "calf_raises",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 3,
+          "estimatedMinutes": 38,
+          "workingSets": 16,
+          "exercises": [
+            {
+              "exerciseId": "barbell_bench_press",
+              "sets": 3,
+              "loadsKg": [
+                100,
+                100,
+                100
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "cable_chest_flyes",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "overhead_press",
+              "sets": 3,
+              "loadsKg": [
+                75,
+                75,
+                75
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "lateral_raises",
+              "sets": 3,
+              "loadsKg": [
+                16,
+                16,
+                16
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "tricep_pushdown",
+              "sets": 3,
+              "loadsKg": [
+                40,
+                40,
+                40
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "face_pulls",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 4,
+          "estimatedMinutes": 35,
+          "workingSets": 13,
+          "exercises": [
+            {
+              "exerciseId": "pull_ups",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "barbell_row",
+              "sets": 1,
+              "loadsKg": [
+                60
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "dumbbell_curl",
+              "sets": 3,
+              "loadsKg": [
+                15,
+                15,
+                15
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "rear_delt_flyes",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "shrugs",
+              "sets": 3,
+              "loadsKg": [
+                17,
+                17,
+                17
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        },
+        {
+          "day": 5,
+          "estimatedMinutes": 48,
+          "workingSets": 14,
+          "exercises": [
+            {
+              "exerciseId": "deadlift",
+              "sets": 3,
+              "loadsKg": [
+                95,
+                95,
+                95
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "romanian_deadlift",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "squat",
+              "sets": 3,
+              "loadsKg": [
+                85,
+                85,
+                85
+              ],
+              "reps": [
+                7,
+                7,
+                7
+              ]
+            },
+            {
+              "exerciseId": "leg_press",
+              "sets": 1,
+              "loadsKg": [
+                0
+              ],
+              "reps": [
+                13
+              ]
+            },
+            {
+              "exerciseId": "calf_raises",
+              "sets": 3,
+              "loadsKg": [
+                0,
+                0,
+                0
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            },
+            {
+              "exerciseId": "overhead_tricep_extension",
+              "sets": 3,
+              "loadsKg": [
+                40,
+                40,
+                40
+              ],
+              "reps": [
+                13,
+                13,
+                13
+              ]
+            }
+          ],
+          "capShortfalls": []
+        }
+      ]
+    }
+  ],
+  "confirmationWarningChanges": [
+    {
+      "week": 1,
+      "before": 19,
+      "after": 19,
+      "delta": 0
+    },
+    {
+      "week": 2,
+      "before": 19,
+      "after": 19,
+      "delta": 0
+    },
+    {
+      "week": 3,
+      "before": 19,
+      "after": 19,
+      "delta": 0
+    },
+    {
+      "week": 4,
+      "before": 19,
+      "after": 19,
+      "delta": 0
+    }
+  ]
+}

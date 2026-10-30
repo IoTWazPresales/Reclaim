@@ -1,0 +1,8 @@
+INCOMPLETE: stopped after more than two minutes without output; no report/exit success. Retrying the same canonical shard.
+
+
+ RUN  v4.0.8 <workspace>/app
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ✓ src/lib/system/__tests__/sessionForegroundSource.test.ts > session foreground source shape > does not depend on the prohibited background-actions transport 5520ms
+ ✓ src/lib/system/__tests__/sessionForegroundSource.test.ts > session foreground source shape > registers one health foreground service and keeps the old library service out of the plugin registration 24ms

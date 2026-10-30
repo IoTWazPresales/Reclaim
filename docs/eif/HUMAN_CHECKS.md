@@ -1,5 +1,14 @@
 # Human checks — PRG-20260917T222550
 
+## D-P2-01 / v2 caps - UNABLE_TO_VERIFY Android (2026-10-30)
+
+Android launch, ADB, emulator renders and device persistence checks were not
+attempted: the operator explicitly excluded Android for this task. Offline source
+review, replay and tests do not constitute device acceptance. Follow the new-build
+load/precedence/cap/frozen-session checks in
+[AWAITING_APPROVAL.md](AWAITING_APPROVAL.md). No live writes, migrations, EIF
+acceptance or R12; no wrapper/queue registration was attempted.
+
 ## Run-routes migration-history drift - BLOCKER (2026-10-30)
 
 The operator's reviewer verified read-only live state through the Supabase

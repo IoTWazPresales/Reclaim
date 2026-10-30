@@ -57,7 +57,7 @@ describe('experience level and Epley ceilings', () => {
     expect(intermediate.userState.experienceLevel).toBe('intermediate');
   });
 
-  it('caps a progressed load at that exercise Epley ceiling and leaves another exercise alone', () => {
+  it('replays the v1 baseline ceiling without inheriting another exercise baseline', () => {
     expect(bench && row).toBeTruthy();
     const plannedReps = 8;
     const oneRM = 80;
@@ -70,6 +70,7 @@ describe('experience level and Epley ceilings', () => {
       { setIndex: 3, weight: 100, reps: 8, completedAt: '2026-09-01T00:00:00.000Z' },
     ];
     const sharedHistory = {
+      prescriptionPolicy: 'v1' as const,
       lastSessionPerformance: {
         barbell_bench_press: canonicalPerformance('barbell_bench_press', heavySets, '2026-09-01'),
         barbell_row: canonicalPerformance('barbell_row', heavySets, '2026-09-01'),

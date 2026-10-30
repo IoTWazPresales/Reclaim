@@ -6,6 +6,7 @@ import { fractionalSetsFromPlans } from '../weeklyVolumeModel';
 import type { BuildSessionInput, SessionPlan } from '../types';
 
 const base: BuildSessionInput = {
+  prescriptionPolicy: 'v1', // Historical eedb704 replay: retain the exact v1 snapshots.
   template: 'upper',
   goals: { build_muscle: 1 },
   constraints: {

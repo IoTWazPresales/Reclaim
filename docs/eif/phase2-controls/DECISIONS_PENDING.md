@@ -1,5 +1,14 @@
 # Material policy decisions: resolved and pending
 
+## Implementation checkpoint - 2026-10-30
+
+Decisions 1-2 are now implemented for **new builds** under
+`weekly-20261030-v3`. Decisions 3-4 have regression coverage without behavior
+changes. Historical v1 replay and frozen started/guided prescriptions are retained.
+[Implementation, offline replay, separate review and final test inventory](../../training/recovery/evidence/resolved-policy-implementation-20261030.md).
+Android approval remains pending; this source checkpoint is not EIF acceptance.
+The documentation-only checkpoint below records the earlier state before implementation.
+
 ## Resolved operator decisions — 2026-10-30
 
 All four decisions below are **RESOLVED** by the operator. The wording is recorded

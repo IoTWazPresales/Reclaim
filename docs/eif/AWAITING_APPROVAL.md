@@ -1,5 +1,35 @@
 # Awaiting visual approval — PRG-20260917T222550
 
+## D-P2-01 / v2 cap precedence - Android approval pending (2026-10-30)
+
+Source implementation only on `fix/training-confident-ux`, new policy
+`weekly-20261030-v3`. No Android was attempted, as explicitly instructed;
+**UNABLE_TO_VERIFY** presentation and device persistence. This is a manual
+tracking entry, not EIF registration, acceptance, deployment or shipping approval.
+
+Offline captured-profile change, in **each of weeks 1-4**: **Shrugs 3 x 13,
+20 -> 17 kg**. All other captured loads/reps unchanged. Sets stay **68/week**;
+20 warnings/week persist, including **19 `load_requires_confirmation`** (delta 0).
+The separate bench fixture now applies **87.5 kg**, rather than 60 kg, at ten
+reps after qualified 80 / 82.5 / 85 kg x 12 history. It is synthetic, not an
+additional changed lift in the captured profile. Existing increments are retained.
+
+Operator Android approval steps for a separately authorized device session:
+
+1. Keep existing started/guided work frozen. Review a **new build** using the
+   captured profile: inspect the shrugs load, its governing-history explanation,
+   all weekly set totals and retained confirmation warnings.
+2. With suitable synthetic evidence, verify the bench 87.5 kg fixture. Enter a
+   later lower baseline and confirm that baseline governs the next new build;
+   reopening setup must retain both entered weight/reps and evidence precedence.
+3. Inspect any cap-constrained new build: five/exercise, ten/owner, 24/session,
+   60-minute estimate and explicit tighter user caps; shortfalls must appear in
+   existing preview/weekly review diagnostics.
+4. Resume a pre-existing started/guided session and verify its stored sets,
+   weights and guidance remain unchanged. Approve/reject this source checkpoint.
+
+[Before/after rows and gate evidence](../training/recovery/evidence/resolved-policy-implementation-20261030.md).
+
 ## R09 / N-0070 - UNABLE_TO_VERIFY, unregistered (2026-10-16)
 
 R09 changes setup validation and weekly completed/frozen/provisional muscle-set copy. Read-only ADB on 2026-10-15 returned no devices; no renders or runtime acceptance are claimed. R11 follow-up: [R09 manual steps](../../.eif/audit/N-0070/R09/human-check.md). The known EIF owner conflict prevents formal attachment/queue registration. Required wrapper tests reproduce it; no ownership repair, bypass, node acceptance or shipping permission is asserted. Branch source/evidence checkpoint only. Stop after R09; do not start R10.

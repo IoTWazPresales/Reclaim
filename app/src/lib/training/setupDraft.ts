@@ -13,6 +13,7 @@ export interface TrainingSetupDraft {
   constraints: string[];
   baselines: Record<string, number>;
   baselineReps?: Record<string, number>;
+  baselineUpdatedAt?: Record<string, string>;
   muscleFrequency?: 'once' | 'twice' | 'auto';
   experienceLevel?: ExperienceLevel;
   includeSkillWork?: boolean;
@@ -52,6 +53,7 @@ export function normalizeTrainingSetupDraft(draft: TrainingSetupDraft): Training
     },
     baselines,
     baselineInputs,
+    baselineUpdatedAt: draft.baselineUpdatedAt,
     experienceLevel: resolveExperienceLevel(draft.experienceLevel),
     trainingMode,
     ...(runningGoal ? { runningGoal } : {}),
@@ -73,6 +75,7 @@ export function prepareTrainingSetup(draft: TrainingSetupDraft) {
       ...(snapshot.runningGoal ? { runningGoal: snapshot.runningGoal } : {}),
       ...(snapshot.runningDistanceKm !== undefined ? { runningDistanceKm: snapshot.runningDistanceKm } : {}),
       baselineInputs: snapshot.baselineInputs,
+      baselineUpdatedAt: snapshot.baselineUpdatedAt,
     },
   } as TrainingProfileRow;
   const profileWrite = {

@@ -1,3 +1,22 @@
+## 2026-10-30 - D-P2-01 and v2 cap precedence source implementation
+
+Baseline `1e18694`, branch `fix/training-confident-ux`. New-build policy is
+`weekly-20261030-v3`; historical `weekly-20261014-v2` and frozen started/guided
+prescriptions retain v1 behavior. Most recent qualified evidence governs the
+Epley ceiling; baseline edit timestamps persist through existing JSON, and
+user-entered values are never overwritten. New caps: 5/exercise, 10/owner,
+24/session, 60-minute estimate, tighter user caps; withheld work stays visible
+in weekly diagnostics. Decisions 3-4 behavior is preserved with regression tests;
+existing non-divisible frequency rounding remains a documented limitation.
+
+Offline captured replay changes shrugs 3 x 13 from 20 to 17 kg in all four weeks;
+68 sets and 20 warnings/week (19 confirmation) stay unchanged. Separate source
+review found no blockers. Final full gate: 1492 tests, 205/205 files, zero failures via sequential shards;
+types, dual31 and catalogue357/0 pass. Gate details/inventory:
+`docs/training/recovery/evidence/resolved-policy-implementation-20261030.md`.
+Android approval is pending; no Android, live writes, migrations, EIF acceptance
+or R12. Stop after the scoped commit/push; retain all unrelated workspace work.
+
 ## 2026-10-30 - Operator training policy decisions resolved
 
 Decisions 1–4 are recorded verbatim as resolved in
