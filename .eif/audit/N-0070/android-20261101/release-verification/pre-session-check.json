@@ -1,0 +1,17 @@
+{
+  "stage": "pre",
+  "readOnly": true,
+  "ownerScoped": true,
+  "totalSessions": 5,
+  "totalItems": 14,
+  "totalSetLogs": 18,
+  "newSessionPresent": false,
+  "trackedItemCount": 0,
+  "trackedSetLogCount": 0,
+  "performedSetCount": 0,
+  "storedMode": null,
+  "items": [],
+  "setLogs": [],
+  "baselineSessionsStillPresent": true,
+  "baselineSetLogsStillPresent": true
+}

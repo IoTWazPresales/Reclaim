@@ -1,0 +1,16 @@
+{
+  "basis": "Prior explicit operator numeric confirmations retained; no corrected values supplied in this turn.",
+  "ohp": {
+    "weightKg": 90,
+    "reps": 8,
+    "savedExerciseId": "overhead_press",
+    "displayMode": "total_bar"
+  },
+  "deadlift": {
+    "weightKg": 100,
+    "reps": 5
+  },
+  "setupChangedThisContinuation": false,
+  "newStandingBarbellOperatorConfirmation": "not separately received; question remains open for variant/correction",
+  "noNewConfirmationInferredFromElapsedTime": true
+}

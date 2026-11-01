@@ -1,0 +1,256 @@
+{
+  "basis": "Persisted started-session planned.sets compared with prior preview-matching stored-input canonical replay, all six items /16sets.",
+  "allMatch": true,
+  "exercises": [
+    {
+      "exerciseId": "barbell_bench_press",
+      "expectedSets": [
+        {
+          "setIndex": 1,
+          "targetReps": 7,
+          "suggestedWeight": 100,
+          "restSeconds": 120
+        },
+        {
+          "setIndex": 2,
+          "targetReps": 7,
+          "suggestedWeight": 100,
+          "restSeconds": 120
+        },
+        {
+          "setIndex": 3,
+          "targetReps": 7,
+          "suggestedWeight": 100,
+          "restSeconds": 120
+        }
+      ],
+      "frozenSets": [
+        {
+          "setIndex": 1,
+          "targetReps": 7,
+          "restSeconds": 120,
+          "suggestedWeight": 100
+        },
+        {
+          "setIndex": 2,
+          "targetReps": 7,
+          "restSeconds": 120,
+          "suggestedWeight": 100
+        },
+        {
+          "setIndex": 3,
+          "targetReps": 7,
+          "restSeconds": 120,
+          "suggestedWeight": 100
+        }
+      ],
+      "exactSetsMatch": true
+    },
+    {
+      "exerciseId": "dumbbell_flyes",
+      "expectedSets": [
+        {
+          "setIndex": 1,
+          "targetReps": 13,
+          "suggestedWeight": 0,
+          "restSeconds": 45,
+          "loadRequiresConfirmation": true
+        },
+        {
+          "setIndex": 2,
+          "targetReps": 13,
+          "suggestedWeight": 0,
+          "restSeconds": 45,
+          "loadRequiresConfirmation": true
+        }
+      ],
+      "frozenSets": [
+        {
+          "setIndex": 1,
+          "targetReps": 13,
+          "restSeconds": 45,
+          "suggestedWeight": 0,
+          "loadRequiresConfirmation": true
+        },
+        {
+          "setIndex": 2,
+          "targetReps": 13,
+          "restSeconds": 45,
+          "suggestedWeight": 0,
+          "loadRequiresConfirmation": true
+        }
+      ],
+      "exactSetsMatch": true
+    },
+    {
+      "exerciseId": "barbell_row",
+      "expectedSets": [
+        {
+          "setIndex": 1,
+          "targetReps": 7,
+          "suggestedWeight": 65,
+          "restSeconds": 120
+        },
+        {
+          "setIndex": 2,
+          "targetReps": 7,
+          "suggestedWeight": 65,
+          "restSeconds": 120
+        },
+        {
+          "setIndex": 3,
+          "targetReps": 7,
+          "suggestedWeight": 65,
+          "restSeconds": 120
+        }
+      ],
+      "frozenSets": [
+        {
+          "setIndex": 1,
+          "targetReps": 7,
+          "restSeconds": 120,
+          "suggestedWeight": 65
+        },
+        {
+          "setIndex": 2,
+          "targetReps": 7,
+          "restSeconds": 120,
+          "suggestedWeight": 65
+        },
+        {
+          "setIndex": 3,
+          "targetReps": 7,
+          "restSeconds": 120,
+          "suggestedWeight": 65
+        }
+      ],
+      "exactSetsMatch": true
+    },
+    {
+      "exerciseId": "lat_pulldown",
+      "expectedSets": [
+        {
+          "setIndex": 1,
+          "targetReps": 13,
+          "suggestedWeight": 0,
+          "restSeconds": 45,
+          "loadRequiresConfirmation": true
+        },
+        {
+          "setIndex": 2,
+          "targetReps": 13,
+          "suggestedWeight": 0,
+          "restSeconds": 45,
+          "loadRequiresConfirmation": true
+        }
+      ],
+      "frozenSets": [
+        {
+          "setIndex": 1,
+          "targetReps": 13,
+          "restSeconds": 45,
+          "suggestedWeight": 0,
+          "loadRequiresConfirmation": true
+        },
+        {
+          "setIndex": 2,
+          "targetReps": 13,
+          "restSeconds": 45,
+          "suggestedWeight": 0,
+          "loadRequiresConfirmation": true
+        }
+      ],
+      "exactSetsMatch": true
+    },
+    {
+      "exerciseId": "lateral_raises",
+      "expectedSets": [
+        {
+          "setIndex": 1,
+          "targetReps": 13,
+          "suggestedWeight": 11,
+          "restSeconds": 45
+        },
+        {
+          "setIndex": 2,
+          "targetReps": 13,
+          "suggestedWeight": 11,
+          "restSeconds": 45
+        },
+        {
+          "setIndex": 3,
+          "targetReps": 13,
+          "suggestedWeight": 11,
+          "restSeconds": 45
+        }
+      ],
+      "frozenSets": [
+        {
+          "setIndex": 1,
+          "targetReps": 13,
+          "restSeconds": 45,
+          "suggestedWeight": 11
+        },
+        {
+          "setIndex": 2,
+          "targetReps": 13,
+          "restSeconds": 45,
+          "suggestedWeight": 11
+        },
+        {
+          "setIndex": 3,
+          "targetReps": 13,
+          "restSeconds": 45,
+          "suggestedWeight": 11
+        }
+      ],
+      "exactSetsMatch": true
+    },
+    {
+      "exerciseId": "barbell_curl",
+      "expectedSets": [
+        {
+          "setIndex": 1,
+          "targetReps": 13,
+          "suggestedWeight": 17.5,
+          "restSeconds": 45
+        },
+        {
+          "setIndex": 2,
+          "targetReps": 13,
+          "suggestedWeight": 17.5,
+          "restSeconds": 45
+        },
+        {
+          "setIndex": 3,
+          "targetReps": 13,
+          "suggestedWeight": 17.5,
+          "restSeconds": 45
+        }
+      ],
+      "frozenSets": [
+        {
+          "setIndex": 1,
+          "targetReps": 13,
+          "restSeconds": 45,
+          "suggestedWeight": 17.5
+        },
+        {
+          "setIndex": 2,
+          "targetReps": 13,
+          "restSeconds": 45,
+          "suggestedWeight": 17.5
+        },
+        {
+          "setIndex": 3,
+          "targetReps": 13,
+          "restSeconds": 45,
+          "suggestedWeight": 17.5
+        }
+      ],
+      "exactSetsMatch": true
+    }
+  ],
+  "retainedAfterOneSetAndResume": true,
+  "remainingPerformedSetCount": 1
+}

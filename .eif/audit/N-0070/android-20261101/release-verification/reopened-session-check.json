@@ -1,0 +1,243 @@
+{
+  "stage": "reopened",
+  "readOnly": true,
+  "ownerScoped": true,
+  "totalSessions": 6,
+  "totalItems": 20,
+  "totalSetLogs": 19,
+  "newSessionPresent": true,
+  "trackedItemCount": 6,
+  "trackedSetLogCount": 1,
+  "performedSetCount": 1,
+  "storedMode": "guided",
+  "items": [
+    {
+      "exerciseId": "dumbbell_flyes",
+      "orderIndex": 1,
+      "planned": {
+        "sets": [
+          {
+            "setIndex": 1,
+            "targetReps": 13,
+            "restSeconds": 45,
+            "suggestedWeight": 0,
+            "loadRequiresConfirmation": true
+          },
+          {
+            "setIndex": 2,
+            "targetReps": 13,
+            "restSeconds": 45,
+            "suggestedWeight": 0,
+            "loadRequiresConfirmation": true
+          }
+        ],
+        "priority": "isolation",
+        "intents": [
+          "horizontal_press"
+        ]
+      },
+      "performed": null,
+      "skipped": false,
+      "plannedSha256": "356ba7ffd11d5629e0aa1622908eb7057969c1a992ae214dfebb1b6b0fceba94",
+      "progressionReason": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+    },
+    {
+      "exerciseId": "barbell_row",
+      "orderIndex": 2,
+      "planned": {
+        "sets": [
+          {
+            "setIndex": 1,
+            "targetReps": 7,
+            "restSeconds": 120,
+            "suggestedWeight": 65
+          },
+          {
+            "setIndex": 2,
+            "targetReps": 7,
+            "restSeconds": 120,
+            "suggestedWeight": 65
+          },
+          {
+            "setIndex": 3,
+            "targetReps": 7,
+            "restSeconds": 120,
+            "suggestedWeight": 65
+          }
+        ],
+        "priority": "primary",
+        "intents": [
+          "horizontal_pull"
+        ]
+      },
+      "performed": null,
+      "skipped": false,
+      "plannedSha256": "59181bb2cda10b534bad9ecea974bd508816595cd51d371be2e4e7097f775d08",
+      "progressionReason": "Prescribed 65kg for 7 reps per set. Most recent qualified history governs the load ceiling. Epley ceiling: 70kg at 7 reps. RPE 8 working limit (2 reps in reserve): 65kg. Applied working weight: 65kg. Qualified history proposed 70kg; qualified history limits it at RPE 8."
+    },
+    {
+      "exerciseId": "lat_pulldown",
+      "orderIndex": 3,
+      "planned": {
+        "sets": [
+          {
+            "setIndex": 1,
+            "targetReps": 13,
+            "restSeconds": 45,
+            "suggestedWeight": 0,
+            "loadRequiresConfirmation": true
+          },
+          {
+            "setIndex": 2,
+            "targetReps": 13,
+            "restSeconds": 45,
+            "suggestedWeight": 0,
+            "loadRequiresConfirmation": true
+          }
+        ],
+        "priority": "accessory",
+        "intents": [
+          "vertical_pull"
+        ]
+      },
+      "performed": null,
+      "skipped": false,
+      "plannedSha256": "116c27c8b3da0eb2fa48cd98614ac13addf6a81d485697a9a40349e55a42b451",
+      "progressionReason": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+    },
+    {
+      "exerciseId": "lateral_raises",
+      "orderIndex": 4,
+      "planned": {
+        "sets": [
+          {
+            "setIndex": 1,
+            "targetReps": 13,
+            "restSeconds": 45,
+            "suggestedWeight": 11
+          },
+          {
+            "setIndex": 2,
+            "targetReps": 13,
+            "restSeconds": 45,
+            "suggestedWeight": 11
+          },
+          {
+            "setIndex": 3,
+            "targetReps": 13,
+            "restSeconds": 45,
+            "suggestedWeight": 11
+          }
+        ],
+        "priority": "isolation",
+        "intents": [
+          "shoulder_isolation"
+        ]
+      },
+      "performed": null,
+      "skipped": false,
+      "plannedSha256": "01aecfc30686ef787b790593c7dfa43554a0bfee931deb5434201aa759ded877",
+      "progressionReason": "Prescribed 11kg for 13 reps per set. Most recent qualified history governs the load ceiling. Epley ceiling: 11kg at 13 reps. RPE 8 working limit (2 reps in reserve): 11kg. Applied working weight: 11kg. Qualified history proposed 12kg; qualified history limits it at RPE 8."
+    },
+    {
+      "exerciseId": "barbell_curl",
+      "orderIndex": 5,
+      "planned": {
+        "sets": [
+          {
+            "setIndex": 1,
+            "targetReps": 13,
+            "restSeconds": 45,
+            "suggestedWeight": 17.5
+          },
+          {
+            "setIndex": 2,
+            "targetReps": 13,
+            "restSeconds": 45,
+            "suggestedWeight": 17.5
+          },
+          {
+            "setIndex": 3,
+            "targetReps": 13,
+            "restSeconds": 45,
+            "suggestedWeight": 17.5
+          }
+        ],
+        "priority": "isolation",
+        "intents": [
+          "elbow_flexion"
+        ]
+      },
+      "performed": null,
+      "skipped": false,
+      "plannedSha256": "f367b1cfa91a271b3e350a65c5d562dec854ebc6e7a6d2d653b430a843a3525f",
+      "progressionReason": "Prescribed 17.5kg for 13 reps per set. Most recent qualified history governs the load ceiling. Epley ceiling: 17.5kg at 13 reps. RPE 8 working limit (2 reps in reserve): 17.5kg. Applied working weight: 17.5kg. Qualified history proposed 20kg; qualified history limits it at RPE 8."
+    },
+    {
+      "exerciseId": "barbell_bench_press",
+      "orderIndex": 0,
+      "planned": {
+        "sets": [
+          {
+            "setIndex": 1,
+            "targetReps": 7,
+            "restSeconds": 120,
+            "suggestedWeight": 100
+          },
+          {
+            "setIndex": 2,
+            "targetReps": 7,
+            "restSeconds": 120,
+            "suggestedWeight": 100
+          },
+          {
+            "setIndex": 3,
+            "targetReps": 7,
+            "restSeconds": 120,
+            "suggestedWeight": 100
+          }
+        ],
+        "warmupSets": [
+          {
+            "reps": 5,
+            "weight": 40
+          },
+          {
+            "reps": 5,
+            "weight": 60
+          },
+          {
+            "reps": 5,
+            "weight": 80
+          }
+        ],
+        "priority": "primary",
+        "intents": [
+          "horizontal_press"
+        ]
+      },
+      "performed": {
+        "sets": [
+          {
+            "reps": 7,
+            "weight": 100,
+            "setIndex": 1,
+            "completedAt": "2026-11-01T20:34:52.936Z"
+          }
+        ]
+      },
+      "skipped": false,
+      "plannedSha256": "040d2918cf768cf61eec398e1ad472906f5e84b212bac5dcf5f4be32314ba2a6",
+      "progressionReason": "Prescribed 100kg for 7 reps per set. Your saved exercise baseline governs the load ceiling. Epley ceiling: 107.5kg at 7 reps. RPE 8 working limit (2 reps in reserve): 100kg. Applied working weight: 100kg. No qualified history is available."
+    }
+  ],
+  "setLogs": [
+    {
+      "setIndex": 1,
+      "weight": 100.0,
+      "reps": 7
+    }
+  ],
+  "baselineSessionsStillPresent": true,
+  "baselineSetLogsStillPresent": true
+}

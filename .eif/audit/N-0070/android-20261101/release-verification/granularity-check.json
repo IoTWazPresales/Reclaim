@@ -1,0 +1,63 @@
+{
+  "operatorRule": "Accept equality caused only by increment when unrounded RPE8 working is strictly below raw ceiling.",
+  "basis": "Prior immutable stored-input/canonical-history replay; exact arithmetic checked against epleyRpe8WorkingWeight targetReps+2 source.",
+  "rows": [
+    {
+      "day": 1,
+      "exercise": "Lateral Raises",
+      "unit": "per_dumbbell",
+      "targetReps": 13,
+      "oneRM": 16.799999999999997,
+      "unroundedRpe8WorkingKg": 11.199999999999998,
+      "rawCeilingKg": 11.720930232558137,
+      "stepKg": 1,
+      "roundedWorkingKg": 11,
+      "roundedCeilingKg": 11,
+      "rpe8Applied": true,
+      "classification": "granularity"
+    },
+    {
+      "day": 1,
+      "exercise": "Barbell Curl",
+      "unit": "total_bar",
+      "targetReps": 13,
+      "oneRM": 28,
+      "unroundedRpe8WorkingKg": 18.666666666666668,
+      "rawCeilingKg": 19.53488372093023,
+      "stepKg": 2.5,
+      "roundedWorkingKg": 17.5,
+      "roundedCeilingKg": 17.5,
+      "rpe8Applied": true,
+      "classification": "granularity"
+    },
+    {
+      "day": 3,
+      "exercise": "Lateral Raises",
+      "unit": "per_dumbbell",
+      "targetReps": 13,
+      "oneRM": 16.799999999999997,
+      "unroundedRpe8WorkingKg": 11.199999999999998,
+      "rawCeilingKg": 11.720930232558137,
+      "stepKg": 1,
+      "roundedWorkingKg": 11,
+      "roundedCeilingKg": 11,
+      "rpe8Applied": true,
+      "classification": "granularity"
+    },
+    {
+      "day": 4,
+      "exercise": "Dumbbell Curl",
+      "unit": "per_dumbbell",
+      "targetReps": 13,
+      "oneRM": 21,
+      "unroundedRpe8WorkingKg": 14.0,
+      "rawCeilingKg": 14.651162790697674,
+      "stepKg": 1,
+      "roundedWorkingKg": 14,
+      "roundedCeilingKg": 14,
+      "rpe8Applied": true,
+      "classification": "granularity"
+    }
+  ],
+  "allGranularity": true
+}

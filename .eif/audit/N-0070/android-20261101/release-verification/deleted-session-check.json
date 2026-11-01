@@ -1,0 +1,21 @@
+{
+  "stage": "deleted",
+  "readOnly": true,
+  "ownerScoped": true,
+  "totalSessions": 5,
+  "totalItems": 14,
+  "totalSetLogs": 18,
+  "newSessionPresent": false,
+  "trackedItemCount": 0,
+  "trackedSetLogCount": 0,
+  "performedSetCount": 0,
+  "storedMode": null,
+  "items": [],
+  "setLogs": [],
+  "baselineSessionsStillPresent": true,
+  "baselineSetLogsStillPresent": true,
+  "directKnownSessionRows": 0,
+  "directKnownSessionItemRows": 0,
+  "directKnownItemSetLogRows": 0,
+  "baselineItemsStillPresent": true
+}

@@ -1,0 +1,26 @@
+{
+  "foregroundServiceObserved": true,
+  "serviceLines": [
+    "* ServiceRecord{17f6d0d u0 com.fissioncorporation.reclaim/.ReclaimSessionForegroundService c:com.fissioncorporation.reclaim}",
+    "intent={cmp=com.fissioncorporation.reclaim/.ReclaimSessionForegroundService}",
+    "isForeground=true foregroundId=92911 types=0x00000100 foregroundNoti=Notification(channel=reclaim_session_fgs shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=ONGOING_EVENT|ONLY_ALERT_ONCE|NO_CLEAR|FOREGROUND_SERVICE color=0x00000000 vis=PRIVATE)"
+  ],
+  "notificationRecords": [
+    "NotificationRecord(0x0b367233: pkg=com.fissioncorporation.reclaim user=UserHandle{0} id=0 tag=reclaim-training-at-[test-session] importance=4 key=0|com.fissioncorporation.reclaim|0|reclaim-training-at-[test-session]|10231: Notification(channel=expo_notifications_fallback_notification_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL color=0x00000000 actions=3 vis=PRIVATE))",
+    "NotificationRecord(0x07b78525: pkg=com.fissioncorporation.reclaim user=UserHandle{0} id=92911 tag=null importance=2 key=0|com.fissioncorporation.reclaim|92911|null|10231: Notification(channel=reclaim_session_fgs shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=ONGOING_EVENT|ONLY_ALERT_ONCE|NO_CLEAR|FOREGROUND_SERVICE color=0x00000000 vis=PRIVATE))"
+  ],
+  "healthTypeMask": "0x00000100",
+  "shadeObserved": [
+    "Session started",
+    "Barbell Bench Press / Set1 /100kg /7reps /Total bar weight",
+    "Done / Skip / Edit",
+    "Reclaim training in progress",
+    "Guided session active"
+  ],
+  "rawShadeScreenshot": "session-notification-shade.png retained local; unrelated Google cards excluded from publication",
+  "note": "Actual shade pixels inspected. No watch connection or lock-screen timing claim. Raw dumps local only.",
+  "foregroundServiceObservedAfterResume": true,
+  "foregroundServicePresentAfterDelete": false,
+  "reclaimNotificationRecordsAfterDelete": 0,
+  "rawShadeScreenshotSha256": "c50886eef5cee7ef6b0a20073398b25539105512446462276f4f4fc9ff3dea48"
+}

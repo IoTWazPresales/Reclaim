@@ -1,3 +1,7 @@
+## 2026-11-01 - Granularity accepted; guided one-set journey and cleanup verified
+
+All4rounded-equality rows have unroundedRPE8 < rawceiling, accepted under operator rule. Prior OHP90x8/deadlift100x5 retained; no correction supplied, new standing-barbell variant confirmation remains open. One guided Monday session: sixitems/16frozen sets match preview; notification and nativehealthFGS visible. NotificationDone once logsBench100x7; canonical performed.sets+one setlog persisted and survived minimize/resume with unchanged frozenplan. Cancel & delete succeeded: direct-ID queries0session/0items/0logs, original5sessions/14items/18logs preserved; no FGS/notifications remain. No source/migration/EIF acceptance. Evidence: .eif/audit/N-0070/android-20261101/release-verification/session-result.md.
+
 ## 2026-11-01 - Confirmed setup saved; rounded-ceiling check stops session journey
 
 Operator changed OHP90x7 to90x8. Advanced/Bench105x8/Squat100x5/Deadlift100x5/OHP90x8 saved, reopened UI and read-only stored snapshot agree; Strength/Mon-Fri/goals40/40/10/10. All28 preview rows across5days match canonical stored-input replay (76sets); weekly unresolved/30warnings/0errors. Four rows equal rounded ceiling while remaining below raw ceiling; stop under strict below-ceiling requirement. No session/set created; FGS/persistence/delete NOT RUN. No source/migration/acceptance. Evidence: .eif/audit/N-0070/android-20261101/release-verification/continued-result.md.

@@ -65,3 +65,7 @@ Read-only esbuild source replay invokes completedPerformanceHistory(items,3), hy
 | Queue / commit / push | Recorded after execution below; no acceptance |
 
 Public wrapper lease/await-approval/automatic-release succeeded at20:06UTC under R20261101RELEASEVERIFY; twelve scoped renders hashed. Existing N-0070 queue heading retained; AWAITING_APPROVAL has a new scope note. No acceptance/evidence-add/complete command. Evidence committed and pushed in the following documentation checkpoint.
+
+## Superseding continuation
+
+Operator accepted step-size equality when unrounded RPE8 working < raw ceiling. All4rows pass that rule. One guided session matched frozen16sets, notification/FGS appeared, oneBench100x7set persisted through minimize/resume, then Cancel & delete returned original5sessions/14items/18logs with direct known-ID zero-row checks. See [session result](session-result.md). No code/migration/EIF acceptance. Standing-barbell variant clarification remains open; previously confirmed numeric baselines retained.
