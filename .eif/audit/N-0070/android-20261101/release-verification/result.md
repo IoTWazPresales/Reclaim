@@ -15,3 +15,7 @@ Five-day exercise/set/ceiling/working-weight/warning inventory, same-unit and co
 Render queue registration is for this partial pre-setup screenshot only; it grants no acceptance or full journey approval. Resume after exact operator setup inputs arrive.
 
 Public wrapper lease, await-approval and automatic release succeeded under R20261101RELEASEVERIFY; PROGRESS mutation log records all three. Existing N-0070 queue section retained, with scoped explanatory note added. No complete/accept command.
+
+## Continuation with confirmed inputs
+
+Operator supplied exact values. STOPPED before Save because the baseline UI supports only3/5/8 reps and cannot enter overhead press90x7. Advanced selected in unsaved draft; no weights entered or records created. See [finding and full accounting](baseline-reps-stop.md). Prior pending-input text above is historical; inputs are now known, UI entry is the blocker.

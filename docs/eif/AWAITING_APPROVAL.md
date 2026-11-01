@@ -1,5 +1,9 @@
 # Awaiting visual approval — PRG-20260917T222550
 
+## N-0070 baseline rep entry stop (2026-11-01)
+
+Wrapper `await-approval` succeeded again under `R20261101RELEASEVERIFY` for `.eif/audit/N-0070/android-20261101/release-verification` (six scoped screenshots), then released lease. Operator supplied Advanced/Bench105x8/Squat100x5/Deadlift100x5/OHP90x7. Setup restricts reps to3/5/8; cannot enter7. Advanced is unsaved draft, weights blank; no Save/session/set. STOP per code-finding instruction. Review the [actual screen and source finding](../../.eif/audit/N-0070/android-20261101/release-verification/baseline-reps-stop.md). No five-day/session verification or EIF acceptance.
+
 
 ## Working-weight release install checkpoint (2026-11-01)
 

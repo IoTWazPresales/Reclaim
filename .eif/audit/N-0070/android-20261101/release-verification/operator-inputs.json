@@ -1,0 +1,37 @@
+{
+  "experience": "Advanced",
+  "mode": "Strength",
+  "weekdays": [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday"
+  ],
+  "goals": {
+    "Build Muscle": 40,
+    "Build Strength": 40,
+    "Lose Fat": 10,
+    "Get Fitter": 10
+  },
+  "baselines": {
+    "Bench press": {
+      "kg": 105,
+      "reps": 8
+    },
+    "Squat": {
+      "kg": 100,
+      "reps": 5
+    },
+    "Deadlift": {
+      "kg": 100,
+      "reps": 5
+    },
+    "Overhead press": {
+      "kg": 90,
+      "reps": 7
+    }
+  },
+  "saved": false,
+  "stopReason": "UI reps restricted to 3/5/8; cannot enter confirmed overhead press reps7"
+}

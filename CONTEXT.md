@@ -1,3 +1,7 @@
+## 2026-11-01 - Android verification stopped on baseline rep entry
+
+Operator confirmed Advanced/Bench105x8/Squat100x5/Deadlift100x5/OHP90x7. Actual setup only offers3/5/8 rep chips, confirmed by read-only TrainingSetupScreen.tsx renderer. No faithful7-rep entry possible; stopped per instruction before Save. Advanced is unsaved draft only; weights remain blank, no session/set created. No source/migration/acceptance. Evidence: .eif/audit/N-0070/android-20261101/release-verification/baseline-reps-stop.md.
+
 ## 2026-11-01 - Working-weight release installed; exact setup inputs pending
 
 Recorded bd69229 release installed with adb install -r; pulled installed APK SHA256 equals 7407978a5afd3d35b52134ebf934626bdf6e34427202386d32531084c674cf0a. Signed-in Training launches. No setup saved/session/set created. Operator request contains experience/Bench/Squat/Deadlift placeholders and unconfirmed OHP80x5; asked exact values before dependent work. Evidence: .eif/audit/N-0070/android-20261101/release-verification/result.md. Five-day/session/FGS/persistence/delete verification pending; no source/migration/EIF acceptance.
