@@ -1,0 +1,343 @@
+{
+  "basis": "Android accessibility text compared to fresh stored-programme/canonical-history source replay. Rounded ceiling is replay explanation value, not a rendered preview field. No session started.",
+  "days": [
+    {
+      "day": 1,
+      "exerciseCount": 6,
+      "comparisons": [
+        {
+          "exerciseId": "barbell_bench_press",
+          "name": "Barbell Bench Press",
+          "android": {
+            "line": "3 sets \u00b7 100kg \u00b7 7 reps \u00b7 Total bar weight.",
+            "captureText": "mon-preview-top.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": true,
+          "rawStrictlyBelow": true
+        },
+        {
+          "exerciseId": "dumbbell_flyes",
+          "name": "Dumbbell Flyes",
+          "android": {
+            "line": "2 sets \u00b7 13 reps \u00b7 weight confirmation required",
+            "captureText": "mon-preview-top.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": null,
+          "rawStrictlyBelow": null
+        },
+        {
+          "exerciseId": "barbell_row",
+          "name": "Barbell Row",
+          "android": {
+            "line": "3 sets \u00b7 65kg \u00b7 7 reps \u00b7 Total bar weight.",
+            "captureText": "mon-preview-exercises-5.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": true,
+          "rawStrictlyBelow": true
+        },
+        {
+          "exerciseId": "lat_pulldown",
+          "name": "Lat Pulldown",
+          "android": {
+            "line": "2 sets \u00b7 13 reps \u00b7 weight confirmation required",
+            "captureText": "mon-preview-exercises-5.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": null,
+          "rawStrictlyBelow": null
+        },
+        {
+          "exerciseId": "lateral_raises",
+          "name": "Lateral Raises",
+          "android": {
+            "line": "3 sets \u00b7 11kg \u00b7 13 reps \u00b7 Per dumbbell.",
+            "captureText": "mon-preview-exercises-5.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": false,
+          "rawStrictlyBelow": true
+        },
+        {
+          "exerciseId": "barbell_curl",
+          "name": "Barbell Curl",
+          "android": {
+            "line": "3 sets \u00b7 17.5kg \u00b7 13 reps \u00b7 Total bar weight.",
+            "captureText": "mon-preview-exercises-5.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": false,
+          "rawStrictlyBelow": true
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "exerciseCount": 5,
+      "comparisons": [
+        {
+          "exerciseId": "squat",
+          "name": "Barbell Back Squat",
+          "android": {
+            "line": "3 sets \u00b7 85kg \u00b7 7 reps \u00b7 Total bar weight.",
+            "captureText": "tue-preview-top.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": true,
+          "rawStrictlyBelow": true
+        },
+        {
+          "exerciseId": "hack_squat",
+          "name": "Hack Squat",
+          "android": {
+            "line": "2 sets \u00b7 13 reps \u00b7 weight confirmation required",
+            "captureText": "tue-preview-top.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": null,
+          "rawStrictlyBelow": null
+        },
+        {
+          "exerciseId": "deadlift",
+          "name": "Conventional Deadlift",
+          "android": {
+            "line": "3 sets \u00b7 85kg \u00b7 7 reps \u00b7 Total bar weight.",
+            "captureText": "tue-preview-3.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": true,
+          "rawStrictlyBelow": true
+        },
+        {
+          "exerciseId": "romanian_deadlift",
+          "name": "Romanian Deadlift",
+          "android": {
+            "line": "2 sets \u00b7 13 reps \u00b7 weight confirmation required",
+            "captureText": "tue-preview-3.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": null,
+          "rawStrictlyBelow": null
+        },
+        {
+          "exerciseId": "calf_raises",
+          "name": "Calf Raises",
+          "android": {
+            "line": "3 sets \u00b7 13 reps \u00b7 weight confirmation required",
+            "captureText": "tue-preview-bottom.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": null,
+          "rawStrictlyBelow": null
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "exerciseCount": 6,
+      "comparisons": [
+        {
+          "exerciseId": "barbell_bench_press",
+          "name": "Barbell Bench Press",
+          "android": {
+            "line": "3 sets \u00b7 100kg \u00b7 7 reps \u00b7 Total bar weight.",
+            "captureText": "wed-preview-top.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": true,
+          "rawStrictlyBelow": true
+        },
+        {
+          "exerciseId": "cable_chest_flyes",
+          "name": "Cable Chest Flyes",
+          "android": {
+            "line": "2 sets \u00b7 13 reps \u00b7 weight confirmation required",
+            "captureText": "wed-preview-top.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": null,
+          "rawStrictlyBelow": null
+        },
+        {
+          "exerciseId": "overhead_press",
+          "name": "Overhead Press",
+          "android": {
+            "line": "3 sets \u00b7 87.5kg \u00b7 7 reps \u00b7 Total bar weight.",
+            "captureText": "wed-preview-3.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": true,
+          "rawStrictlyBelow": true
+        },
+        {
+          "exerciseId": "lateral_raises",
+          "name": "Lateral Raises",
+          "android": {
+            "line": "3 sets \u00b7 11kg \u00b7 13 reps \u00b7 Per dumbbell.",
+            "captureText": "wed-preview-3.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": false,
+          "rawStrictlyBelow": true
+        },
+        {
+          "exerciseId": "tricep_pushdown",
+          "name": "Tricep Pushdown",
+          "android": {
+            "line": "3 sets \u00b7 40kg \u00b7 13 reps \u00b7 Cable / stack weight.",
+            "captureText": "wed-preview-3.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": null,
+          "rawStrictlyBelow": null
+        },
+        {
+          "exerciseId": "face_pulls",
+          "name": "Face Pulls",
+          "android": {
+            "line": "3 sets \u00b7 13 reps \u00b7 weight confirmation required",
+            "captureText": "wed-preview-4.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": null,
+          "rawStrictlyBelow": null
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "exerciseCount": 5,
+      "comparisons": [
+        {
+          "exerciseId": "pull_ups",
+          "name": "Pull-ups",
+          "android": {
+            "line": "3 sets \u00b7 Bodyweight \u00b7 7 reps",
+            "captureText": "thu-preview-top.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": null,
+          "rawStrictlyBelow": null
+        },
+        {
+          "exerciseId": "t_bar_row",
+          "name": "T-Bar Row",
+          "android": {
+            "line": "2 sets \u00b7 35kg \u00b7 13 reps \u00b7 Total bar weight.",
+            "captureText": "thu-preview-top.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": true,
+          "rawStrictlyBelow": true
+        },
+        {
+          "exerciseId": "dumbbell_curl",
+          "name": "Dumbbell Curl",
+          "android": {
+            "line": "3 sets \u00b7 14kg \u00b7 13 reps \u00b7 Per dumbbell.",
+            "captureText": "thu-preview-2.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": false,
+          "rawStrictlyBelow": true
+        },
+        {
+          "exerciseId": "rear_delt_flyes",
+          "name": "Rear Delt Flyes",
+          "android": {
+            "line": "3 sets \u00b7 13 reps \u00b7 weight confirmation required",
+            "captureText": "thu-preview-2.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": null,
+          "rawStrictlyBelow": null
+        },
+        {
+          "exerciseId": "shrugs",
+          "name": "Shrugs",
+          "android": {
+            "line": "3 sets \u00b7 16kg \u00b7 13 reps \u00b7 Per dumbbell.",
+            "captureText": "thu-preview-3.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": true,
+          "rawStrictlyBelow": true
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "exerciseCount": 6,
+      "comparisons": [
+        {
+          "exerciseId": "deadlift",
+          "name": "Conventional Deadlift",
+          "android": {
+            "line": "3 sets \u00b7 85kg \u00b7 7 reps \u00b7 Total bar weight.",
+            "captureText": "fri-preview-top.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": true,
+          "rawStrictlyBelow": true
+        },
+        {
+          "exerciseId": "romanian_deadlift",
+          "name": "Romanian Deadlift",
+          "android": {
+            "line": "2 sets \u00b7 13 reps \u00b7 weight confirmation required",
+            "captureText": "fri-preview-top.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": null,
+          "rawStrictlyBelow": null
+        },
+        {
+          "exerciseId": "squat",
+          "name": "Barbell Back Squat",
+          "android": {
+            "line": "3 sets \u00b7 85kg \u00b7 7 reps \u00b7 Total bar weight.",
+            "captureText": "fri-preview-3.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": true,
+          "rawStrictlyBelow": true
+        },
+        {
+          "exerciseId": "leg_press",
+          "name": "Leg Press",
+          "android": {
+            "line": "2 sets \u00b7 13 reps \u00b7 weight confirmation required",
+            "captureText": "fri-preview-4.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": null,
+          "rawStrictlyBelow": null
+        },
+        {
+          "exerciseId": "calf_raises",
+          "name": "Calf Raises",
+          "android": {
+            "line": "3 sets \u00b7 13 reps \u00b7 weight confirmation required",
+            "captureText": "fri-preview-5.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": null,
+          "rawStrictlyBelow": null
+        },
+        {
+          "exerciseId": "overhead_tricep_extension",
+          "name": "Overhead Tricep Extension",
+          "android": {
+            "line": "3 sets \u00b7 13 reps \u00b7 weight confirmation required",
+            "captureText": "fri-preview-bottom.txt"
+          },
+          "matchesReplayedSetsRepsWeight": true,
+          "roundedStrictlyBelow": null,
+          "rawStrictlyBelow": null
+        }
+      ]
+    }
+  ]
+}

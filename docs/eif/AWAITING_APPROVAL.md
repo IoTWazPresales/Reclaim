@@ -1,5 +1,9 @@
 # Awaiting visual approval — PRG-20260917T222550
 
+## N-0070 saved setup and rounded-ceiling stop (2026-11-01)
+
+Wrapper `await-approval` succeeded under `R20261101RELEASEVERIFY` at20:06UTC for `.eif/audit/N-0070/android-20261101/release-verification/continued-renders` (12 scoped renders), then released lease. Operator OHP90x8 update saved with Advanced/Bench105x8/Squat100x5/Deadlift100x5; reopened UI and read-only snapshot agree. All28 five-day rows match replay;16/13/17/14/16sets; weekly unresolved/30warnings/0errors. Strict rounded-ceiling comparison fails4rows although all evidence-backed loads remain below raw ceilings; one population default has no own ceiling. STOP before session; no FGS/persistence/deletion verification. No source/migration/acceptance. [Current result](../../.eif/audit/N-0070/android-20261101/release-verification/continued-result.md), [full inventory](../../.eif/audit/N-0070/android-20261101/release-verification/five-day-prescriptions.md). Earlier seven-rep stop is resolved for this input; this entry supersedes its resume blocker. Queue registration is not approval or acceptance.
+
 ## N-0070 baseline rep entry stop (2026-11-01)
 
 Wrapper `await-approval` succeeded again under `R20261101RELEASEVERIFY` for `.eif/audit/N-0070/android-20261101/release-verification` (six scoped screenshots), then released lease. Operator supplied Advanced/Bench105x8/Squat100x5/Deadlift100x5/OHP90x7. Setup restricts reps to3/5/8; cannot enter7. Advanced is unsaved draft, weights blank; no Save/session/set. STOP per code-finding instruction. Review the [actual screen and source finding](../../.eif/audit/N-0070/android-20261101/release-verification/baseline-reps-stop.md). No five-day/session verification or EIF acceptance.

@@ -1,0 +1,47 @@
+{
+  "basis": "Owner-filtered PostgREST GET; identifiers/credentials omitted; profile snapshot agrees with reopened setup.",
+  "experience": "advanced",
+  "trainingMode": "strength",
+  "goals": {
+    "lose_fat": 0.1,
+    "get_fitter": 0.1,
+    "build_muscle": 0.4,
+    "build_strength": 0.4
+  },
+  "baselineInputs": {
+    "squat": {
+      "reps": 5,
+      "weightKg": 100
+    },
+    "deadlift": {
+      "reps": 5,
+      "weightKg": 100
+    },
+    "bench_press": {
+      "reps": 8,
+      "weightKg": 105
+    },
+    "overhead_press": {
+      "reps": 8,
+      "weightKg": 90
+    }
+  },
+  "baselineOneRM": {
+    "squat": 116.66666666666667,
+    "deadlift": 116.66666666666667,
+    "overhead_press": 114,
+    "barbell_bench_press": 133
+  },
+  "selectedWeekdays": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "activeProgramCount": 1,
+  "activeProgramDayRows": 20,
+  "existingSessionRows": 5,
+  "newSessionsCreated": 0,
+  "newSetsLogged": 0
+}

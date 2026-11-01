@@ -1,0 +1,1093 @@
+{
+  "basis": "Source replay from read-only persisted active programme snapshot plus freshly read canonical performed history; compare to actual Android preview text. Not a claim the app displayed ceiling text in preview.",
+  "profile": {
+    "experience": "advanced",
+    "baselineInputs": {
+      "squat": {
+        "reps": 5,
+        "weightKg": 100
+      },
+      "deadlift": {
+        "reps": 5,
+        "weightKg": 100
+      },
+      "bench_press": {
+        "reps": 8,
+        "weightKg": 105
+      },
+      "overhead_press": {
+        "reps": 8,
+        "weightKg": 90
+      }
+    },
+    "goals": {
+      "lose_fat": 0.1,
+      "get_fitter": 0.1,
+      "build_muscle": 0.4,
+      "build_strength": 0.4
+    },
+    "selectedWeekdays": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "history": {
+    "rows": 14,
+    "sessions": 2
+  },
+  "days": [
+    {
+      "day": 1,
+      "template": "upper",
+      "totalSets": 16,
+      "exercises": [
+        {
+          "exerciseId": "barbell_bench_press",
+          "name": "Barbell Bench Press",
+          "unit": "total_bar",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 100,
+              "restSeconds": 120
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 100,
+              "restSeconds": 120
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 100,
+              "restSeconds": 120
+            }
+          ],
+          "capacity": {
+            "source": "baseline",
+            "oneRM": 133,
+            "rawCeiling": 107.83783783783784,
+            "roundedCeiling": 107.5,
+            "step": 2.5,
+            "belowRaw": true,
+            "belowRounded": true
+          },
+          "explanation": "Prescribed 100kg for 7 reps per set. Your saved exercise baseline governs the load ceiling. Epley ceiling: 107.5kg at 7 reps. RPE 8 working limit (2 reps in reserve): 100kg. Applied working weight: 100kg. No qualified history is available."
+        },
+        {
+          "exerciseId": "dumbbell_flyes",
+          "name": "Dumbbell Flyes",
+          "unit": "per_dumbbell",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            }
+          ],
+          "capacity": {
+            "source": "default",
+            "rawCeiling": null,
+            "roundedCeiling": null,
+            "belowRaw": null,
+            "belowRounded": null
+          },
+          "explanation": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        },
+        {
+          "exerciseId": "barbell_row",
+          "name": "Barbell Row",
+          "unit": "total_bar",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 65,
+              "restSeconds": 120
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 65,
+              "restSeconds": 120
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 65,
+              "restSeconds": 120
+            }
+          ],
+          "capacity": {
+            "source": "history",
+            "oneRM": 86.33333333333334,
+            "rawCeiling": 70,
+            "roundedCeiling": 70,
+            "step": 2.5,
+            "belowRaw": true,
+            "belowRounded": true
+          },
+          "explanation": "Prescribed 65kg for 7 reps per set. Most recent qualified history governs the load ceiling. Epley ceiling: 70kg at 7 reps. RPE 8 working limit (2 reps in reserve): 65kg. Applied working weight: 65kg. Qualified history proposed 70kg; qualified history limits it at RPE 8."
+        },
+        {
+          "exerciseId": "lat_pulldown",
+          "name": "Lat Pulldown",
+          "unit": "cable_stack",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            }
+          ],
+          "capacity": {
+            "source": "default",
+            "rawCeiling": null,
+            "roundedCeiling": null,
+            "belowRaw": null,
+            "belowRounded": null
+          },
+          "explanation": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        },
+        {
+          "exerciseId": "lateral_raises",
+          "name": "Lateral Raises",
+          "unit": "per_dumbbell",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 11,
+              "restSeconds": 45
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 11,
+              "restSeconds": 45
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 11,
+              "restSeconds": 45
+            }
+          ],
+          "capacity": {
+            "source": "history",
+            "oneRM": 16.799999999999997,
+            "rawCeiling": 11.720930232558137,
+            "roundedCeiling": 11,
+            "step": 1,
+            "belowRaw": true,
+            "belowRounded": false
+          },
+          "explanation": "Prescribed 11kg for 13 reps per set. Most recent qualified history governs the load ceiling. Epley ceiling: 11kg at 13 reps. RPE 8 working limit (2 reps in reserve): 11kg. Applied working weight: 11kg. Qualified history proposed 12kg; qualified history limits it at RPE 8."
+        },
+        {
+          "exerciseId": "barbell_curl",
+          "name": "Barbell Curl",
+          "unit": "total_bar",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 17.5,
+              "restSeconds": 45
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 17.5,
+              "restSeconds": 45
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 17.5,
+              "restSeconds": 45
+            }
+          ],
+          "capacity": {
+            "source": "history",
+            "oneRM": 28,
+            "rawCeiling": 19.53488372093023,
+            "roundedCeiling": 17.5,
+            "step": 2.5,
+            "belowRaw": true,
+            "belowRounded": false
+          },
+          "explanation": "Prescribed 17.5kg for 13 reps per set. Most recent qualified history governs the load ceiling. Epley ceiling: 17.5kg at 13 reps. RPE 8 working limit (2 reps in reserve): 17.5kg. Applied working weight: 17.5kg. Qualified history proposed 20kg; qualified history limits it at RPE 8."
+        }
+      ],
+      "warnings": [
+        {
+          "code": "load_requires_confirmation",
+          "severity": "warning",
+          "exerciseId": "dumbbell_flyes",
+          "message": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        },
+        {
+          "code": "load_requires_confirmation",
+          "severity": "warning",
+          "exerciseId": "lat_pulldown",
+          "message": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "template": "lower",
+      "totalSets": 13,
+      "exercises": [
+        {
+          "exerciseId": "squat",
+          "name": "Barbell Back Squat",
+          "unit": "total_bar",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 85,
+              "restSeconds": 120
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 85,
+              "restSeconds": 120
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 85,
+              "restSeconds": 120
+            }
+          ],
+          "capacity": {
+            "source": "baseline",
+            "oneRM": 116.66666666666667,
+            "rawCeiling": 94.5945945945946,
+            "roundedCeiling": 90,
+            "step": 5,
+            "belowRaw": true,
+            "belowRounded": true
+          },
+          "explanation": "Prescribed 85kg for 7 reps per set. Your saved exercise baseline governs the load ceiling. Epley ceiling: 90kg at 7 reps. RPE 8 working limit (2 reps in reserve): 85kg. Applied working weight: 85kg. No qualified history is available."
+        },
+        {
+          "exerciseId": "hack_squat",
+          "name": "Hack Squat",
+          "unit": "cable_stack",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            }
+          ],
+          "capacity": {
+            "source": "default",
+            "rawCeiling": null,
+            "roundedCeiling": null,
+            "belowRaw": null,
+            "belowRounded": null
+          },
+          "explanation": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        },
+        {
+          "exerciseId": "deadlift",
+          "name": "Conventional Deadlift",
+          "unit": "total_bar",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 85,
+              "restSeconds": 120
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 85,
+              "restSeconds": 120
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 85,
+              "restSeconds": 120
+            }
+          ],
+          "capacity": {
+            "source": "baseline",
+            "oneRM": 116.66666666666667,
+            "rawCeiling": 94.5945945945946,
+            "roundedCeiling": 90,
+            "step": 5,
+            "belowRaw": true,
+            "belowRounded": true
+          },
+          "explanation": "Prescribed 85kg for 7 reps per set. Your saved exercise baseline governs the load ceiling. Epley ceiling: 90kg at 7 reps. RPE 8 working limit (2 reps in reserve): 85kg. Applied working weight: 85kg. No qualified history is available."
+        },
+        {
+          "exerciseId": "romanian_deadlift",
+          "name": "Romanian Deadlift",
+          "unit": "per_dumbbell",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            }
+          ],
+          "capacity": {
+            "source": "default",
+            "rawCeiling": null,
+            "roundedCeiling": null,
+            "belowRaw": null,
+            "belowRounded": null
+          },
+          "explanation": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        },
+        {
+          "exerciseId": "calf_raises",
+          "name": "Calf Raises",
+          "unit": "per_dumbbell",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            }
+          ],
+          "capacity": {
+            "source": "default",
+            "rawCeiling": null,
+            "roundedCeiling": null,
+            "belowRaw": null,
+            "belowRounded": null
+          },
+          "explanation": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        }
+      ],
+      "warnings": [
+        {
+          "code": "load_requires_confirmation",
+          "severity": "warning",
+          "exerciseId": "hack_squat",
+          "message": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        },
+        {
+          "code": "load_requires_confirmation",
+          "severity": "warning",
+          "exerciseId": "romanian_deadlift",
+          "message": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        },
+        {
+          "code": "load_requires_confirmation",
+          "severity": "warning",
+          "exerciseId": "calf_raises",
+          "message": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "template": "push",
+      "totalSets": 17,
+      "exercises": [
+        {
+          "exerciseId": "barbell_bench_press",
+          "name": "Barbell Bench Press",
+          "unit": "total_bar",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 100,
+              "restSeconds": 120
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 100,
+              "restSeconds": 120
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 100,
+              "restSeconds": 120
+            }
+          ],
+          "capacity": {
+            "source": "baseline",
+            "oneRM": 133,
+            "rawCeiling": 107.83783783783784,
+            "roundedCeiling": 107.5,
+            "step": 2.5,
+            "belowRaw": true,
+            "belowRounded": true
+          },
+          "explanation": "Prescribed 100kg for 7 reps per set. Your saved exercise baseline governs the load ceiling. Epley ceiling: 107.5kg at 7 reps. RPE 8 working limit (2 reps in reserve): 100kg. Applied working weight: 100kg. No qualified history is available."
+        },
+        {
+          "exerciseId": "cable_chest_flyes",
+          "name": "Cable Chest Flyes",
+          "unit": "cable_stack",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            }
+          ],
+          "capacity": {
+            "source": "default",
+            "rawCeiling": null,
+            "roundedCeiling": null,
+            "belowRaw": null,
+            "belowRounded": null
+          },
+          "explanation": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        },
+        {
+          "exerciseId": "overhead_press",
+          "name": "Overhead Press",
+          "unit": "total_bar",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 87.5,
+              "restSeconds": 120
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 87.5,
+              "restSeconds": 120
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 87.5,
+              "restSeconds": 120
+            }
+          ],
+          "capacity": {
+            "source": "baseline",
+            "oneRM": 114,
+            "rawCeiling": 92.43243243243242,
+            "roundedCeiling": 90,
+            "step": 2.5,
+            "belowRaw": true,
+            "belowRounded": true
+          },
+          "explanation": "Prescribed 87.5kg for 7 reps per set. Your saved exercise baseline governs the load ceiling. Epley ceiling: 90kg at 7 reps. RPE 8 working limit (2 reps in reserve): 87.5kg. Applied working weight: 87.5kg. No qualified history is available."
+        },
+        {
+          "exerciseId": "lateral_raises",
+          "name": "Lateral Raises",
+          "unit": "per_dumbbell",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 11,
+              "restSeconds": 45
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 11,
+              "restSeconds": 45
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 11,
+              "restSeconds": 45
+            }
+          ],
+          "capacity": {
+            "source": "history",
+            "oneRM": 16.799999999999997,
+            "rawCeiling": 11.720930232558137,
+            "roundedCeiling": 11,
+            "step": 1,
+            "belowRaw": true,
+            "belowRounded": false
+          },
+          "explanation": "Prescribed 11kg for 13 reps per set. Most recent qualified history governs the load ceiling. Epley ceiling: 11kg at 13 reps. RPE 8 working limit (2 reps in reserve): 11kg. Applied working weight: 11kg. Qualified history proposed 12kg; qualified history limits it at RPE 8."
+        },
+        {
+          "exerciseId": "tricep_pushdown",
+          "name": "Tricep Pushdown",
+          "unit": "cable_stack",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 40,
+              "restSeconds": 45
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 40,
+              "restSeconds": 45
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 40,
+              "restSeconds": 45
+            }
+          ],
+          "capacity": {
+            "source": "default",
+            "rawCeiling": null,
+            "roundedCeiling": null,
+            "belowRaw": null,
+            "belowRounded": null
+          },
+          "explanation": null
+        },
+        {
+          "exerciseId": "face_pulls",
+          "name": "Face Pulls",
+          "unit": "cable_stack",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            }
+          ],
+          "capacity": {
+            "source": "default",
+            "rawCeiling": null,
+            "roundedCeiling": null,
+            "belowRaw": null,
+            "belowRounded": null
+          },
+          "explanation": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        }
+      ],
+      "warnings": [
+        {
+          "code": "load_requires_confirmation",
+          "severity": "warning",
+          "exerciseId": "cable_chest_flyes",
+          "message": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        },
+        {
+          "code": "load_requires_confirmation",
+          "severity": "warning",
+          "exerciseId": "face_pulls",
+          "message": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "template": "pull",
+      "totalSets": 14,
+      "exercises": [
+        {
+          "exerciseId": "pull_ups",
+          "name": "Pull-ups",
+          "unit": "bodyweight",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 0,
+              "restSeconds": 120
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 0,
+              "restSeconds": 120
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 0,
+              "restSeconds": 120
+            }
+          ],
+          "capacity": {
+            "source": "default",
+            "rawCeiling": null,
+            "roundedCeiling": null,
+            "belowRaw": null,
+            "belowRounded": null
+          },
+          "explanation": "Bodyweight prescription: 7 reps per set, no added load. Continue building repetitions within the prescribed work."
+        },
+        {
+          "exerciseId": "t_bar_row",
+          "name": "T-Bar Row",
+          "unit": "total_bar",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 35,
+              "restSeconds": 45
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 35,
+              "restSeconds": 45
+            }
+          ],
+          "capacity": {
+            "source": "history",
+            "oneRM": 55.5,
+            "rawCeiling": 38.72093023255814,
+            "roundedCeiling": 37.5,
+            "step": 2.5,
+            "belowRaw": true,
+            "belowRounded": true
+          },
+          "explanation": "Prescribed 35kg for 13 reps per set. Most recent qualified history governs the load ceiling. Epley ceiling: 37.5kg at 13 reps. RPE 8 working limit (2 reps in reserve): 35kg. Applied working weight: 35kg. Qualified history proposed 45kg; qualified history limits it at RPE 8."
+        },
+        {
+          "exerciseId": "dumbbell_curl",
+          "name": "Dumbbell Curl",
+          "unit": "per_dumbbell",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 14,
+              "restSeconds": 45
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 14,
+              "restSeconds": 45
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 14,
+              "restSeconds": 45
+            }
+          ],
+          "capacity": {
+            "source": "history",
+            "oneRM": 21,
+            "rawCeiling": 14.651162790697674,
+            "roundedCeiling": 14,
+            "step": 1,
+            "belowRaw": true,
+            "belowRounded": false
+          },
+          "explanation": "Prescribed 14kg for 13 reps per set. Most recent qualified history governs the load ceiling. Epley ceiling: 14kg at 13 reps. RPE 8 working limit (2 reps in reserve): 14kg. Applied working weight: 14kg. Qualified history proposed 15kg; qualified history limits it at RPE 8."
+        },
+        {
+          "exerciseId": "rear_delt_flyes",
+          "name": "Rear Delt Flyes",
+          "unit": "per_dumbbell",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            }
+          ],
+          "capacity": {
+            "source": "default",
+            "rawCeiling": null,
+            "roundedCeiling": null,
+            "belowRaw": null,
+            "belowRounded": null
+          },
+          "explanation": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        },
+        {
+          "exerciseId": "shrugs",
+          "name": "Shrugs",
+          "unit": "per_dumbbell",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 16,
+              "restSeconds": 45
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 16,
+              "restSeconds": 45
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 16,
+              "restSeconds": 45
+            }
+          ],
+          "capacity": {
+            "source": "history",
+            "oneRM": 24.666666666666668,
+            "rawCeiling": 17.209302325581397,
+            "roundedCeiling": 17,
+            "step": 1,
+            "belowRaw": true,
+            "belowRounded": true
+          },
+          "explanation": "Prescribed 16kg for 13 reps per set. Most recent qualified history governs the load ceiling. Epley ceiling: 17kg at 13 reps. RPE 8 working limit (2 reps in reserve): 16kg. Applied working weight: 16kg. Qualified history proposed 20kg; qualified history limits it at RPE 8."
+        }
+      ],
+      "warnings": [
+        {
+          "code": "load_requires_confirmation",
+          "severity": "warning",
+          "exerciseId": "rear_delt_flyes",
+          "message": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "template": "lower",
+      "totalSets": 16,
+      "exercises": [
+        {
+          "exerciseId": "deadlift",
+          "name": "Conventional Deadlift",
+          "unit": "total_bar",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 85,
+              "restSeconds": 120
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 85,
+              "restSeconds": 120
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 85,
+              "restSeconds": 120
+            }
+          ],
+          "capacity": {
+            "source": "baseline",
+            "oneRM": 116.66666666666667,
+            "rawCeiling": 94.5945945945946,
+            "roundedCeiling": 90,
+            "step": 5,
+            "belowRaw": true,
+            "belowRounded": true
+          },
+          "explanation": "Prescribed 85kg for 7 reps per set. Your saved exercise baseline governs the load ceiling. Epley ceiling: 90kg at 7 reps. RPE 8 working limit (2 reps in reserve): 85kg. Applied working weight: 85kg. No qualified history is available."
+        },
+        {
+          "exerciseId": "romanian_deadlift",
+          "name": "Romanian Deadlift",
+          "unit": "per_dumbbell",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            }
+          ],
+          "capacity": {
+            "source": "default",
+            "rawCeiling": null,
+            "roundedCeiling": null,
+            "belowRaw": null,
+            "belowRounded": null
+          },
+          "explanation": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        },
+        {
+          "exerciseId": "squat",
+          "name": "Barbell Back Squat",
+          "unit": "total_bar",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 7,
+              "suggestedWeight": 85,
+              "restSeconds": 120
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 7,
+              "suggestedWeight": 85,
+              "restSeconds": 120
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 7,
+              "suggestedWeight": 85,
+              "restSeconds": 120
+            }
+          ],
+          "capacity": {
+            "source": "baseline",
+            "oneRM": 116.66666666666667,
+            "rawCeiling": 94.5945945945946,
+            "roundedCeiling": 90,
+            "step": 5,
+            "belowRaw": true,
+            "belowRounded": true
+          },
+          "explanation": "Prescribed 85kg for 7 reps per set. Your saved exercise baseline governs the load ceiling. Epley ceiling: 90kg at 7 reps. RPE 8 working limit (2 reps in reserve): 85kg. Applied working weight: 85kg. No qualified history is available."
+        },
+        {
+          "exerciseId": "leg_press",
+          "name": "Leg Press",
+          "unit": "cable_stack",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            }
+          ],
+          "capacity": {
+            "source": "default",
+            "rawCeiling": null,
+            "roundedCeiling": null,
+            "belowRaw": null,
+            "belowRounded": null
+          },
+          "explanation": "Recent work is not qualified for progression. Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        },
+        {
+          "exerciseId": "calf_raises",
+          "name": "Calf Raises",
+          "unit": "per_dumbbell",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            }
+          ],
+          "capacity": {
+            "source": "default",
+            "rawCeiling": null,
+            "roundedCeiling": null,
+            "belowRaw": null,
+            "belowRounded": null
+          },
+          "explanation": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        },
+        {
+          "exerciseId": "overhead_tricep_extension",
+          "name": "Overhead Tricep Extension",
+          "unit": "per_dumbbell",
+          "sets": [
+            {
+              "setIndex": 1,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            },
+            {
+              "setIndex": 2,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            },
+            {
+              "setIndex": 3,
+              "targetReps": 13,
+              "suggestedWeight": 0,
+              "restSeconds": 45,
+              "loadRequiresConfirmation": true
+            }
+          ],
+          "capacity": {
+            "source": "default",
+            "rawCeiling": null,
+            "roundedCeiling": null,
+            "belowRaw": null,
+            "belowRounded": null
+          },
+          "explanation": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        }
+      ],
+      "warnings": [
+        {
+          "code": "load_requires_confirmation",
+          "severity": "warning",
+          "exerciseId": "romanian_deadlift",
+          "message": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        },
+        {
+          "code": "load_requires_confirmation",
+          "severity": "warning",
+          "exerciseId": "leg_press",
+          "message": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        },
+        {
+          "code": "load_requires_confirmation",
+          "severity": "warning",
+          "exerciseId": "calf_raises",
+          "message": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        },
+        {
+          "code": "load_requires_confirmation",
+          "severity": "warning",
+          "exerciseId": "overhead_tricep_extension",
+          "message": "Choose a load and confirm it for this exercise; no load has been prescribed in its unit."
+        }
+      ]
+    }
+  ]
+}

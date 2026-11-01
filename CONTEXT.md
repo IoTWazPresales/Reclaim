@@ -1,3 +1,7 @@
+## 2026-11-01 - Confirmed setup saved; rounded-ceiling check stops session journey
+
+Operator changed OHP90x7 to90x8. Advanced/Bench105x8/Squat100x5/Deadlift100x5/OHP90x8 saved, reopened UI and read-only stored snapshot agree; Strength/Mon-Fri/goals40/40/10/10. All28 preview rows across5days match canonical stored-input replay (76sets); weekly unresolved/30warnings/0errors. Four rows equal rounded ceiling while remaining below raw ceiling; stop under strict below-ceiling requirement. No session/set created; FGS/persistence/delete NOT RUN. No source/migration/acceptance. Evidence: .eif/audit/N-0070/android-20261101/release-verification/continued-result.md.
+
 ## 2026-11-01 - Android verification stopped on baseline rep entry
 
 Operator confirmed Advanced/Bench105x8/Squat100x5/Deadlift100x5/OHP90x7. Actual setup only offers3/5/8 rep chips, confirmed by read-only TrainingSetupScreen.tsx renderer. No faithful7-rep entry possible; stopped per instruction before Save. Advanced is unsaved draft only; weights remain blank, no session/set created. No source/migration/acceptance. Evidence: .eif/audit/N-0070/android-20261101/release-verification/baseline-reps-stop.md.

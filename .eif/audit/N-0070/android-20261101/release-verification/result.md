@@ -19,3 +19,7 @@ Public wrapper lease, await-approval and automatic release succeeded under R2026
 ## Continuation with confirmed inputs
 
 Operator supplied exact values. STOPPED before Save because the baseline UI supports only3/5/8 reps and cannot enter overhead press90x7. Advanced selected in unsaved draft; no weights entered or records created. See [finding and full accounting](baseline-reps-stop.md). Prior pending-input text above is historical; inputs are now known, UI entry is the blocker.
+
+## Continuation after operator changed overhead press to8reps
+
+Saved Advanced/Bench105x8/Squat100x5/Deadlift100x5/OHP90x8; stored readback confirmed. All28 five-day exercise rows recorded and match stored-input replay. STOP before session on4rows equalling rounded Epley ceilings (all below raw ceilings); population pushdown has no own ceiling. See [current result](continued-result.md) and [inventory](five-day-prescriptions.md). No session/set/source/migration/acceptance.
