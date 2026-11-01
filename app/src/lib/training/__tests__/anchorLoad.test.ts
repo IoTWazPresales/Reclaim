@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildSessionFromProgramDay, getExerciseById, suggestLoading } from '../engine';
-import { epleyWorkingWeightCeiling, getWeightStep } from '../progression';
+import { epleyRpe8WorkingWeight, getWeightStep } from '../progression';
 import { BACK_SQUAT_MEAN_KG, FRONT_SQUAT_MEAN_KG } from '../anchorLoad';
 import { runTargetMinutes } from '../runGuidance';
 import type { TrainingGoal, UserState } from '../types';
@@ -25,8 +25,8 @@ describe('personal baselines', () => {
       priority: 'primary',
     });
     const step = getWeightStep(front!);
-    const squatWorking = epleyWorkingWeightCeiling(squatE1rm, 6, step);
-    const frontWorking = epleyWorkingWeightCeiling(
+    const squatWorking = epleyRpe8WorkingWeight(squatE1rm, 6, step);
+    const frontWorking = epleyRpe8WorkingWeight(
       squatE1rm * (FRONT_SQUAT_MEAN_KG / BACK_SQUAT_MEAN_KG),
       6,
       step,

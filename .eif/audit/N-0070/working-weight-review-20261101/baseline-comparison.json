@@ -1,0 +1,16 @@
+{
+  "baseline": "b693b0dc28e527f054118e73ff48f84cb9f04aec",
+  "fixture": "Synthetic own-unit qualified shrugs 20kg x 7, three complete sets; 13 target reps",
+  "results": [
+    {
+      "label": "baseline",
+      "weight": 17,
+      "reason": "Prescribed 17kg for 13 reps per set. Most recent qualified history governs the load ceiling. Qualified history proposed 20kg; qualified history limits it."
+    },
+    {
+      "label": "working",
+      "weight": 16,
+      "reason": "Prescribed 16kg for 13 reps per set. Most recent qualified history governs the load ceiling. Epley ceiling: 17kg at 13 reps. RPE 8 working limit (2 reps in reserve): 16kg. Applied working weight: 16kg. Qualified history proposed 20kg; qualified history limits it at RPE 8."
+    }
+  ]
+}

@@ -1,5 +1,18 @@
 # Reclaim training routine / generator audit (AS-IS)
 
+## Working weight versus ceiling (2026-11-01; new builds only)
+
+The 9 October Epley figure remains a ceiling, not the working weight. Applying
+this audit's RPE 8 rule means leaving **2 reps in reserve**: invert the same
+Epley relation at **target reps + 2**, then round **down** to the exercise unit's
+existing step. Baseline and qualified-history evidence retain the resolved
+D-P2-01 precedence. The applied working load is the lower of the existing
+progression/deload proposal and that RPE 8 limit; no additional load constants
+are introduced. Explanation text separates the target-rep ceiling, RPE 8 limit,
+and final applied working weight. Started/guided prescriptions and historical
+v1 replay remain frozen. Source verification and release-build evidence:
+[working-weight evidence](recovery/evidence/working-weight-20261101.md).
+
 ## RA-016 source correction (2026-11-01; Android approval pending)
 
 For new builds, population loads now require an exact source/target unit match: existing free-weight defaults are total-bar; existing machine defaults are cable-stack; the existing carry default is per-hand only. Other units use their own qualified evidence or `load_requires_confirmation` with no displayed number. No ratios or load constants were added. Started/frozen/history rows are not recomputed. The 9 October rule that a different unit never copies a barbell kilogram is enforced at the shared resolver and new-build boundaries. [Full path inventory, 137-exercise comparison, history limits and gates](recovery/evidence/ra016-default-load-units-20261101.md). Historical audit observations below remain historical; Android, live writes and EIF acceptance were excluded by the operator.

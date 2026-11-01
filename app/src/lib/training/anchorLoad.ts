@@ -3,7 +3,7 @@
  * ROUTINE_AUDIT.md "Prescription rules (2026-10-07)".
  */
 import type { Exercise, UserState } from './types';
-import { epleyWorkingWeightCeiling, getWeightStep } from './progression';
+import { epleyWorkingWeightCeiling, epleyRpe8WorkingWeight, getWeightStep } from './progression';
 import { getExerciseLoadingProfile } from './exerciseLoadingProfile';
 
 /**
@@ -63,6 +63,16 @@ function anchorExerciseId(exerciseId: string): string | null {
   return null;
 }
 
+/** Same-unit anchor evidence, including the audit's cited squat variation ratio. */
+export function anchorLoadEvidence(exercise: Exercise, userState: UserState): number | undefined {
+  const id = anchorExerciseId(exercise.id);
+  if (!id || id === exercise.id || getExerciseLoadingProfile(exercise).loadDisplayMode !== 'total_bar') return undefined;
+  const oneRM = userState.estimated1RM?.[id];
+  if (!oneRM || !Number.isFinite(oneRM) || oneRM <= 0) return undefined;
+  return exercise.id === 'front_squat' || exercise.id === 'overhead_squat'
+    ? oneRM * (FRONT_SQUAT_MEAN_KG / BACK_SQUAT_MEAN_KG) : oneRM;
+}
+
 /**
  * Working kilograms for a variation, from the anchor the person actually entered.
  * Returns null when this exercise is the anchor, or when that anchor was not entered.
@@ -82,11 +92,12 @@ export function anchoredWorkingKg(
   if (!(typeof oneRM === 'number' && oneRM > 0)) return null;
 
   const step = getWeightStep(exercise);
-  const ceiling = epleyWorkingWeightCeiling(oneRM, plannedReps, step);
-  if (!(ceiling > 0)) return null;
+  const workingWeight = userState.prescriptionPolicy === 'v1' ? epleyWorkingWeightCeiling : epleyRpe8WorkingWeight;
+  const ceiling = workingWeight(oneRM, plannedReps, step);
+  if (!(ceiling > 0)) return userState.prescriptionPolicy === 'v1' ? null : 0;
 
   if (exercise.id === 'front_squat' || exercise.id === 'overhead_squat') {
-    const scaled = epleyWorkingWeightCeiling(
+    const scaled = workingWeight(
       oneRM * (FRONT_SQUAT_MEAN_KG / BACK_SQUAT_MEAN_KG),
       plannedReps,
       step,
@@ -94,5 +105,5 @@ export function anchoredWorkingKg(
     return Math.min(scaled, ceiling);
   }
 
-  return Math.min(populationKg, ceiling);
+  return Math.min(userState.prescriptionPolicy === 'v1' ? populationKg : Math.floor(populationKg / step) * step, ceiling);
 }

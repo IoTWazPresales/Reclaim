@@ -113,13 +113,13 @@ describe('canonical history to decision', () => {
     const proposed = deriveProgressionDecision(bench, user, [8, 12]);
     const applied = suggestLoading({ exercise: bench, userState: user, goalWeights: goals, plannedReps: 10 });
     expect(proposed?.nextWeight).toBe(87.5);
-    expect(applied).toBe(87.5);
+    expect(applied).toBe(85);
     expect(user.estimated1RM[bench.id]).toBe(80);
     const reason = explainAppliedProgression(bench, user, [8, 12], applied, 10);
-    expect(reason).toContain('Prescribed 87.5kg for 10 reps per set');
+    expect(reason).toContain('Prescribed 85kg for 10 reps per set');
     expect(reason).toContain('87.5kg');
     expect(reason).toContain('Most recent qualified history governs');
-    expect(reason).toContain('+2.5kg');
+    expect(reason).toContain('RPE 8 working limit (2 reps in reserve): 85kg');
   });
 
   it('uses a newer baseline, or a baseline with no history, and preserves v1 replay', () => {
@@ -127,16 +127,16 @@ describe('canonical history to decision', () => {
     user.estimated1RM = { [bench.id]: 80 };
     const load = () => suggestLoading({ exercise: bench, userState: user, goalWeights: goals, plannedReps: 10 });
     user.baselineUpdatedAt = { [bench.id]: '2026-10-04T00:00:00Z' };
-    expect(load()).toBe(60);
+    expect(load()).toBe(55);
     expect(explainAppliedProgression(bench, user, [8, 12], load(), 10)).toContain('baseline governs');
     user.baselineUpdatedAt[bench.id] = '2026-10-01T00:00:00Z';
-    expect(load()).toBe(87.5);
+    expect(load()).toBe(85);
     user.prescriptionPolicy = 'v1';
     expect(load()).toBe(60);
     delete user.prescriptionPolicy;
     delete user.lastSessionPerformance;
     delete user.recentSessionPerformance;
-    expect(load()).toBe(60);
+    expect(load()).toBe(55);
   });
 
   it('uses both original load ceiling and caps on direct v1 replay builds', () => {
@@ -154,7 +154,7 @@ describe('canonical history to decision', () => {
     const user = state([historyItem(bench.id, '2026-10-03', 8, 100)]);
     user.baselineUpdatedAt = { [bench.id]: '2026-10-04T00:00:00Z' };
     const load = suggestLoading({ exercise: bench, userState: user, goalWeights: goals, plannedReps: 12 });
-    expect(load).toBe(epleyWorkingWeightCeiling(100 * (1 + 8 / 30), 12, 2.5));
+    expect(load).toBe(85);
     expect(explainAppliedProgression(bench, user, [8, 12], load, 12)).toContain('Most recent qualified history governs');
   });
 
@@ -162,7 +162,7 @@ describe('canonical history to decision', () => {
     const user = state([historyItem(bench.id, '2026-10-03', 12, 85)]);
     user.estimated1RM = { [bench.id]: 80 };
     (user.lastSessionPerformance![bench.id].evidence! as any).loadUnit = 'lb';
-    expect(suggestLoading({ exercise: bench, userState: user, goalWeights: goals, plannedReps: 10 })).toBe(60);
+    expect(suggestLoading({ exercise: bench, userState: user, goalWeights: goals, plannedReps: 10 })).toBe(55);
   });
 
   it('passes qualification and the applied reason through the committed R04 allocated-day path', () => {

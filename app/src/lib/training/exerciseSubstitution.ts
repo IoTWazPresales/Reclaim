@@ -11,7 +11,7 @@ import type { Exercise, ExercisePriority, MovementIntent, TrainingProfileSnapsho
 export function replacementPlanningProfile(row: TrainingProfileRow | null | undefined): TrainingProfileSnapshot | null {
   if (!row) return null;
   return { goals: row.goals as TrainingProfileSnapshot['goals'], equipment_access: row.equipment_access,
-    constraints: row.constraints, baselines: row.baselines, experienceLevel: resolveExperienceLevel(row.constraints?.experienceLevel) };
+    constraints: row.constraints, baselines: row.baselines, baselineUpdatedAt: row.constraints?.baselineUpdatedAt, experienceLevel: resolveExperienceLevel(row.constraints?.experienceLevel) };
 }
 
 function slotIntents(item: TrainingSessionItemRow): MovementIntent[] {
@@ -50,6 +50,7 @@ export function prescribeReplacement(item: TrainingSessionItemRow, replacement: 
   const hasBaseline = supportedLoad && Number.isFinite(baseline) && (baseline ?? 0) > 0;
   const userState: UserState = {
     experienceLevel: profile.experienceLevel ?? 'beginner',
+    baselineUpdatedAt: profile.baselineUpdatedAt,
     // No cross-exercise anchor inference during substitution.
     estimated1RM: hasBaseline ? { [replacement.id]: baseline! } : {},
     performanceHistory: profile.performanceHistory,

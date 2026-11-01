@@ -48,9 +48,9 @@ describe('default loads stay in their declared source unit (RA-016)', () => {
   });
 
   it('retains the replacement exercise own baseline and correctly qualified own-unit history', () => {
-    expect(weight('dumbbell_bench_press', { estimated1RM: { dumbbell_bench_press: 30, barbell_bench_press: 200 } })).toBe(24);
+    expect(weight('dumbbell_bench_press', { estimated1RM: { dumbbell_bench_press: 30, barbell_bench_press: 200 } })).toBe(23);
     const history = canonicalPerformance('dumbbell_bench_press', [1, 2, 3].map(setIndex => ({ setIndex, weight: 20, reps: 7, completedAt: '2026-10-31T10:00:00Z' })), '2026-10-31');
-    expect(weight('dumbbell_bench_press', { lastSessionPerformance: { dumbbell_bench_press: history } })).toBe(20);
+    expect(weight('dumbbell_bench_press', { lastSessionPerformance: { dumbbell_bench_press: history } })).toBe(18);
     expect(weight('dumbbell_bench_press', { lastSessionPerformance: { dumbbell_bench_press: { ...history, evidence: { ...history.evidence!, loadDisplayMode: 'total_bar' } } } })).toBe(0);
   });
 

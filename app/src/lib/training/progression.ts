@@ -42,6 +42,18 @@ export function epleyWorkingWeightCeiling(oneRM: number, plannedReps: number, st
 }
 
 /**
+ * New-build RPE 8 load: two repetitions in reserve, using the same Epley
+ * relation at target reps + 2. ROUTINE_AUDIT.md RPE 8 / 9 October ceiling
+ * rule. Floor to the unit's existing step; never round above capacity.
+ * Keep the original ceiling helper unchanged for historical v1 replay.
+ */
+export function epleyRpe8WorkingWeight(oneRM: number, plannedReps: number, step: number): number {
+  if (!Number.isFinite(oneRM) || !Number.isFinite(plannedReps) || !Number.isFinite(step) ||
+      !(oneRM > 0) || !(plannedReps > 0) || !(step > 0)) return 0;
+  return Math.floor(oneRM / (1 + (plannedReps + 2) / 30) / step) * step;
+}
+
+/**
  * Compute e1RM from best set in performance data
  * Best = highest e1RM across all sets
  */

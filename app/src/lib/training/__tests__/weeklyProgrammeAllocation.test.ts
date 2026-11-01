@@ -106,7 +106,8 @@ describe('R04 declared weekly objectives constrain real planner sessions', () =>
     const ohp = weeks[0][2].exercises.find((item) => item.exerciseId === 'overhead_press')!;
     expect(squat.decisionTrace.constraintsApplied.join(' ')).toContain('entered_rack_exception');
     expect(ohp.decisionTrace.constraintsApplied.join(' ')).toContain('entered_rack_exception');
-    expect(squat.plannedSets[0].suggestedWeight).toBe(95);
+    // 116.67 e1RM / (1 + (7 target + 2 reserve) / 30), floored to 5 kg.
+    expect(squat.plannedSets[0].suggestedWeight).toBe(85);
     const unknown = weeks[0].flatMap((session) => session.exercises).find((item) => item.exerciseId === 'dumbbell_flyes')!;
     expect(unknown.plannedSets[0].suggestedWeight).toBe(0);
   });

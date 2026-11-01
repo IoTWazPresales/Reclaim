@@ -442,14 +442,14 @@ describe('routine volume measurement harness', () => {
       plannedReps: 8,
       priority: 'primary',
     });
-    const expectedEpley = Math.round(100 / (1 + 8 / 30) / 2.5) * 2.5;
+    const expectedEpley = Math.floor(100 / (1 + (8 + 2) / 30) / 2.5) * 2.5;
 
     push('## Empty-history loads per experience (barbell_bench_press @ 8 reps)');
     push('');
     push(`- beginner: **${emptyLoads.beginner} kg**`);
     push(`- intermediate: **${emptyLoads.intermediate} kg**`);
     push(`- advanced: **${emptyLoads.advanced} kg**`);
-    push(`- intermediate + explicit 1RM 100 kg via Epley: **${with1rm} kg** (formula rounded ${expectedEpley})`);
+    push(`- intermediate + explicit 1RM 100 kg via Epley: **${with1rm} kg** (RPE 8 formula floored ${expectedEpley})`);
     push('');
 
     const lastSets = [

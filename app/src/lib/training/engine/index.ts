@@ -4,6 +4,7 @@ import exerciseCuesData from '../catalog/exerciseCues.v1.json';
 import rulesData from '../rules/rules.v1.json';
 import {
   epleyWorkingWeightCeiling,
+  epleyRpe8WorkingWeight,
   getWeightStep,
   getMinimumWeight,
   detectFatigue,
@@ -16,7 +17,7 @@ import { getExerciseLoadingProfile } from '../exerciseLoadingProfile';
 import { annotateLoadConfirmation } from '../loadConfirmation';
 import { resolveExperienceLevel } from '../experienceLevel';
 import { applyOptionalAdaptiveLoadBias } from '../adaptiveLoadBias';
-import { anchoredWorkingKg, CARRY_FINISHER_METERS, NOVICE_CARRY_KG_PER_HAND } from '../anchorLoad';
+import { anchoredWorkingKg, anchorLoadEvidence, CARRY_FINISHER_METERS, NOVICE_CARRY_KG_PER_HAND } from '../anchorLoad';
 import { runTargetMinutes } from '../runGuidance';
 import { setsForMajorPattern, setsForSmallMuscle, smallMuscleOf, weeklySmallMuscleSetTarget, majorMuscleForIntent, majorMuscleOfExercise, MAX_SETS_ON_ONE_EXERCISE } from '../smallMuscleVolume';
 import { warmupSetsForWorkingWeight } from '../warmupSets';
@@ -922,12 +923,35 @@ function capAtExerciseEpleyCeiling(
 ): number {
   const oneRM = governingLoadEvidence(exercise, userState, plannedReps).oneRM;
   if (!oneRM || oneRM <= 0 || isBodyweightExercise(exercise)) return weight;
-  const ceiling = epleyWorkingWeightCeiling(oneRM, plannedReps, getWeightStep(exercise));
+  const step = getWeightStep(exercise);
+  const rpe8 = userState.prescriptionPolicy !== 'v1' && getExerciseLoadingProfile(exercise).prescriptionType === 'reps';
+  const ceiling = !rpe8
+    ? epleyWorkingWeightCeiling(oneRM, plannedReps, step)
+    : epleyRpe8WorkingWeight(oneRM, plannedReps, step);
+  if (rpe8) return Math.min(Math.floor(weight / step) * step, ceiling);
   if (ceiling <= 0) return weight;
   return Math.min(weight, ceiling);
 }
 
 export function explainAppliedProgression(exercise: Exercise, userState: UserState, repRange: [number, number], appliedWeight: number, appliedReps: number): string | undefined {
+  const ownEvidence = governingLoadEvidence(exercise, userState, appliedReps);
+  const anchorRM = ownEvidence.oneRM ? undefined : anchorLoadEvidence(exercise, userState);
+  const evidence = anchorRM ? { oneRM: anchorRM, source: 'anchor' } : ownEvidence;
+  if (userState.prescriptionPolicy !== 'v1' && evidence.oneRM && evidence.oneRM > 0 && !isBodyweightExercise(exercise) && getExerciseLoadingProfile(exercise).prescriptionType === 'reps') {
+    const step = getWeightStep(exercise);
+    const ceiling = Math.floor(evidence.oneRM / (1 + appliedReps / 30) / step) * step;
+    const working = epleyRpe8WorkingWeight(evidence.oneRM, appliedReps, step);
+    const decision = deriveProgressionDecision(exercise, userState, repRange);
+    const governed = evidence.source === 'history' ? 'Most recent qualified history governs the load ceiling.' : evidence.source === 'anchor' ? 'Your saved same-unit anchor baseline governs the load ceiling.' : 'Your saved exercise baseline governs the load ceiling.';
+    let progression = 'No qualified history is available.';
+    if (decision) {
+      const limitReason = decision.nextWeight > working
+        ? evidence.source === 'history' ? 'qualified history limits it at RPE 8.' : 'your saved exercise baseline limits it at RPE 8.'
+        : 'the current load adjustment limits it.';
+      progression = `Qualified history proposed ${decision.nextWeight}kg; ${appliedWeight < decision.nextWeight ? limitReason : decision.reason}`;
+    }
+    return `Prescribed ${appliedWeight}kg for ${appliedReps} reps per set. ${governed} Epley ceiling: ${ceiling}kg at ${appliedReps} reps. RPE 8 working limit (2 reps in reserve): ${working}kg. Applied working weight: ${appliedWeight}kg. ${progression}`;
+  }
   const decision = deriveProgressionDecision(exercise, userState, repRange);
   if (!decision) {
     const status = userState.performanceHistory?.status;
