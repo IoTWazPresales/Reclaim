@@ -1,3 +1,7 @@
+## 2026-11-01 - Working-weight release APK built; stop
+
+Source `bd69229f92276663861c426f46b75953db6653b7` pushed. Same local x86_64 Gradle recipe succeeded in 7m47s; 1.0.5/vc15, signature/ZIP checks pass, embedded bundle has new working-load text. APK `releases/reclaim-1.0.5-vc15-working-weight-bd69229-x86_64.apk`, SHA256 `7407978a5afd3d35b52134ebf934626bdf6e34427202386d32531084c674cf0a`. Wrapper smoke3/3 passes. Evidence: `docs/training/recovery/evidence/working-weight-20261101.md`. No installation/native regeneration/live operation/migration/EIF acceptance. Task stopped after build/receipt; no further programme work authorized.
+
 ## 2026-11-01 - Working load uses RPE 8 below the Epley ceiling
 
 New-build repetition loads invert Epley at target reps + 2 and floor to the existing unit step; retain lower progression/deload proposals. Shrugs20x7 -> ceiling17x13 / working16x13. D-P2-01 precedence retained, including real substitution timestamp transport; v1/started/guided rows unchanged. Separate source review has no blockers; complete1531/208-file fallback coverage, focused119, allocation21, types/dual31/catalogue357 pass. Operator reports deleted RA-016 test session training_1790871926289_4tsky2d; verified5 sessions/18 set logs remain. No live operations or EIF acceptance. Evidence: `docs/training/recovery/evidence/working-weight-20261101.md`. Next action is fresh same-recipe x86_64 release APK, record source/hash, do not install; stop after build.

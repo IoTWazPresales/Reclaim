@@ -1,0 +1,38 @@
+{
+  "sourceCommit": "bd69229f92276663861c426f46b75953db6653b7",
+  "branch": "fix/training-confident-ux",
+  "apk": "releases/reclaim-1.0.5-vc15-working-weight-bd69229-x86_64.apk",
+  "originalOutput": "app/android/app/build/outputs/apk/release/app-release.apk",
+  "sha256": "7407978a5afd3d35b52134ebf934626bdf6e34427202386d32531084c674cf0a",
+  "bytes": 121254168,
+  "abi": [
+    "x86_64"
+  ],
+  "zipIntegrity": "passed",
+  "embeddedBundleBytes": 8128296,
+  "embeddedBundleSha256": "095b34ec6fc73c378feff218b239b83775a172e44bbee2049ff78f4e523c2562",
+  "embeddedNewCopyMarkers": {
+    "RPE 8 working limit (2 reps in reserve): ": true,
+    "Applied working weight: ": true,
+    "Epley ceiling: ": true
+  },
+  "buildCommand": "gradlew.bat :app:assembleRelease -PreactNativeArchitectures=x86_64 --max-workers=2 --console=plain",
+  "environment": {
+    "NODE_ENV": "production",
+    "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+  },
+  "gradleExitCode": 0,
+  "buildResult": "BUILD SUCCESSFUL in 7m 47s; 1228 tasks:34 executed,1194 up-to-date",
+  "installed": false,
+  "nativeRegeneration": false,
+  "sourceMatchesCommit": true,
+  "localBuildLogSha256": "c5b653dff1be8ff2d9965833d7e444e7f90fdf7a60beaa0c5b0bdfc455c9dd95",
+  "package": "com.fissioncorporation.reclaim",
+  "versionName": "1.0.5",
+  "versionCode": 15,
+  "debuggable": false,
+  "apkSignatureVerification": "passed; v2 signature, one signer",
+  "apksignerExitCode": 0,
+  "working-weight-apk-badging.local.txtSha256": "53be39002f9dab6589759f2cdf0c79bf8ae90dc741acc3b19619b40b851b01de",
+  "working-weight-apk-signature.local.txtSha256": "23dcad2d94b6d102297165e0287d0ce9b79368726ccf857fb3785c53e70672c7"
+}

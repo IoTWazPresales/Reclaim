@@ -76,8 +76,28 @@ no test was excluded and the configured30-second test budget was unchanged.
 
 ## Release build
 
-Build only after the validated source commit is pushed. Same command as the
+Built after validated source commit `bd69229f92276663861c426f46b75953db6653b7` was pushed. Same command as the
 1 November build: `app/android/gradlew.bat :app:assembleRelease
 -PreactNativeArchitectures=x86_64 --max-workers=2 --console=plain`, with
 `NODE_ENV=production` and `SENTRY_DISABLE_AUTO_UPLOAD=true`. Existing native
 projects retained; no prebuild, regeneration or installation.
+
+
+**BUILD SUCCESSFUL**, Gradle exit 0, **7m 47s**, 1228 tasks (34 executed,
+1194 up-to-date). Artifact `releases/reclaim-1.0.5-vc15-working-weight-bd69229-x86_64.apk`
+(121254168 bytes), copied byte-identically from the fresh Gradle release output.
+SHA-256: `7407978a5afd3d35b52134ebf934626bdf6e34427202386d32531084c674cf0a`.
+Package `com.fissioncorporation.reclaim`, **1.0.5 / vc15**, **x86_64**;
+no debuggable marker. APK v2 signature verifies (one signer); ZIP integrity
+passes. Embedded bundle8128296 bytes contains the new ceiling, RPE8 limit and
+applied-working-weight text. Product/native/package sources have no diff from
+the source commit. Existing local release signing/configuration retained.
+This is the same local x86_64 recipe, not a store submission or ARM build.
+[Machine-readable release receipt](../../../../.eif/audit/N-0070/working-weight-20261101/release-build.json).
+
+Additional repository wrapper smoke: **3/3 passed**, exit0, status/read-only and
+dry-run commands only; no ledger acceptance. Raw build/test logs and the APK
+remain local. Final documentation commit records these receipts; it does not
+change the application source used to build the APK. **Stopped after the build
+and its receipt. No installation, native regeneration, live data write,
+migration or EIF acceptance.**

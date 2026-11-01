@@ -10,6 +10,8 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **Working-weight build complete; STOP, 2026-11-01:** Source `bd69229f92276663861c426f46b75953db6653b7` pushed; same local x86_64 release recipe succeeds7m47s. APK1.0.5/vc15, signature/ZIP/embedded new-copy checks pass; SHA256 `7407978a5afd3d35b52134ebf934626bdf6e34427202386d32531084c674cf0a`. [Build/source receipt](../training/recovery/evidence/working-weight-20261101.md). Wrapper smoke3/3 passes. Documentation-only receipt follows source commit; no install/native regeneration/live write/migration/EIF acceptance. No further programme work authorized by this task.
+
 - **Working weight vs ceiling, 2026-11-01:** New-build rep loads use the audit RPE8 rule (target+2, existing step floored), separate ceiling/working explanation, and preserved D-P2-01 precedence. Shrugs17 ->16kg at13; frozen/v1 unchanged. Separate review no blockers; complete1531 tests/208 files via fallback and replay, focused119/allocation21/types/dual31/catalogue357 pass. [Evidence and build receipt](../training/recovery/evidence/working-weight-20261101.md). Operator deletion note recorded; no live operations or EIF acceptance. Existing programme-node status/table below unchanged. Build fresh same-recipe release APK after push, record commit/hash, do not install, stop after build.
 
 | Scoped work | Source validation | Programme/runtime state |

@@ -285,5 +285,13 @@
     "command": "Git Bash npm run audit:training-dual-paths"
   },
   "noLiveOperations": true,
-  "noEifAcceptance": true
+  "noEifAcceptance": true,
+  "wrapperSmoke": {
+    "command": "python -m pytest scripts/test_eif_node.py -q",
+    "tests": 3,
+    "passed": 3,
+    "exitCode": 0,
+    "readOnlyAndDryRunOnly": true,
+    "localLogSha256": "6f00fe2efa794f67cfa07bbe5764899d6c1afad4339ec92531b13022160e2119"
+  }
 }
