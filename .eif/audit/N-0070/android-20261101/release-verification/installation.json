@@ -1,0 +1,17 @@
+{
+  "date": "2026-11-01",
+  "branch": "fix/training-confident-ux",
+  "sourceCommit": "bd69229f92276663861c426f46b75953db6653b7",
+  "documentationHead": "0d13a9c",
+  "artifact": "releases/reclaim-1.0.5-vc15-working-weight-bd69229-x86_64.apk",
+  "installCommand": "adb install -r",
+  "installResult": "Success",
+  "dataCleared": false,
+  "artifactSha256": "7407978a5afd3d35b52134ebf934626bdf6e34427202386d32531084c674cf0a",
+  "pulledInstalledBaseApkSha256": "7407978a5afd3d35b52134ebf934626bdf6e34427202386d32531084c674cf0a",
+  "launch": "am start -n com.fissioncorporation.reclaim/.MainActivity succeeded; signed-in Home and Training observed",
+  "setupSaved": false,
+  "sessionsCreated": 0,
+  "setsLogged": 0,
+  "acceptance": false
+}

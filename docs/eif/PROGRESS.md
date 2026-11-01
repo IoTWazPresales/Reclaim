@@ -10,6 +10,8 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **Working-weight release installed, 2026-11-01; inputs pending:** `adb install -r` succeeded; pulled installed base.apk SHA256 matches `7407978a5afd3d35b52134ebf934626bdf6e34427202386d32531084c674cf0a`. Launch allowed, signed-in Training rendered. No setup save/session/set. Asked exact experience and four lift kg/reps because request has placeholders. Existing review unresolved/39 warnings/0 errors is pre-save only. Full five-day/session/FGS/persistence/deletion journey pending. [Partial evidence](../../.eif/audit/N-0070/android-20261101/release-verification/result.md). No source/migration/acceptance changes; N-0070 remains open.
+
 - **Working-weight build complete; STOP, 2026-11-01:** Source `bd69229f92276663861c426f46b75953db6653b7` pushed; same local x86_64 release recipe succeeds7m47s. APK1.0.5/vc15, signature/ZIP/embedded new-copy checks pass; SHA256 `7407978a5afd3d35b52134ebf934626bdf6e34427202386d32531084c674cf0a`. [Build/source receipt](../training/recovery/evidence/working-weight-20261101.md). Wrapper smoke3/3 passes. Documentation-only receipt follows source commit; no install/native regeneration/live write/migration/EIF acceptance. No further programme work authorized by this task.
 
 - **Working weight vs ceiling, 2026-11-01:** New-build rep loads use the audit RPE8 rule (target+2, existing step floored), separate ceiling/working explanation, and preserved D-P2-01 precedence. Shrugs17 ->16kg at13; frozen/v1 unchanged. Separate review no blockers; complete1531 tests/208 files via fallback and replay, focused119/allocation21/types/dual31/catalogue357 pass. [Evidence and build receipt](../training/recovery/evidence/working-weight-20261101.md). Operator deletion note recorded; no live operations or EIF acceptance. Existing programme-node status/table below unchanged. Build fresh same-recipe release APK after push, record commit/hash, do not install, stop after build.
@@ -790,3 +792,6 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-11-01T11:55:53Z` run `R20261101ANDROIDVERIFY` — evidence.add EV-0069 for N-0070 @ 90fe7f6 (.eif/audit/N-0070/android-20261101/operator-accepted-result.md)
 - `2026-11-01T12:59:51Z` run `R20261101RA016` — node.lease.acquire N-0070 lease acquired
 - `2026-11-01T15:16:59Z` run `R20261101RA016` — node.lease.release N-0070 lease released
+- `2026-11-01T16:15:02Z` run `R20261101RELEASEVERIFY` — node.lease.acquire N-0070 lease acquired
+- `2026-11-01T16:15:06Z` run `R20261101RELEASEVERIFY` — node.stage_note N-0070 AWAITING_APPROVAL renders=.eif/audit/N-0070/android-20261101/release-verification; image artifacts=[{"path": ".eif/audit/N-0070/android-20261101/release-verification/training-before-setup.png", "sha256": "98d0d555061f48b6be9927d4ed7db4cd70b0bfa26ccf63c6c7f77ed4475c5cfa"}]; authenticity and visual quality UNVERIFIED
+- `2026-11-01T16:15:11Z` run `R20261101RELEASEVERIFY` — node.lease.release N-0070 lease released

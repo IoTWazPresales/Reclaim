@@ -1,3 +1,7 @@
+## 2026-11-01 - Working-weight release installed; exact setup inputs pending
+
+Recorded bd69229 release installed with adb install -r; pulled installed APK SHA256 equals 7407978a5afd3d35b52134ebf934626bdf6e34427202386d32531084c674cf0a. Signed-in Training launches. No setup saved/session/set created. Operator request contains experience/Bench/Squat/Deadlift placeholders and unconfirmed OHP80x5; asked exact values before dependent work. Evidence: .eif/audit/N-0070/android-20261101/release-verification/result.md. Five-day/session/FGS/persistence/delete verification pending; no source/migration/EIF acceptance.
+
 ## 2026-11-01 - Working-weight release APK built; stop
 
 Source `bd69229f92276663861c426f46b75953db6653b7` pushed. Same local x86_64 Gradle recipe succeeded in 7m47s; 1.0.5/vc15, signature/ZIP checks pass, embedded bundle has new working-load text. APK `releases/reclaim-1.0.5-vc15-working-weight-bd69229-x86_64.apk`, SHA256 `7407978a5afd3d35b52134ebf934626bdf6e34427202386d32531084c674cf0a`. Wrapper smoke3/3 passes. Evidence: `docs/training/recovery/evidence/working-weight-20261101.md`. No installation/native regeneration/live operation/migration/EIF acceptance. Task stopped after build/receipt; no further programme work authorized.

@@ -1,5 +1,10 @@
 # Awaiting visual approval — PRG-20260917T222550
 
+
+## Working-weight release install checkpoint (2026-11-01)
+
+N-0070 partial verification only. Wrapper `await-approval` succeeded under `R20261101RELEASEVERIFY` for `.eif/audit/N-0070/android-20261101/release-verification`, then released the lease. Existing N-0070 heading prevented the wrapper adding another section; this note clarifies the newly registered scope. Installed APK hash matches recorded release; signed-in Training screenshot inspected. Setup awaits exact operator experience and lift inputs. Five-day/session/FGS/persistence/deletion checks remain pending. No acceptance or approval granted. [Partial result](../../.eif/audit/N-0070/android-20261101/release-verification/result.md).
+
 ## RA-016 ? new-build load confirmation (2026-11-01)
 
 **Visible changes recorded; Android renders UNABLE_TO_VERIFY.** The operator explicitly excluded Android, live writes, migrations and EIF acceptance. No emulator/ADB/capture methods were attempted and no older render represents this fix. Blank-baseline dumbbell loads now show confirmation instead of copied barbell kilograms. Focus/rest/overlay/edit and notification flows preserve this state; unknown Done cannot log a set. Supported barbell/stack/per-hand sources and old frozen prescriptions retain their behavior. Automated component rendering and separate source review do not constitute Android approval. [Evidence and full changed-exercise list](../training/recovery/evidence/ra016-default-load-units-20261101.md). Manual record only; no EIF acceptance/approval event invoked. Later operator approval remains required before shipping.
