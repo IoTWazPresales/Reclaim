@@ -1,0 +1,98 @@
+[
+  {
+    "timestamp": 1793532266673,
+    "message": "Updates state change: StartStartup, context = {isStartupProcedureRunning=true, isUpdateAvailable=false, isUpdatePending=false, isChecking=false, isDownloading=false, isRestarting=false, restartCount=0, downloadProgress=0.0, sequenceNumber=1}",
+    "code": "None",
+    "level": "info"
+  },
+  {
+    "timestamp": 1793532266725,
+    "message": "embeddedAssetFileMap: embeddedAssets count = 131",
+    "code": "None",
+    "level": "info"
+  },
+  {
+    "timestamp": 1793532266870,
+    "message": "Updates state change: Check, context = {isStartupProcedureRunning=true, isUpdateAvailable=false, isUpdatePending=false, isChecking=true, isDownloading=false, isRestarting=false, restartCount=0, downloadProgress=0.0, sequenceNumber=2}",
+    "code": "None",
+    "level": "info"
+  },
+  {
+    "timestamp": 1793532267423,
+    "message": "Remote update request not successful",
+    "code": "UpdateFailedToLoad",
+    "level": "error"
+  },
+  {
+    "timestamp": 1793532267424,
+    "message": "Failed to download remote update",
+    "code": "UpdateFailedToLoad",
+    "level": "error"
+  },
+  {
+    "timestamp": 1793532267426,
+    "message": "Load error",
+    "code": "UpdateFailedToLoad",
+    "level": "error"
+  },
+  {
+    "timestamp": 1793532267428,
+    "message": "UpdatesController onBackgroundUpdateFinished",
+    "code": "Unknown",
+    "level": "error"
+  },
+  {
+    "timestamp": 1793532267443,
+    "message": "Updates state change: CheckError, context = {isStartupProcedureRunning=true, isUpdateAvailable=false, isUpdatePending=false, isChecking=false, isDownloading=false, isRestarting=false, restartCount=0, downloadProgress=0.0, sequenceNumber=3, checkError={message=Failed to download remote update}, lastCheckForUpdateTime=Sun Nov 01 13:24:27 GMT+02:00 2026}",
+    "code": "None",
+    "level": "info"
+  },
+  {
+    "timestamp": 1793532267446,
+    "message": "ErrorRecovery: remote load status changed: IDLE",
+    "code": "None",
+    "level": "info"
+  },
+  {
+    "timestamp": 1793532267446,
+    "message": "Failed to download remote update",
+    "code": "UpdateFailedToLoad",
+    "level": "error"
+  },
+  {
+    "timestamp": 1793532267469,
+    "message": "Updates state change: EndStartup, context = {isStartupProcedureRunning=false, isUpdateAvailable=false, isUpdatePending=false, isChecking=false, isDownloading=false, isRestarting=false, restartCount=0, downloadProgress=0.0, sequenceNumber=4, checkError={message=Failed to download remote update}, lastCheckForUpdateTime=Sun Nov 01 13:24:27 GMT+02:00 2026}",
+    "code": "None",
+    "level": "info"
+  },
+  {
+    "timestamp": 1793532268116,
+    "message": "UpdatesModule: getConstants called",
+    "code": "None",
+    "level": "info"
+  },
+  {
+    "timestamp": 1793532268616,
+    "message": "Updates state change: Check, context = {isStartupProcedureRunning=false, isUpdateAvailable=false, isUpdatePending=false, isChecking=true, isDownloading=false, isRestarting=false, restartCount=0, downloadProgress=0.0, sequenceNumber=5, checkError={message=Failed to download remote update}, lastCheckForUpdateTime=Sun Nov 01 13:24:27 GMT+02:00 2026}",
+    "code": "None",
+    "level": "info"
+  },
+  {
+    "timestamp": 1793532268968,
+    "message": "Remote update request not successful",
+    "code": "UpdateFailedToLoad",
+    "level": "error"
+  },
+  {
+    "timestamp": 1793532268970,
+    "message": "Failed to download remote update",
+    "code": "UpdateFailedToLoad",
+    "level": "error"
+  },
+  {
+    "timestamp": 1793532268970,
+    "message": "Updates state change: CheckError, context = {isStartupProcedureRunning=false, isUpdateAvailable=false, isUpdatePending=false, isChecking=false, isDownloading=false, isRestarting=false, restartCount=0, downloadProgress=0.0, sequenceNumber=6, checkError={message=Failed to download remote update: Remote update request not successful: \"channel-name\": Required. The headers \"expo-runtime-version\", \"expo-channel-name\", and \"expo-platform\" are required. They can also be set with the query parameters \"runtime-version\", \"channel-name\", and \"platform\". Learn more: https://expo.fyi/eas-update-missing-headers}, lastCheckForUpdateTime=Sun Nov 01 13:24:28 GMT+02:00 2026}",
+    "code": "None",
+    "level": "info"
+  }
+]

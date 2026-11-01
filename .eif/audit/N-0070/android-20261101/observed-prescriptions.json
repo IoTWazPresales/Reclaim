@@ -1,0 +1,34 @@
+{
+  "monday": {
+    "rows": {
+      "1. Barbell Bench Press": "3 sets · 60kg · 7 reps · Total bar weight.",
+      "2. Dumbbell Flyes": "2 sets · 13 reps · weight confirmation required",
+      "3. Barbell Row": "3 sets · 62.5kg · 7 reps · Total bar weight.",
+      "4. Lat Pulldown": "2 sets · 13 reps · weight confirmation required",
+      "5. Lateral Raises": "3 sets · 16kg · 13 reps · Per dumbbell.",
+      "6. Barbell Curl": "3 sets · 25kg · 13 reps · Total bar weight."
+    },
+    "workingSets": 16
+  },
+  "tuesday": {
+    "rows": {
+      "1. Barbell Back Squat": "3 sets · 80kg · 7 reps · Total bar weight.",
+      "2. Hack Squat": "2 sets · 13 reps · weight confirmation required",
+      "3. Clean and Press": "3 sets · 7 reps · weight confirmation required",
+      "4. Romanian Deadlift": "2 sets · 13 reps · weight confirmation required",
+      "5. Calf Raises": "3 sets · 13 reps · weight confirmation required"
+    },
+    "workingSets": 13
+  },
+  "wednesday": {
+    "rows": {
+      "1. Dumbbell Bench Press": "3 sets · 60kg · 7 reps · Per dumbbell.",
+      "2. Cable Chest Flyes": "2 sets · 13 reps · weight confirmation required",
+      "3. Overhead Press": "3 sets · 40kg · 7 reps · Total bar weight.",
+      "4. Lateral Raises": "3 sets · 16kg · 13 reps · Per dumbbell.",
+      "5. Tricep Pushdown": "3 sets · 25kg · 13 reps · Cable / stack weight.",
+      "6. Face Pulls": "3 sets · 13 reps · weight confirmation required"
+    },
+    "workingSets": 17
+  }
+}

@@ -1,3 +1,11 @@
+## 2026-11-01 - Real five-day schedule saved; runtime stopped on RA-016
+
+Operator accepted installed embedded provenance by elimination. Saved Monday-Friday, preserving Strength, goals40/40/10/10, Intermediate, equipment and blank visible baseline fields. 20 day rows returned; weekly unresolved/33 warnings/0 errors. Preview capture reproduced RA-016: shared 60 kg default displayed as total-bar bench and per-dumbbell bench. Pure source control confirms convention mismatch. Stop requested on findings requiring code, so no fix, Start, set or Cancel & delete occurred. No test data to clean up. Remaining parity/ceiling/leg-press/frozen/FGS/persistence steps incomplete. OTA enabled with no channel recorded as release finding, not fixed. Evidence `.eif/audit/N-0070/android-20261101/operator-accepted-result.md`.
+
+## 2026-11-01 - Standalone emulator install
+
+Operator explicitly requested a fresh standalone install after uninstalling the dev app. Current-source local assembleRelease succeeded; x86_64 Reclaim 1.0.5/vc15 installed and rendered login with Metro stopped and reverse removed. Embedded bundle and non-debuggable package verified. Startup logcat readable; no crash/Metro markers in snapshot. No product code or account changes. Authenticated verification remains pending login. Evidence: `.eif/audit/N-0070/android-20261101/standalone-result.md`. Emulator/app retained.
+
 ## 2026-10-30 ? Android operator-account verification blocked at launch
 
 Source `0cecd15`; qualified shrug history yields 17 kg per dumbbell on the valid 1 kg step (no own baseline). Metro reachable; one retained-data cold boot plus stale ADB server recovery reached Android boot complete with Reclaim installed. Execution policy blocked canonical localhost dev-client launch; no retry/account write/source change/migration/acceptance/R12. Bundle identity and app steps remain UNABLE_TO_VERIFY. Only Android startup screenshot captured. Await-approval wrapper succeeded for N-0070 under R20261030ANDROID, stage note sequence 564. See `.eif/audit/N-0070/android-20261030/result.md`; approval pending. No test sessions or sets created.

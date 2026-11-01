@@ -1,5 +1,10 @@
 # Awaiting visual approval — PRG-20260917T222550
 
+## N-0070 Android 2026-11-01 - stopped on load-unit finding
+
+Operator accepted embedded provenance by elimination; Monday-Friday saved with Strength, 40/40/10/10 goals and blank visible baselines unchanged. New weekly review unresolved/33 warnings/0 errors; old replay has different inputs. Runtime reproduces RA-016: Dumbbell Bench Press 60 kg **per dumbbell**, while barbell bench uses shared 60 kg **total bar** default. Stopped before session/set creation; no cleanup needed. Remaining steps incomplete; no acceptance or shipping approval. [Result](../../.eif/audit/N-0070/android-20261101/operator-accepted-result.md). Focused review renders remain local in that directory's `review-renders/`. Public wrapper queue result recorded in the evidence after invocation.
+
+
 ## N-0070 operator-account Android attempt ? 2026-10-30
 
 **UNABLE_TO_VERIFY product visuals and acceptance.** Source `0cecd15`; step 0 confirms history governs shrugs at 17 kg per dumbbell on the valid 1 kg step. One cold boot recovered Android; execution policy rejected the documented app-launch command. No retry or account write occurred. The only screenshot is Android startup, not a Reclaim render. No weekly status/counts, five-day parity, confirmation/leg-press screen, frozen session, guidance, persistence or deletion was verified.

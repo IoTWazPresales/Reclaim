@@ -1,0 +1,29 @@
+{
+  "scope": "Pure-source empty-baseline/no-history control; not an extraction of current runtime history",
+  "rows": [
+    {
+      "exerciseId": "barbell_bench_press",
+      "exerciseName": "Barbell Bench Press",
+      "loadingProfile": {
+        "loadingIntentKey": "horizontal_press",
+        "prescriptionType": "reps",
+        "loadDisplayMode": "total_bar",
+        "defaultSelectionTier": "normal",
+        "compoundClassification": "infer"
+      },
+      "suggestedKg": 60
+    },
+    {
+      "exerciseId": "dumbbell_bench_press",
+      "exerciseName": "Dumbbell Bench Press",
+      "loadingProfile": {
+        "loadingIntentKey": "horizontal_press",
+        "prescriptionType": "reps",
+        "loadDisplayMode": "per_dumbbell",
+        "defaultSelectionTier": "normal",
+        "compoundClassification": "infer"
+      },
+      "suggestedKg": 60
+    }
+  ]
+}
