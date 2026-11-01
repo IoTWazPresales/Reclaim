@@ -144,6 +144,8 @@ export interface PlannedSet {
   setIndex: number;
   targetReps: number;
   suggestedWeight: number;
+  /** New-build unknown load: zero is storage only; ask for a load without displaying kg. */
+  loadRequiresConfirmation?: boolean;
   restSeconds: number;
 }
 

@@ -17,6 +17,7 @@ interface SetFocusOverlayProps {
   totalSets: number;
   plannedWeight: number;
   plannedReps: number;
+  loadRequiresConfirmation?: boolean;
   isCompleted: boolean;
   isResting: boolean;
   restRemaining?: number;
@@ -36,6 +37,7 @@ export default function SetFocusOverlay({
   totalSets,
   plannedWeight,
   plannedReps,
+  loadRequiresConfirmation,
   isCompleted,
   isResting,
   restRemaining,
@@ -124,7 +126,7 @@ export default function SetFocusOverlay({
                 <>
                   <View style={{ alignItems: 'center', marginBottom: appTheme.spacing.lg }}>
                     <Text variant="headlineMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
-                      {formatWeightReps(plannedWeight, plannedReps)}
+                      {loadRequiresConfirmation && plannedWeight === 0 ? 'Weight confirmation required' : formatWeightReps(plannedWeight, plannedReps)}
                     </Text>
                     <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
                       Planned
@@ -136,6 +138,7 @@ export default function SetFocusOverlay({
                       <Button
                         mode="contained"
                         onPress={onDone}
+                        disabled={loadRequiresConfirmation === true && plannedWeight === 0}
                         style={[primaryCapsule.style, { marginBottom: appTheme.spacing.xs }]}
                         contentStyle={primaryCapsule.contentStyle}
                         labelStyle={primaryCapsule.labelStyle}

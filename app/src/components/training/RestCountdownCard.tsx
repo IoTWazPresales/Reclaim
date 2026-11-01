@@ -24,6 +24,7 @@ interface RestCountdownCardProps {
   nextTotalSets: number;
   nextWeight: number;
   nextReps: number;
+  loadRequiresConfirmation?: boolean;
   isNewExercise: boolean;
   onSkipRest: () => void;
   onExtend: (seconds: number) => void;
@@ -39,6 +40,7 @@ export default function RestCountdownCard({
   nextTotalSets,
   nextWeight,
   nextReps,
+  loadRequiresConfirmation,
   isNewExercise,
   onSkipRest,
   onExtend,
@@ -107,7 +109,7 @@ export default function RestCountdownCard({
             {nextExerciseName}
           </Text>
           <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
-            Set {nextSetIndex} of {nextTotalSets} · {formatWeight(nextWeight)} {formatReps(nextReps)}
+            Set {nextSetIndex} of {nextTotalSets} · {loadRequiresConfirmation && nextWeight === 0 ? 'Weight confirmation required' : formatWeight(nextWeight)} {formatReps(nextReps)}
           </Text>
         </View>
 

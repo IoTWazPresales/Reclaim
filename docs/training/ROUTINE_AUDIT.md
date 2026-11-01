@@ -1,5 +1,9 @@
 # Reclaim training routine / generator audit (AS-IS)
 
+## RA-016 source correction (2026-11-01; Android approval pending)
+
+For new builds, population loads now require an exact source/target unit match: existing free-weight defaults are total-bar; existing machine defaults are cable-stack; the existing carry default is per-hand only. Other units use their own qualified evidence or `load_requires_confirmation` with no displayed number. No ratios or load constants were added. Started/frozen/history rows are not recomputed. The 9 October rule that a different unit never copies a barbell kilogram is enforced at the shared resolver and new-build boundaries. [Full path inventory, 137-exercise comparison, history limits and gates](recovery/evidence/ra016-default-load-units-20261101.md). Historical audit observations below remain historical; Android, live writes and EIF acceptance were excluded by the operator.
+
 ## Approved policy update (2026-10-30; implementation pending)
 
 The [resolved operator decisions](../eif/phase2-controls/DECISIONS_PENDING.md#resolved-operator-decisions--2026-10-30)

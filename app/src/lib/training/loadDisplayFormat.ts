@@ -42,12 +42,18 @@ export function formatLoadSemanticsSuffix(exercise: Exercise, weightKg: number):
  */
 export function formatPlannedSetSummary(
   exercise: Exercise,
-  set: { targetReps: number; suggestedWeight: number },
+  set: { targetReps: number; suggestedWeight: number; loadRequiresConfirmation?: boolean },
 ): string {
   const p = getExerciseLoadingProfile(exercise);
   const w = set.suggestedWeight;
   const r = set.targetReps;
   const note = formatLoadSemanticsSuffix(exercise, w);
+
+  if (set.loadRequiresConfirmation && w === 0) {
+    const target = p.prescriptionType === 'carry_distance' ? `~${r} m / set` :
+      p.prescriptionType === 'time_hold' ? `~${r}s hold` : `${r} reps`;
+    return `${target} · weight confirmation required`;
+  }
 
   if (p.prescriptionType === 'carry_distance') {
     return `~${r} m / set · ${fmtKg(w)} kg/hand`;

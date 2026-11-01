@@ -121,6 +121,7 @@ function EditSetDialog({
   setIndex,
   totalSets,
   initialWeight,
+  loadRequiresConfirmation,
   initialReps,
   initialRpe,
   isUpdate,
@@ -133,6 +134,7 @@ function EditSetDialog({
   setIndex: number;
   totalSets: number;
   initialWeight: number;
+  loadRequiresConfirmation?: boolean;
   initialReps: number;
   initialRpe: number | null;
   isUpdate: boolean;
@@ -204,7 +206,7 @@ function EditSetDialog({
               />
               <View style={{ minWidth: 80, alignItems: 'center' }}>
                 <Text variant="headlineSmall" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
-                  {formatWeight(weight)}
+                  {loadRequiresConfirmation && weight === 0 ? 'Choose a weight' : formatWeight(weight)}
                 </Text>
               </View>
               <IconButton
@@ -274,7 +276,7 @@ function EditSetDialog({
             </Text>
 
             <View style={{ flexDirection: 'row', gap: appTheme.spacing.sm }}>
-              <Button mode="contained" onPress={() => onSave(weight, reps, rpe)} style={{ flex: 1 }}>
+              <Button mode="contained" disabled={loadRequiresConfirmation === true && weight === 0} onPress={() => onSave(weight, reps, rpe)} style={{ flex: 1 }}>
                 {isUpdate ? 'Update' : 'Log Set'}
               </Button>
               <Button mode="outlined" onPress={onCancel} style={{ flex: 1 }}>
@@ -728,6 +730,11 @@ function TrainingSessionView({
       if (!currentItem) return;
       if (isEnded) {
         Alert.alert('Session completed', 'This session is already completed. Start a new session to log more sets.');
+        return;
+      }
+
+      if (weight === 0 && reps > 0 && currentItem.planned?.sets.find(set => set.setIndex === setIndex)?.loadRequiresConfirmation) {
+        Alert.alert('Choose a weight', 'Confirm a load for this exercise before completing the set.');
         return;
       }
 
@@ -1901,6 +1908,7 @@ function TrainingSessionView({
               totalSets: nextItem?.planned?.sets?.length ?? 0,
               weight: effective?.weight ?? 0,
               reps: effective?.reps ?? 0,
+              loadRequiresConfirmation: nextItem?.planned?.sets.find(set => set.setIndex === nextTarget?.setIndex)?.loadRequiresConfirmation,
               isNewExercise: !!nextItem && nextItem.id !== currentItem.id,
             };
 
@@ -1915,6 +1923,7 @@ function TrainingSessionView({
                   nextTotalSets={nextSetInfo.totalSets}
                   nextWeight={nextSetInfo.weight}
                   nextReps={nextSetInfo.reps}
+                  loadRequiresConfirmation={nextSetInfo.loadRequiresConfirmation}
                   isNewExercise={nextSetInfo.isNewExercise}
                   onSkipRest={() => {
                     setRestTimer(null);
@@ -1998,6 +2007,7 @@ function TrainingSessionView({
               totalSets={plannedSets.length}
               plannedWeight={focusSet.weight}
               plannedReps={focusSet.reps}
+              loadRequiresConfirmation={currentItem.planned?.sets.find(set => set.setIndex === focusSet.setIndex)?.loadRequiresConfirmation}
               priority={currentItem.planned?.priority as string | undefined}
               intents={currentItem.planned?.intents as string[] | undefined}
               autoregMessage={focusSet.autoregMessage}
@@ -2090,6 +2100,7 @@ function TrainingSessionView({
               totalSets={overlayPlannedSets.length}
               plannedWeight={effective.weight}
               plannedReps={effective.reps}
+              loadRequiresConfirmation={focusedSet.loadRequiresConfirmation}
               isCompleted={focusedPerformed}
               isResting={!!(restTimer && restTimer.exerciseId === overlayItem.id)}
               restRemaining={restTimer ? restCountdown.remaining : undefined}
@@ -2133,6 +2144,7 @@ function TrainingSessionView({
               setIndex={editSet.setIndex}
               totalSets={plannedSets.length}
               initialWeight={existingPerf?.weight ?? getAdjustedSetParams(currentItem, editSet.setIndex, {}).weight}
+              loadRequiresConfirmation={!existingPerf && editSet.loadRequiresConfirmation}
               initialReps={existingPerf?.reps ?? getAdjustedSetParams(currentItem, editSet.setIndex, {}).reps}
               initialRpe={existingPerf?.rpe ?? null}
               isUpdate={!!existingPerf}

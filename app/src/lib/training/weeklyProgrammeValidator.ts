@@ -335,7 +335,11 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
           }
           if (loading.loadDisplayMode === 'bodyweight' && set.suggestedWeight !== 0) add('invalid_load_state', 'Pure bodyweight prescription carries external load.', { dayKey, exerciseId: item.exerciseId });
           if (slot && declaration.exposurePolicies[slot.slotId]?.loadPolicy === 'none' && !ownEvidence && loading.loadDisplayMode !== 'bodyweight' && set.suggestedWeight > 0) add('unanchored_external_load', 'No-inference exercise receives kilograms without its own evidence.', { dayKey, slotId: slot.slotId, exerciseId: item.exerciseId });
-          if (loading.loadDisplayMode !== 'bodyweight' && !['added_bodyweight', 'assisted_bodyweight'].includes(loading.loadDisplayMode) && set.suggestedWeight === 0) warning('load_requires_confirmation', 'External-load zero is unspecified load, not validated bodyweight work.', { dayKey, exerciseId: item.exerciseId });
+          if ((set.loadRequiresConfirmation || loading.loadDisplayMode !== 'bodyweight') && set.suggestedWeight === 0 &&
+              !(loading.loadDisplayMode === 'added_bodyweight' && qualifiedHistory &&
+                (!profile.performanceHistory || profile.performanceHistory.status === 'available' && profile.performanceHistory.requestedExerciseIds.includes(exercise.id)))) {
+            warning('load_requires_confirmation', 'External-load zero is unspecified load, not validated bodyweight work.', { dayKey, exerciseId: item.exerciseId });
+          }
           // Independently check D-P2-01 using the qualified, consecutive recent
           // evidence window. Keep v1 replay's original baseline-only ceiling.
           let ceiling1RM = baseline;

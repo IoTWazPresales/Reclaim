@@ -1,0 +1,8 @@
+{
+  "snapshots": 3,
+  "exercises": 24,
+  "sets": 86,
+  "changedLoads": 56,
+  "removedWarmupSequences": 3,
+  "unchanged": "Exercise identity/order/priority, working-set count/index/reps/rest. Only unknown cross-unit loads and their invalid derived warmups change."
+}

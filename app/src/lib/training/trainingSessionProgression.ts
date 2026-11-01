@@ -24,6 +24,7 @@ export type TrainingNotificationNext = {
   suggestedWeight?: number;
   targetReps?: number;
   restSeconds?: number;
+  loadRequiresConfirmation?: boolean;
 } | null;
 
 export type NotificationWorkChain = {
@@ -73,6 +74,7 @@ export function workTargetToNotificationNext(
     suggestedWeight: effective.weight,
     targetReps: effective.reps,
     restSeconds: planned.restSeconds ?? 90,
+    ...(planned.loadRequiresConfirmation && effective.weight === 0 ? { loadRequiresConfirmation: true } : {}),
   };
 }
 

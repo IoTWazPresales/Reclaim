@@ -177,6 +177,29 @@ describe('guidedTrainingNotificationActions persistence (fire-time derivation)',
     expect(persistMocks.patchSessionItemPerformedInCache).toHaveBeenCalled();
   });
 
+  it('phone/watch Done cannot record a newly marked unknown load as zero', async () => {
+    persistMocks.loadGuidedTrainingNotificationWorkChain.mockResolvedValue(chainWithNext({ suggestedWeight: 0, loadRequiresConfirmation: true }));
+    expect(await handleGuidedTrainingNotificationAction({ action: 'SET_DONE', key: 'unknown-load', response,
+      data: { type: 'TRAINING_SET', sessionId: 'sess-1' } })).toBe(true);
+    expect(persistMocks.applySetCompletion).not.toHaveBeenCalled();
+    expect(persistMocks.patchSessionItemPerformedInCache).not.toHaveBeenCalled();
+    expect(persistMocks.markActionProcessed).toHaveBeenCalledWith('unknown-load');
+  });
+
+  it('consumes an unknown-load Done response so the same key cannot later complete changed work', async () => {
+    const processed = new Set<string>();
+    persistMocks.wasActionProcessed.mockImplementation(async key => processed.has(key));
+    persistMocks.markActionProcessed.mockImplementation(async key => { processed.add(key); });
+    const action = { action: 'SET_DONE' as const, key: 'unknown-replay', response, data: { type: 'TRAINING_SET' as const, sessionId: 'sess-1' } };
+    persistMocks.loadGuidedTrainingNotificationWorkChain.mockResolvedValue(chainWithNext({ suggestedWeight: 0, loadRequiresConfirmation: true }));
+    await handleGuidedTrainingNotificationAction(action);
+    persistMocks.loadGuidedTrainingNotificationWorkChain.mockResolvedValue(chainWithNext({ setIndex: 2, suggestedWeight: 20 }));
+    await handleGuidedTrainingNotificationAction(action);
+    expect(persistMocks.applySetCompletion).not.toHaveBeenCalled();
+    expect(persistMocks.loadGuidedTrainingNotificationWorkChain).toHaveBeenCalledTimes(1);
+    expect(processed.has(action.key)).toBe(true);
+  });
+
   it('SKIP_SET persists through applySetSkip on the derived target before scheduling', async () => {
     const handled = await handleGuidedTrainingNotificationAction({
       action: 'SKIP_SET',

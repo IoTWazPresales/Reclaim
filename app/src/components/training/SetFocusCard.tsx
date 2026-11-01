@@ -30,6 +30,8 @@ interface SetFocusCardProps {
   totalSets: number;
   plannedWeight: number;
   plannedReps: number;
+  /** Only marked new prescriptions hide the unknown storage zero. */
+  loadRequiresConfirmation?: boolean;
   priority?: string;
   intents?: string[];
   autoregMessage?: string | null;
@@ -54,6 +56,7 @@ export default function SetFocusCard({
   totalSets,
   plannedWeight,
   plannedReps,
+  loadRequiresConfirmation,
   priority,
   intents,
   autoregMessage,
@@ -87,17 +90,19 @@ export default function SetFocusCard({
   }, [plannedWeight, plannedReps, setIndex]);
 
   const loadProfile = useMemo(() => getExerciseLoadingProfile(exercise), [exercise]);
+  const needsLoad = loadRequiresConfirmation === true && weight === 0;
 
   const weightStep = getWeightStep(exercise);
   const bigStep = Math.max(weightStep * 5, 5);
 
   const loadMeaningHint = useMemo(() => {
+    if (needsLoad) return 'Choose a load and confirm it for this exercise.';
     if (loadProfile.loadDisplayMode === 'bodyweight' && weight === 0) {
       return 'Bodyweight: use 0 here unless you add external load (vest, plate, etc.).';
     }
     const s = formatLoadSemanticsSuffix(exercise, weight).trim();
     return s || null;
-  }, [exercise, loadProfile.loadDisplayMode, weight]);
+  }, [exercise, loadProfile.loadDisplayMode, weight, needsLoad]);
 
   /** Live exercise cues (catalog → pattern fallback) — never stale planned text. */
   const howToTips = useMemo(() => {
@@ -302,7 +307,7 @@ export default function SetFocusCard({
           />
           <View style={{ minWidth: 90, alignItems: 'center' }}>
             <Text variant="headlineMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
-              {formatWeight(weight)}
+              {needsLoad ? 'Choose a weight' : formatWeight(weight)}
             </Text>
           </View>
           <IconButton
@@ -378,7 +383,7 @@ export default function SetFocusCard({
         <Button
           mode="contained"
           onPress={() => onDone(weight, reps, selectedRpe || undefined)}
-          disabled={isSessionEnded}
+          disabled={isSessionEnded || needsLoad}
           buttonColor={theme.colors.primary}
           textColor={theme.colors.onPrimary}
           style={[primaryCapsule.style, { marginBottom: appTheme.spacing.sm }]}

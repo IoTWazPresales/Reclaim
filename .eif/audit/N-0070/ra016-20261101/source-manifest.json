@@ -1,0 +1,110 @@
+{
+  "baseline": "6403453",
+  "scope": "RA-016 changed/new application files, reviewed separately; raw-byte SHA-256 per file",
+  "files": [
+    {
+      "path": "app/src/components/training/RestCountdownCard.tsx",
+      "sha256": "1d4141f435866daa70f38316c413cebabb34f077437d6d66544662c337666b11"
+    },
+    {
+      "path": "app/src/components/training/SetFocusCard.tsx",
+      "sha256": "ee5aea403f9fae2a4da9891e59670caaefcb49d647a6ea0e1830bd6f61626f8a"
+    },
+    {
+      "path": "app/src/components/training/SetFocusOverlay.tsx",
+      "sha256": "484cb6d0972ca53d7cf39edd1fb01d6329af1ff88a8b5c76c90b97e1f99b42fd"
+    },
+    {
+      "path": "app/src/components/training/TrainingSessionView.tsx",
+      "sha256": "61335683f40a19fd064f361a5a1a0a2c866553c2e2687e40823c853e847143c9"
+    },
+    {
+      "path": "app/src/components/training/__tests__/SetFocusCard.loadConfirmation.test.tsx",
+      "sha256": "97c3bd5482cde65d193ed9affd518fb438113d2df2a75b608673d8fb46ddee8d"
+    },
+    {
+      "path": "app/src/lib/api.ts",
+      "sha256": "5833f6f9dfc5c57d8f1fa7088c4da0c9e5854bae7503feab81b58464d43e4413"
+    },
+    {
+      "path": "app/src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts",
+      "sha256": "08b7d06a623f4e7d7cb40542697b3bd4fe96a6f33aba8274f2f351b648dc7113"
+    },
+    {
+      "path": "app/src/lib/notifications/guidedTrainingNotificationActions.ts",
+      "sha256": "66899814ef888d5e5e076af2f35f44f61653c3dfdbab62f93c7a703f53d6f5e6"
+    },
+    {
+      "path": "app/src/lib/training/__tests__/__snapshots__/postAllocationSessionCap.test.ts.snap",
+      "sha256": "63970e0fbad576417f2b8aa841937106251c1740d226eb2d888324ab88a33d2c"
+    },
+    {
+      "path": "app/src/lib/training/__tests__/defaultLoadUnits.test.ts",
+      "sha256": "6700b79d499465f1fc962b148b07a4476ac605f4ea2f56eae6fcc0cb1c71f424"
+    },
+    {
+      "path": "app/src/lib/training/__tests__/exerciseLoadingProfile.test.ts",
+      "sha256": "1d4ebfd80cfb219d271ff234fc6b2371adb4c075960e27bfa000a785d651aa0b"
+    },
+    {
+      "path": "app/src/lib/training/__tests__/postAllocationSessionCap.test.ts",
+      "sha256": "e727f601a0adfca71c5fa92669e2d08715ce25e46007945020c2e2e0c9b58c84"
+    },
+    {
+      "path": "app/src/lib/training/allocatedProgramSession.ts",
+      "sha256": "ab5e0fc267f05028ba64e27a88fa0f5a495760be87950a4c89bd7bf863368271"
+    },
+    {
+      "path": "app/src/lib/training/anchorLoad.ts",
+      "sha256": "dc741c05577f2c93c48f62db801259498e96369b61eafd1c4bb03e8aa6914db6"
+    },
+    {
+      "path": "app/src/lib/training/balancedHypertrophy.ts",
+      "sha256": "01f26a1e1620da11448b2418789c6f9e266ece0c198f213bbb1d02f922d74f57"
+    },
+    {
+      "path": "app/src/lib/training/engine/index.ts",
+      "sha256": "776e405979cf8fc44f12d03be65b3a93c3a165f6ce43ca642115a5588dfd62ec"
+    },
+    {
+      "path": "app/src/lib/training/exerciseSubstitution.ts",
+      "sha256": "e80cbe24c1b0ae877b7456c54ac52767b32f6e762203ccbbbc95538391f491e3"
+    },
+    {
+      "path": "app/src/lib/training/loadConfirmation.ts",
+      "sha256": "1e1f01d8c199457179019cb1b52706deedfda7aae6a6b99ba0cbebec9a5cbea4"
+    },
+    {
+      "path": "app/src/lib/training/loadDisplayFormat.ts",
+      "sha256": "69d181c04048b966c833f19a7b814160d1b3fe802c112ebe112ebb626509a6dc"
+    },
+    {
+      "path": "app/src/lib/training/preview/index.ts",
+      "sha256": "946ecc2164ff1773bf113937d2e60f97b5e9de45e0890195e00e7e15d062aa67"
+    },
+    {
+      "path": "app/src/lib/training/progression.ts",
+      "sha256": "946a63c95c169d74b347e79139fb40225363b55f78fc508ac6b98e66cf9577aa"
+    },
+    {
+      "path": "app/src/lib/training/scheduleGuidedTrainingAfterSetPersist.ts",
+      "sha256": "42c452ebec941eb75cf8a837034017d1bc5679fa781c146152032ef313d02916"
+    },
+    {
+      "path": "app/src/lib/training/trainingSessionProgression.ts",
+      "sha256": "583c72f2025af507723fb09f467508d1703e871a8ba8f1a77ac47397db0136da"
+    },
+    {
+      "path": "app/src/lib/training/types.ts",
+      "sha256": "c33cc074cd19ef17d8c927299eb13d1dfa33adeeb14cafa9e08abbafaaf4cbcb"
+    },
+    {
+      "path": "app/src/lib/training/weeklyProgrammeTypes.ts",
+      "sha256": "52c497bc1ba01acc38121ef45c66adaf02c513a903e23221435e979a6d3a2833"
+    },
+    {
+      "path": "app/src/lib/training/weeklyProgrammeValidator.ts",
+      "sha256": "cdbe97c8d5d0c7475ebceeff2177fb9f761ecabe23d3da0ee3010c81c8d9d8e3"
+    }
+  ]
+}

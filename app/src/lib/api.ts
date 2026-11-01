@@ -1979,6 +1979,7 @@ export type TrainingSessionItemRow = {
       setIndex: number;
       targetReps: number;
       suggestedWeight: number;
+      loadRequiresConfirmation?: boolean;
       restSeconds: number;
     }>;
     priority: string;

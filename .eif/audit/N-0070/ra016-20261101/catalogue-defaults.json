@@ -1,0 +1,1627 @@
+{
+  "scope": "All catalogue exercises; empty own baselines/history; all three experience levels; seven target reps. Raw default path, not a claim every exercise is selected in an allocated programme.",
+  "catalogueCount": 137,
+  "numericChanges": [
+    {
+      "exerciseId": "dumbbell_bench_press",
+      "name": "Dumbbell Bench Press",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 20,
+          "afterKg": 0,
+          "oldDisplay": "20kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 60,
+          "afterKg": 0,
+          "oldDisplay": "60kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 100,
+          "afterKg": 0,
+          "oldDisplay": "100kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "dumbbell_shoulder_press",
+      "name": "Dumbbell Shoulder Press",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 15,
+          "afterKg": 0,
+          "oldDisplay": "15kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 40,
+          "afterKg": 0,
+          "oldDisplay": "40kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 70,
+          "afterKg": 0,
+          "oldDisplay": "70kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "romanian_deadlift",
+      "name": "Romanian Deadlift",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 40,
+          "afterKg": 0,
+          "oldDisplay": "40kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 100,
+          "afterKg": 0,
+          "oldDisplay": "100kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 180,
+          "afterKg": 0,
+          "oldDisplay": "180kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "dumbbell_curl",
+      "name": "Dumbbell Curl",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 8,
+          "afterKg": 0,
+          "oldDisplay": "8kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 15,
+          "afterKg": 0,
+          "oldDisplay": "15kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 25,
+          "afterKg": 0,
+          "oldDisplay": "25kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "dumbbell_flyes",
+      "name": "Dumbbell Flyes",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 8,
+          "afterKg": 0,
+          "oldDisplay": "8kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 12,
+          "afterKg": 0,
+          "oldDisplay": "12kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 16,
+          "afterKg": 0,
+          "oldDisplay": "16kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "lateral_raises",
+      "name": "Lateral Raises",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 8,
+          "afterKg": 0,
+          "oldDisplay": "8kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 12,
+          "afterKg": 0,
+          "oldDisplay": "12kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 16,
+          "afterKg": 0,
+          "oldDisplay": "16kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "leg_curls",
+      "name": "Leg Curls",
+      "unit": "machine_total",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 8,
+          "afterKg": 0,
+          "oldDisplay": "8kg · 7 reps · Cable / stack weight.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 12,
+          "afterKg": 0,
+          "oldDisplay": "12kg · 7 reps · Cable / stack weight.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 16,
+          "afterKg": 0,
+          "oldDisplay": "16kg · 7 reps · Cable / stack weight.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "lunges",
+      "name": "Walking Lunges",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 30,
+          "afterKg": 0,
+          "oldDisplay": "30kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 80,
+          "afterKg": 0,
+          "oldDisplay": "80kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 140,
+          "afterKg": 0,
+          "oldDisplay": "140kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "bulgarian_split_squat",
+      "name": "Bulgarian Split Squat",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 30,
+          "afterKg": 0,
+          "oldDisplay": "30kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 80,
+          "afterKg": 0,
+          "oldDisplay": "80kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 140,
+          "afterKg": 0,
+          "oldDisplay": "140kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "overhead_tricep_extension",
+      "name": "Overhead Tricep Extension",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 15,
+          "afterKg": 0,
+          "oldDisplay": "15kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 25,
+          "afterKg": 0,
+          "oldDisplay": "25kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 40,
+          "afterKg": 0,
+          "oldDisplay": "40kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "hammer_curl",
+      "name": "Hammer Curl",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 8,
+          "afterKg": 0,
+          "oldDisplay": "8kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 15,
+          "afterKg": 0,
+          "oldDisplay": "15kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 25,
+          "afterKg": 0,
+          "oldDisplay": "25kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "kettlebell_swing",
+      "name": "Kettlebell Swing",
+      "unit": "unspecified",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 40,
+          "afterKg": 0,
+          "oldDisplay": "40kg · 7 reps",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 100,
+          "afterKg": 0,
+          "oldDisplay": "100kg · 7 reps",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 180,
+          "afterKg": 0,
+          "oldDisplay": "180kg · 7 reps",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "arnold_press",
+      "name": "Arnold Press",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 15,
+          "afterKg": 0,
+          "oldDisplay": "15kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 40,
+          "afterKg": 0,
+          "oldDisplay": "40kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 70,
+          "afterKg": 0,
+          "oldDisplay": "70kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "front_raises",
+      "name": "Front Raises",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 15,
+          "afterKg": 0,
+          "oldDisplay": "15kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 40,
+          "afterKg": 0,
+          "oldDisplay": "40kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 70,
+          "afterKg": 0,
+          "oldDisplay": "70kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "rear_delt_flyes",
+      "name": "Rear Delt Flyes",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 8,
+          "afterKg": 0,
+          "oldDisplay": "8kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 12,
+          "afterKg": 0,
+          "oldDisplay": "12kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 16,
+          "afterKg": 0,
+          "oldDisplay": "16kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "t_bar_row",
+      "name": "T-Bar Row",
+      "unit": "total_bar",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 25,
+          "afterKg": 0,
+          "oldDisplay": "25kg · 7 reps · Total bar weight.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 45,
+          "afterKg": 0,
+          "oldDisplay": "45kg · 7 reps · Total bar weight.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 75,
+          "afterKg": 0,
+          "oldDisplay": "75kg · 7 reps · Total bar weight.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "chest_supported_row",
+      "name": "Chest Supported Row",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 20,
+          "afterKg": 0,
+          "oldDisplay": "20kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 50,
+          "afterKg": 0,
+          "oldDisplay": "50kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 90,
+          "afterKg": 0,
+          "oldDisplay": "90kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "one_arm_row",
+      "name": "One-Arm Row",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 20,
+          "afterKg": 0,
+          "oldDisplay": "20kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 50,
+          "afterKg": 0,
+          "oldDisplay": "50kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 90,
+          "afterKg": 0,
+          "oldDisplay": "90kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "goblet_squat",
+      "name": "Goblet Squat",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 30,
+          "afterKg": 0,
+          "oldDisplay": "30kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 80,
+          "afterKg": 0,
+          "oldDisplay": "80kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 140,
+          "afterKg": 0,
+          "oldDisplay": "140kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "leg_extensions",
+      "name": "Leg Extensions",
+      "unit": "machine_total",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 8,
+          "afterKg": 0,
+          "oldDisplay": "8kg · 7 reps · Cable / stack weight.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 12,
+          "afterKg": 0,
+          "oldDisplay": "12kg · 7 reps · Cable / stack weight.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 16,
+          "afterKg": 0,
+          "oldDisplay": "16kg · 7 reps · Cable / stack weight.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "step_ups",
+      "name": "Step-ups",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 30,
+          "afterKg": 0,
+          "oldDisplay": "30kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 80,
+          "afterKg": 0,
+          "oldDisplay": "80kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 140,
+          "afterKg": 0,
+          "oldDisplay": "140kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "reverse_lunges",
+      "name": "Reverse Lunges",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 30,
+          "afterKg": 0,
+          "oldDisplay": "30kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 80,
+          "afterKg": 0,
+          "oldDisplay": "80kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 140,
+          "afterKg": 0,
+          "oldDisplay": "140kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "trap_bar_deadlift",
+      "name": "Trap Bar Deadlift",
+      "unit": "unspecified",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 40,
+          "afterKg": 0,
+          "oldDisplay": "40kg · 7 reps",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 100,
+          "afterKg": 0,
+          "oldDisplay": "100kg · 7 reps",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 180,
+          "afterKg": 0,
+          "oldDisplay": "180kg · 7 reps",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "single_leg_rdl",
+      "name": "Single Leg Romanian Deadlift",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 40,
+          "afterKg": 0,
+          "oldDisplay": "40kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 100,
+          "afterKg": 0,
+          "oldDisplay": "100kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 180,
+          "afterKg": 0,
+          "oldDisplay": "180kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "skull_crushers",
+      "name": "Skull Crushers",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 20,
+          "afterKg": 0,
+          "oldDisplay": "20kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 20,
+          "afterKg": 0,
+          "oldDisplay": "20kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 35,
+          "afterKg": 0,
+          "oldDisplay": "35kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "concentration_curl",
+      "name": "Concentration Curl",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 8,
+          "afterKg": 0,
+          "oldDisplay": "8kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 15,
+          "afterKg": 0,
+          "oldDisplay": "15kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 25,
+          "afterKg": 0,
+          "oldDisplay": "25kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "turkish_get_up",
+      "name": "Turkish Get-up",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 15,
+          "afterKg": 0,
+          "oldDisplay": "15kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 40,
+          "afterKg": 0,
+          "oldDisplay": "40kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 70,
+          "afterKg": 0,
+          "oldDisplay": "70kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "clean_and_press",
+      "name": "Clean and Press",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 40,
+          "afterKg": 0,
+          "oldDisplay": "40kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 100,
+          "afterKg": 0,
+          "oldDisplay": "100kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 180,
+          "afterKg": 0,
+          "oldDisplay": "180kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "calf_raises",
+      "name": "Calf Raises",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 8,
+          "afterKg": 0,
+          "oldDisplay": "8kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 12,
+          "afterKg": 0,
+          "oldDisplay": "12kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 16,
+          "afterKg": 0,
+          "oldDisplay": "16kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "seated_calf_raise",
+      "name": "Seated Calf Raise",
+      "unit": "machine_total",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 8,
+          "afterKg": 0,
+          "oldDisplay": "8kg · 7 reps · Cable / stack weight.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 12,
+          "afterKg": 0,
+          "oldDisplay": "12kg · 7 reps · Cable / stack weight.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 16,
+          "afterKg": 0,
+          "oldDisplay": "16kg · 7 reps · Cable / stack weight.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "shrugs",
+      "name": "Shrugs",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 20,
+          "afterKg": 0,
+          "oldDisplay": "20kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 20,
+          "afterKg": 0,
+          "oldDisplay": "20kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 20,
+          "afterKg": 0,
+          "oldDisplay": "20kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "upright_row",
+      "name": "Upright Row",
+      "unit": "per_dumbbell",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 20,
+          "afterKg": 0,
+          "oldDisplay": "20kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 40,
+          "afterKg": 0,
+          "oldDisplay": "40kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 70,
+          "afterKg": 0,
+          "oldDisplay": "70kg · 7 reps · Per dumbbell.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "chest_supported_t_bar_row",
+      "name": "Chest Supported T-Bar Row",
+      "unit": "total_bar",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 25,
+          "afterKg": 0,
+          "oldDisplay": "25kg · 7 reps · Total bar weight.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 45,
+          "afterKg": 0,
+          "oldDisplay": "45kg · 7 reps · Total bar weight.",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 75,
+          "afterKg": 0,
+          "oldDisplay": "75kg · 7 reps · Total bar weight.",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "sandbag_carry",
+      "name": "Sandbag Carry",
+      "unit": "bodyweight",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 15,
+          "afterKg": 0,
+          "oldDisplay": "~7 m / set · 15 kg/hand",
+          "newDisplay": "~7 m / set · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 15,
+          "afterKg": 0,
+          "oldDisplay": "~7 m / set · 15 kg/hand",
+          "newDisplay": "~7 m / set · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 15,
+          "afterKg": 0,
+          "oldDisplay": "~7 m / set · 15 kg/hand",
+          "newDisplay": "~7 m / set · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "yoke_walk",
+      "name": "Yoke Walk",
+      "unit": "bodyweight",
+      "numericChange": true,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 15,
+          "afterKg": 0,
+          "oldDisplay": "~7 m / set · 15 kg/hand",
+          "newDisplay": "~7 m / set · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 15,
+          "afterKg": 0,
+          "oldDisplay": "~7 m / set · 15 kg/hand",
+          "newDisplay": "~7 m / set · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 15,
+          "afterKg": 0,
+          "oldDisplay": "~7 m / set · 15 kg/hand",
+          "newDisplay": "~7 m / set · weight confirmation required"
+        }
+      ]
+    }
+  ],
+  "confirmationLabelOnlyChanges": [
+    {
+      "exerciseId": "assisted_pull_ups",
+      "name": "Assisted Pull-ups",
+      "unit": "assisted_bodyweight",
+      "numericChange": false,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 0,
+          "afterKg": 0,
+          "oldDisplay": "7 reps · enter a weight",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 0,
+          "afterKg": 0,
+          "oldDisplay": "7 reps · enter a weight",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 0,
+          "afterKg": 0,
+          "oldDisplay": "7 reps · enter a weight",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    },
+    {
+      "exerciseId": "dips_assisted",
+      "name": "Assisted Dips",
+      "unit": "assisted_bodyweight",
+      "numericChange": false,
+      "displayChange": true,
+      "values": [
+        {
+          "experienceLevel": "beginner",
+          "beforeKg": 0,
+          "afterKg": 0,
+          "oldDisplay": "7 reps · enter a weight",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "intermediate",
+          "beforeKg": 0,
+          "afterKg": 0,
+          "oldDisplay": "7 reps · enter a weight",
+          "newDisplay": "7 reps · weight confirmation required"
+        },
+        {
+          "experienceLevel": "advanced",
+          "beforeKg": 0,
+          "afterKg": 0,
+          "oldDisplay": "7 reps · enter a weight",
+          "newDisplay": "7 reps · weight confirmation required"
+        }
+      ]
+    }
+  ],
+  "unchanged": [
+    {
+      "exerciseId": "barbell_bench_press",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "overhead_press",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "barbell_row",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "pull_ups",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "lat_pulldown",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "squat",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "front_squat",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "deadlift",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "tricep_dips",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "tricep_pushdown",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "barbell_curl",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "plank",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "farmer_walk",
+      "unit": "per_hand"
+    },
+    {
+      "exerciseId": "burpees",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "running",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "rowing_machine",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "incline_bench_press",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "cable_row",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "face_pulls",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "leg_press",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "good_mornings",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "hip_thrust",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "dead_bug",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "russian_twist",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "battle_ropes",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "assault_bike",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "bike",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "decline_bench_press",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "push_ups",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "chest_press_machine",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "cable_chest_flyes",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "pike_push_ups",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "chin_ups",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "cable_pulldown_wide",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "close_grip_pulldown",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "hack_squat",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "sumo_deadlift",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "glute_ham_raise",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "nordic_curls",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "close_grip_bench_press",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "diamond_push_ups",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "rope_tricep_pushdown",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "preacher_curl",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "cable_curl",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "side_plank",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "bird_dog",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "pallof_press",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "ab_wheel_rollout",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "suitcase_carry",
+      "unit": "per_hand"
+    },
+    {
+      "exerciseId": "waiters_walk",
+      "unit": "per_hand"
+    },
+    {
+      "exerciseId": "jumping_jacks",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "mountain_climbers",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "jump_rope",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "elliptical",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "stair_climber",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "thruster",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "wall_balls",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "box_jumps",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "sled_push",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "snatch",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "overhead_squat",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "zercher_squat",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "pistol_squat",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "cossack_squat",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "hip_abduction",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "hip_adduction",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "pendlay_row",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "meadows_row",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "inverted_row",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "archer_pull_ups",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "weighted_pull_ups",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "neutral_grip_pulldown",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "straight_arm_pulldown",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "landmine_press",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "bradford_press",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "handstand_push_ups",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "weighted_dips",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "bench_dips",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "cable_overhead_extension",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "spider_curl",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "cable_hammer_curl",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "21s",
+      "unit": "total_bar"
+    },
+    {
+      "exerciseId": "hanging_leg_raise",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "knee_raises",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "cable_crunch",
+      "unit": "cable_stack"
+    },
+    {
+      "exerciseId": "reverse_crunch",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "bear_crawl",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "crab_walk",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "sled_pull",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "tire_flip",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "sledgehammer",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "rope_climb",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "muscle_ups",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "dragon_flag",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "human_flag",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "l_sit",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "front_lever",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "back_lever",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "planche",
+      "unit": "bodyweight"
+    },
+    {
+      "exerciseId": "handstand",
+      "unit": "bodyweight"
+    }
+  ],
+  "historyRead": {
+    "rowsScanned": 23,
+    "sessionsScanned": 3,
+    "operatorScopedReadOnly": true,
+    "perDumbbellRows": [
+      {
+        "exerciseId": "shrugs",
+        "plannedWeights": [
+          20
+        ],
+        "performedWeights": [
+          20
+        ],
+        "matchedPopulationLevels": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ],
+        "completedSession": true,
+        "explicitDefaultSourceRecorded": false
+      },
+      {
+        "exerciseId": "lateral_raises",
+        "plannedWeights": [
+          12
+        ],
+        "performedWeights": [
+          12
+        ],
+        "matchedPopulationLevels": [
+          "intermediate"
+        ],
+        "completedSession": true,
+        "explicitDefaultSourceRecorded": false
+      },
+      {
+        "exerciseId": "dumbbell_curl",
+        "plannedWeights": [
+          15
+        ],
+        "performedWeights": [
+          15
+        ],
+        "matchedPopulationLevels": [
+          "intermediate"
+        ],
+        "completedSession": true,
+        "explicitDefaultSourceRecorded": false
+      },
+      {
+        "exerciseId": "bulgarian_split_squat",
+        "plannedWeights": [
+          80
+        ],
+        "performedWeights": [],
+        "matchedPopulationLevels": [
+          "intermediate"
+        ],
+        "completedSession": true,
+        "explicitDefaultSourceRecorded": false
+      },
+      {
+        "exerciseId": "dumbbell_shoulder_press",
+        "plannedWeights": [
+          70
+        ],
+        "performedWeights": [
+          70
+        ],
+        "matchedPopulationLevels": [
+          "advanced"
+        ],
+        "completedSession": true,
+        "explicitDefaultSourceRecorded": false
+      },
+      {
+        "exerciseId": "front_raises",
+        "plannedWeights": [
+          70
+        ],
+        "performedWeights": [
+          70
+        ],
+        "matchedPopulationLevels": [
+          "advanced"
+        ],
+        "completedSession": true,
+        "explicitDefaultSourceRecorded": false
+      },
+      {
+        "exerciseId": "lateral_raises",
+        "plannedWeights": [
+          16
+        ],
+        "performedWeights": [
+          16
+        ],
+        "matchedPopulationLevels": [
+          "advanced"
+        ],
+        "completedSession": true,
+        "explicitDefaultSourceRecorded": false
+      }
+    ],
+    "rowsMatchingAffectedPopulationValues": 7,
+    "attribution": "Numeric matches are candidates only. Historical source metadata is absent; neither a barbell-default origin nor absence of past contamination can be proven from these rows. No history was changed."
+  }
+}

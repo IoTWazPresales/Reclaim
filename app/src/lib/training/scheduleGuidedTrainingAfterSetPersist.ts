@@ -62,6 +62,7 @@ export function formatSetPromptBody(next: NonNullable<TrainingNotificationNext>)
         formatPlannedSetSummary(exercise, {
           targetReps: next.targetReps,
           suggestedWeight: next.suggestedWeight ?? 0,
+          loadRequiresConfirmation: next.loadRequiresConfirmation,
         }),
       );
     } else if (next.suggestedWeight && next.suggestedWeight > 0) {

@@ -6,7 +6,9 @@ import { fractionalSetsFromPlans } from '../weeklyVolumeModel';
 import type { BuildSessionInput, SessionPlan } from '../types';
 
 const base: BuildSessionInput = {
-  prescriptionPolicy: 'v1', // Historical eedb704 replay: retain the exact v1 snapshots.
+  // Replay v1 volume/placement; new builds use the unit-safe load correction.
+  // Already frozen set values are preserved in the separate snapshot tests below.
+  prescriptionPolicy: 'v1',
   template: 'upper',
   goals: { build_muscle: 1 },
   constraints: {

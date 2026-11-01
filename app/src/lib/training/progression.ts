@@ -78,20 +78,22 @@ export function getWeightStep(exercise: Exercise): number {
  * Get minimum weight for exercise (empty bar/dumbbell minimum)
  */
 export function getMinimumWeight(exercise: Exercise): number {
+  const mode = getExerciseLoadingProfile(exercise).loadDisplayMode;
   // Bodyweight exercises
   if (exercise.equipment.length === 0) return 0;
 
   // Barbell exercises
-  if (exercise.equipment.includes('barbell')) return 20; // empty bar
+  if (mode === 'total_bar' && exercise.equipment.includes('barbell')) return 20; // empty bar
 
   // Dumbbell exercises
-  if (exercise.equipment.includes('dumbbells')) return 2.5; // smallest plate
+  if (mode === 'per_dumbbell' && exercise.equipment.includes('dumbbells')) return 2.5; // smallest plate
 
   // Machine exercises
-  if (exercise.equipment.some((e) => e.includes('machine'))) return 5;
+  if (mode === 'cable_stack' && exercise.equipment.some((e) => e.includes('machine'))) return 5;
 
   // Default
-  return 2.5;
+  // No positive floor is defined in this unit; never reuse a generic kilogram.
+  return 0;
 }
 
 /**

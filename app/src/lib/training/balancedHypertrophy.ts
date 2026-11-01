@@ -1,4 +1,5 @@
 import { isQualifiedPerformance } from './performanceHistory';
+import { annotateLoadConfirmation } from './loadConfirmation';
 /**
  * Balanced hypertrophy week. One owner per exercise.
  * Heavy and follow-up set counts are the goal blend. Supporting work is 3.
@@ -309,7 +310,7 @@ export function buildBalancedProgramSession(input: {
     };
   });
 
-  return {
+  return annotateLoadConfirmation({
     id: `session_${Date.now()}`,
     template: input.template,
     goals,
@@ -332,5 +333,5 @@ export function buildBalancedProgramSession(input: {
     sessionLabel: input.label,
     programmeValidation: { policyVersion: 'legacy-balanced-v1', status: issues.some((issue) => issue.severity === 'error') ? 'infeasible' : 'legacy', issues },
     ...(input.weekIndex !== undefined ? { weekIndex: input.weekIndex } : {}),
-  };
+  });
 }

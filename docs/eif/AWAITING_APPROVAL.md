@@ -1,5 +1,9 @@
 # Awaiting visual approval — PRG-20260917T222550
 
+## RA-016 ? new-build load confirmation (2026-11-01)
+
+**Visible changes recorded; Android renders UNABLE_TO_VERIFY.** The operator explicitly excluded Android, live writes, migrations and EIF acceptance. No emulator/ADB/capture methods were attempted and no older render represents this fix. Blank-baseline dumbbell loads now show confirmation instead of copied barbell kilograms. Focus/rest/overlay/edit and notification flows preserve this state; unknown Done cannot log a set. Supported barbell/stack/per-hand sources and old frozen prescriptions retain their behavior. Automated component rendering and separate source review do not constitute Android approval. [Evidence and full changed-exercise list](../training/recovery/evidence/ra016-default-load-units-20261101.md). Manual record only; no EIF acceptance/approval event invoked. Later operator approval remains required before shipping.
+
 ## N-0070 Android 2026-11-01 - stopped on load-unit finding
 
 Operator accepted embedded provenance by elimination; Monday-Friday saved with Strength, 40/40/10/10 goals and blank visible baselines unchanged. New weekly review unresolved/33 warnings/0 errors; old replay has different inputs. Runtime reproduces RA-016: Dumbbell Bench Press 60 kg **per dumbbell**, while barbell bench uses shared 60 kg **total bar** default. Stopped before session/set creation; no cleanup needed. Remaining steps incomplete; no acceptance or shipping approval. [Result](../../.eif/audit/N-0070/android-20261101/operator-accepted-result.md). Focused review renders remain local in that directory's `review-renders/`. Public wrapper queue result recorded in the evidence after invocation.

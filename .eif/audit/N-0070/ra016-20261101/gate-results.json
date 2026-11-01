@@ -1,0 +1,82 @@
+{
+  "baseline": "6403453",
+  "full": {
+    "command": "npm test -- --reporter=verbose",
+    "exitCode": 0,
+    "filesPassed": 207,
+    "testsPassed": 1519,
+    "seconds": 425.01,
+    "sharded": false
+  },
+  "focusedBeforeFinalCopyAndCarryHint": {
+    "filesPassed": 10,
+    "testsPassed": 231
+  },
+  "focusedFinal": {
+    "filesPassed": 8,
+    "testsPassed": 82,
+    "exitCode": 0
+  },
+  "independentFinalFocused": {
+    "filesPassed": 3,
+    "testsPassed": 31,
+    "decision": "APPROVE, source only"
+  },
+  "typecheck": {
+    "command": "npm run typecheck",
+    "exitCode": 0
+  },
+  "dualPath": {
+    "command": "npm run audit:training-dual-paths (Git Bash)",
+    "passed": 31,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "catalogueQA": {
+    "command": "npm run med-catalog-qa",
+    "rows": 357,
+    "governanceIssues": 0,
+    "exitCode": 0
+  },
+  "wrapper": {
+    "command": "python -m pytest scripts/test_eif_node.py -q",
+    "passed": 3,
+    "exitCode": 0
+  },
+  "catalogueDefaultAudit": {
+    "exercises": 137,
+    "numericChanges": 35,
+    "labelOnlyChanges": 2
+  },
+  "rawLocalLogHashes": {
+    "focused-reviewed.local.txt": {
+      "sha256": "05d731d03f87e8b2d1f9b8d5fa171219ee6b6e32c05012e7f2455efb95583f41",
+      "committed": false
+    },
+    "focused-approved.local.txt": {
+      "sha256": "b36ce39d114c7a0d7cfce590c2100a513a6e2e2e0ea4248403bc06515258e673",
+      "committed": false
+    },
+    "full-vitest-approved.local.txt": {
+      "sha256": "e457eba11fb2b608bff9d8e6d69d43d929a3eded11f94a0b655d8abc9f439c33",
+      "committed": false
+    },
+    "typecheck-approved.local.txt": {
+      "sha256": "cd35ebdba9e12b61678eec835bf92424979bd88f78501689ba82b1dffbf391cc",
+      "committed": false
+    },
+    "dual-path-final.local.txt": {
+      "sha256": "0dd8080c5e0bde3107071dfa1f145f876ad93f92ff87b4e949a572755b35748b",
+      "committed": false
+    },
+    "catalogue-qa-final.local.txt": {
+      "sha256": "2ffd0aad38c448e4dcc691cc363bea82d1eec7aeebaede9235f29ec4a384446b",
+      "committed": false
+    },
+    "wrapper.local.txt": {
+      "sha256": "a4ef3c3b8cab8c39edaa4355d232a3e9d311c7995abe766f70f6db6fdc04f689",
+      "committed": false
+    }
+  },
+  "limits": "Working-tree full gate includes existing tests; unrelated edits excluded from commit. No Android/live writes/migrations/EIF acceptance. Raw logs not committed."
+}

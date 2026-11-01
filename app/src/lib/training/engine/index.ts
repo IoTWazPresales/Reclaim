@@ -13,6 +13,7 @@ import {
 } from '../progression';
 import { isQualifiedPerformance } from '../performanceHistory';
 import { getExerciseLoadingProfile } from '../exerciseLoadingProfile';
+import { annotateLoadConfirmation } from '../loadConfirmation';
 import { resolveExperienceLevel } from '../experienceLevel';
 import { applyOptionalAdaptiveLoadBias } from '../adaptiveLoadBias';
 import { anchoredWorkingKg, CARRY_FINISHER_METERS, NOVICE_CARRY_KG_PER_HAND } from '../anchorLoad';
@@ -967,10 +968,15 @@ export function suggestLoading(input: SuggestLoadingInput): number {
 
   const earlyProfile = getExerciseLoadingProfile(exercise);
   if (earlyProfile.prescriptionType === 'carry_distance') {
-    return finish(NOVICE_CARRY_KG_PER_HAND);
+    return earlyProfile.loadDisplayMode === 'per_hand' ? finish(NOVICE_CARRY_KG_PER_HAND) : 0;
   }
 
+  // The existing free-weight table is total-bar kg; the machine table is
+  // stack kg (the lat-pulldown/cable-row source). Neither defines DB/hand kg.
+  // ROUTINE_AUDIT.md, 9 Oct: a different unit never copies a barbell kilogram.
+  const populationUnit = isMachineBiased(exercise) ? 'cable_stack' : 'total_bar';
   const fromAnchor = (populationKg: number) => {
+    if (earlyProfile.loadDisplayMode !== populationUnit) return 0;
     const anchored = anchoredWorkingKg(exercise, userState, plannedReps, populationKg);
     return finish(anchored ?? populationKg);
   };
@@ -1059,8 +1065,8 @@ export function suggestLoading(input: SuggestLoadingInput): number {
   if (!intentDefaults) {
     // For bodyweight exercises, always return 0 (weight is your body)
     if (isBW) return finish(0);
-    const minWeight = getMinimumWeight(exercise);
-    return fromAnchor(Math.max(0, minWeight));
+    // A physical minimum is not a generic starting prescription.
+    return 0;
   }
 
   let defaultWeight: number;
@@ -1703,7 +1709,7 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
   }, 0);
   const estimatedDurationMinutes = warmupMinutes + perExerciseMinutes + cooldownMinutes;
 
-  return {
+  return annotateLoadConfirmation({
     id: `session_${Date.now()}`,
     template,
     goals,
@@ -1716,7 +1722,7 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     ...(skippedRequiredIntents.size > 0
       ? { skippedOverrideIntents: [...skippedRequiredIntents] as MovementIntent[] }
       : {}),
-  };
+  });
 }
 
 // ============================================================================

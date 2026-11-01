@@ -1,4 +1,5 @@
 import { isQualifiedPerformance } from './performanceHistory';
+import { annotateLoadConfirmation } from './loadConfirmation';
 import catalogData from './catalog/exercises.v1.json';
 import { SESSION_MINUTE_CAP, SESSION_SET_CAP } from './balancedHypertrophy';
 import { evaluateExerciseEligibility } from './exerciseEligibility';
@@ -71,7 +72,7 @@ export function buildAllocatedProgramSession(input: {
     ? capNewSession(exercises, undefined, SESSION_MINUTE_CAP, exercises.map(ex => allocation.slots.find(s => s.exerciseId === ex.exerciseId)!.owner), exercises.map(ex => allocation.slots.find(s => s.exerciseId === ex.exerciseId)!.compound ? 8 : 3))
     : { exercises, issues: [], estimatedDurationMinutes: 10 + allocation.slots.filter(slot => slot.exerciseId).reduce((n, slot) => n + (slot.compound ? 8 : 3), 0) };
   issues.push(...capped.issues);
-  return {
+  return annotateLoadConfirmation({
     id: `session_${Date.now()}`, template: input.template, goals: profile.goals,
     constraints: { availableEquipment: profile.equipment_access, injuries: profile.constraints?.injuries ?? [], forbiddenMovements: (profile.constraints?.forbiddenMovements ?? []) as SessionPlan['constraints']['forbiddenMovements'], preferences: profile.constraints?.preferences, timeBudgetMinutes: SESSION_MINUTE_CAP },
     userState: { experienceLevel: profile.experienceLevel ?? 'beginner', estimated1RM: profile.baselines, performanceHistory: profile.performanceHistory, lastSessionPerformance: profile.lastSessionPerformance, recentSessionPerformance: profile.recentSessionPerformance },
@@ -80,5 +81,5 @@ export function buildAllocatedProgramSession(input: {
     estimatedDurationMinutes: capped.estimatedDurationMinutes,
     createdAt: new Date().toISOString(), sessionLabel: input.label, weekIndex: input.weekIndex,
     programmeValidation: { policyVersion: allocation.policyVersion, status: issues.some((issue) => issue.severity === 'error') ? 'infeasible' : 'feasible', issues },
-  };
+  });
 }

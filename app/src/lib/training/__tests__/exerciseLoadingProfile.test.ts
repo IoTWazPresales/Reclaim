@@ -20,7 +20,7 @@ const fullEquipment: TrainingConstraints = {
 };
 
 describe('exercise loading profile (Phase 1)', () => {
-  it('lateral raise uses shoulder isolation loading, not vertical press / compound press scale', () => {
+  it('lateral raise keeps shoulder classification but requires its own per-dumbbell load source', () => {
     const lat = getExerciseById('lateral_raises');
     expect(lat).not.toBeNull();
     const w = suggestLoading({
@@ -30,9 +30,11 @@ describe('exercise loading profile (Phase 1)', () => {
       plannedReps: 12,
       priority: 'isolation',
     });
-    expect(w).toBeGreaterThanOrEqual(6);
-    expect(w).toBeLessThanOrEqual(20);
+    expect(w).toBe(0); // The generic shoulder free-weight row is total-bar kg.
     expect(getExerciseLoadingProfile(lat!).loadingIntentKey).toBe('shoulder_isolation');
+    expect(getExerciseLoadingProfile(lat!).loadDisplayMode).toBe('per_dumbbell');
+    expect(suggestLoading({ exercise: lat!, userState: { ...intermediate, estimated1RM: { lateral_raises: 20 } },
+      goalWeights: goalsBuild, plannedReps: 12, priority: 'isolation' })).toBeGreaterThan(0);
   });
 
   it('thruster default load is a hybrid, not full squat default', () => {

@@ -145,7 +145,9 @@ export function computePreviewSummary(plan: SessionPlan | null): PreviewSummary 
   // Extract deterministic example snippet (first exercise, first set)
   const firstExercise = plan.exercises[0];
   const exampleSnippet = firstExercise
-    ? `${firstExercise.exercise.name}: ${firstExercise.plannedSets[0]?.targetReps || 0} reps @ ${firstExercise.plannedSets[0]?.suggestedWeight || 0}kg`
+    ? firstExercise.plannedSets[0]?.loadRequiresConfirmation
+      ? `${firstExercise.exercise.name}: weight confirmation required`
+      : `${firstExercise.exercise.name}: ${firstExercise.plannedSets[0]?.targetReps || 0} reps @ ${firstExercise.plannedSets[0]?.suggestedWeight || 0}kg`
     : 'No exercises generated';
 
   return {

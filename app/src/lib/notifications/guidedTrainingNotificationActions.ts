@@ -235,6 +235,14 @@ export async function handleGuidedTrainingNotificationAction({
         }
 
         const target = chain.next;
+        if (verb === 'SET_DONE' && target.loadRequiresConfirmation) {
+          logger.debug('[GUIDED_NOTIF_ACTION] Confirm the exercise load on the phone before Done', { sessionId });
+          // This response was consumed without completing work. Replaying it
+          // after an edit must never complete a different or now-loaded set.
+          await markActionProcessed(key);
+          safeNavigate('App', { screen: 'Training' });
+          return true;
+        }
         const { sessionItemId, exerciseId, setIndex } = target;
 
         traceGuidedTransition({

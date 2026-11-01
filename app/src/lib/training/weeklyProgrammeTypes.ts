@@ -11,6 +11,7 @@ export type ProgrammeIssue = {
   message: string;
   dayKey?: string;
   slotId?: string;
+  exerciseId?: string;
 };
 export type WeeklyRequirement = {
   id: string;

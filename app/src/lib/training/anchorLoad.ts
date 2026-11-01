@@ -4,6 +4,7 @@
  */
 import type { Exercise, UserState } from './types';
 import { epleyWorkingWeightCeiling, getWeightStep } from './progression';
+import { getExerciseLoadingProfile } from './exerciseLoadingProfile';
 
 /**
  * Gullett et al. reported mean 1RM values of 69.2 kg for the front squat and
@@ -75,6 +76,8 @@ export function anchoredWorkingKg(
 ): number | null {
   const anchorId = anchorExerciseId(exercise.id);
   if (!anchorId || anchorId === exercise.id) return null;
+  // These entered anchor IDs are total-bar loads, not DB/hand/stack loads.
+  if (getExerciseLoadingProfile(exercise).loadDisplayMode !== 'total_bar') return null;
   const oneRM = userState.estimated1RM?.[anchorId];
   if (!(typeof oneRM === 'number' && oneRM > 0)) return null;
 

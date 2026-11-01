@@ -1,5 +1,11 @@
 # Human checks — PRG-20260917T222550
 
+## RA-016 ? deferred device verification (2026-11-01)
+
+**UNABLE_TO_VERIFY:** Android was explicitly excluded; no device method was attempted. This is a manual future-check record, not an EIF acceptance or permission to write live data now.
+
+With later operator authorization, prove loaded-code identity, preserve real settings and verify a newly built blank-baseline Intermediate Strength plan: barbell bench keeps 60 kg total; dumbbell bench has no default number and requires confirmation; supported cable-stack and per-hand carry defaults retain their own units. Check preview == saved == started plan; exercise substitution across units cannot carry old kilograms. Check focus/rest/overlay/edit/notification guidance requires a load without showing 0 kg or Bodyweight for unknown external load. Confirm choosing a load permits the canonical Done flow; verify an already frozen unmarked 60 kg dumbbell item remains 60 without recomputation. Any controlled test writes and cleanup require separate runtime authorization. Do not replace the real schedule or alter history for this source task. [Evidence](../training/recovery/evidence/ra016-default-load-units-20261101.md).
+
 ## N-0070 Android operator-account journey ? UNABLE_TO_VERIFY (2026-10-30)
 
 One retained-data cold boot and stale ADB server recovery reached a booted emulator with Reclaim installed and Metro reachable. Execution policy blocked the canonical localhost dev-client launch; no retry. Only the Android startup screenshot was captured. No account writes or test work were created. Resume the operator-authorized steps 1?7 after the launch restriction is resolved: prove loaded JS source identity first; stop if an older session is open; save setup, compare all five days to replay, inspect confirmation/leg-press explanations, start/freeze/check guidance, log at most one set and Cancel & delete with persisted-history verification. Do not infer these from the boot image. [Evidence and exact limitations](../../.eif/audit/N-0070/android-20261030/result.md). Await-approval registration succeeded, without acceptance.

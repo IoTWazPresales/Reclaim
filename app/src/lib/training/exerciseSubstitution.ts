@@ -4,6 +4,7 @@ import { getExerciseById, listExercises, suggestLoading, getRepRange, getExercis
 import { getExerciseLoadingProfile } from './exerciseLoadingProfile';
 import { evaluateExerciseEligibility } from './exerciseEligibility';
 import { isQualifiedPerformance } from './performanceHistory';
+import { requiresLoadConfirmation } from './loadConfirmation';
 import type { Exercise, ExercisePriority, MovementIntent, TrainingProfileSnapshot, UserState } from './types';
 
 /** Current saved restrictions/preferences, not an older programme/session snapshot. */
@@ -68,7 +69,9 @@ export function prescribeReplacement(item: TrainingSessionItemRow, replacement: 
     : bodyweight ? 'Bodyweight replacement; no external load transferred.'
       : explainAppliedProgression(replacement, userState, repRange, suggestedWeight, targetReps) ?? 'Uses this replacement exercise own baseline.';
   return {
-    sets: item.planned.sets.map(set => ({ setIndex: set.setIndex, targetReps, suggestedWeight, restSeconds: getRestSeconds(priority, profile.goals) })),
+    sets: item.planned.sets.map(set => ({ setIndex: set.setIndex, targetReps, suggestedWeight,
+      ...(requiresLoadConfirmation(replacement, suggestedWeight, userState) ? { loadRequiresConfirmation: true } : {}),
+      restSeconds: getRestSeconds(priority, profile.goals) })),
     priority, intents: [...replacement.intents],
     decisionTrace: {
       intent: slotIntents(item), selectionReason: 'User selected an eligible replacement for this session.',
