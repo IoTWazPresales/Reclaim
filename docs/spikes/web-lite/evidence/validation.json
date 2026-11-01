@@ -1,0 +1,66 @@
+{
+  "date": "2026-11-02",
+  "branch": "spike/web-lite",
+  "baseCommit": "06dcbe9dfe250f17824234ac438f5fb1c498b8e3",
+  "webExport": {
+    "command": "npx expo export -p web --max-workers 2",
+    "exitCode": 0,
+    "modules": 989,
+    "assets": 31,
+    "jsBundles": 11,
+    "appEntryApproxUncompressedMB": 2.07
+  },
+  "types": {
+    "command": "npm run typecheck",
+    "exitCode": 0,
+    "errors": 0
+  },
+  "unit": {
+    "command": "npm test -- --reporter=verbose --sequence.shuffle.files --sequence.seed=20261102",
+    "exitCode": 0,
+    "filesPassed": 209,
+    "testsPassed": 1533,
+    "configuredTestTimeoutMs": 30000,
+    "individualTestOrderChanged": false
+  },
+  "focusedCanonicalWriter": {
+    "passed": 4
+  },
+  "focusedWebOfflineGuard": {
+    "passed": 2
+  },
+  "trainingDualPaths": {
+    "passed": 31,
+    "failed": 0,
+    "shell": "Git Bash"
+  },
+  "medCatalogue": {
+    "rows": 357,
+    "governanceIssues": 0
+  },
+  "eifWrapperSmoke": {
+    "skipped": 3,
+    "reason": "Runtime absent in isolated worktree; no EIF mutation"
+  },
+  "sourceIsolation": {
+    "existingAppFilesChanged": [],
+    "fixBranchHeadUnchanged": true,
+    "contextPrependOnly": true,
+    "packageOrNativeConfigChanges": false,
+    "androidBinaryCompared": false
+  },
+  "credentialScan": {
+    "stagedFilesAndExport": "PASS",
+    "anonKeyExposure": "Expected browser public key; no server key or private auth credential present"
+  },
+  "stagedSourceSha256": {
+    "app/App.web.tsx": "1700568eba827fccf4f74ef839c8a2bb6100d7c5834eede11ed503313ece7a5f",
+    "app/src/components/training/SessionPreviewModal.web.tsx": "259f2361fa3197d31e85f7b870f5d8baf5570691e47696a35b1b8276da374625",
+    "app/src/lib/localData/database.web.ts": "ac4ae6590a7e52e234a63c9f9d8252fb1831a4eeaf6244c80318d9421b53a260",
+    "app/src/lib/logger.web.ts": "6e7164224f47a6f5b0940356954692ea4b040dafd4ddb167a405e3d88d7eabbe",
+    "app/src/lib/training/offlineQueue.web.ts": "4e143898cad9a752a6de46fffa3d3c8881da7ac62c3196ef6ac2e35d4e31b10c",
+    "app/src/web/WebLiteApp.tsx": "8bf8eb3a9c1d9e776c22a4b0e0a5302580c76919b97a1bb7241513d010b5df33",
+    "app/src/web/WebTraining.tsx": "71e63bea552fba204594c814b013a98b2a72db165cefdd3ae5c3c706d0a62544",
+    "app/src/web/__tests__/webOfflineQueue.test.ts": "c1623242346bb881aea0d4d8b0d09e515ed2e2eebe38bcc3081c846e308a9f16"
+  }
+}

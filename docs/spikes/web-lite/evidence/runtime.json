@@ -1,0 +1,125 @@
+{
+  "date": "2026-11-02",
+  "desktopViewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "phoneSizeViewport": {
+    "width": 390,
+    "height": 844
+  },
+  "engine": "Playwright-controlled Chromium on Windows; no physical iPhone claim",
+  "account": "Operator account explicitly authorized by subsequent user instruction; no new user created",
+  "setup": {
+    "stepsThroughFinalSave": "PASS",
+    "saved": false,
+    "reason": "Preserve active operator programme"
+  },
+  "manual": {
+    "status": "PASS",
+    "runtimeErrors": [],
+    "reloadRetainsCanonicalSet": true,
+    "offlineRejected": true,
+    "noBrowserOfflineQueue": true,
+    "canonicalReadback": {
+      "frozenItems": 6,
+      "performedSets": [
+        {
+          "setIndex": 1,
+          "weight": 12,
+          "reps": 3
+        },
+        {
+          "setIndex": 2,
+          "weight": 13,
+          "reps": 4
+        }
+      ],
+      "setLogRows": 2,
+      "loggedEvents": 2
+    },
+    "horizontalOverflow": false,
+    "restoration": {
+      "training_profiles": {
+        "before": 1,
+        "after": 1,
+        "byteEqual": true
+      },
+      "training_program_instances": {
+        "before": 3,
+        "after": 3,
+        "byteEqual": true
+      },
+      "training_program_days": {
+        "before": 48,
+        "after": 48,
+        "byteEqual": true
+      },
+      "training_sessions": {
+        "before": 5,
+        "after": 5,
+        "byteEqual": true
+      },
+      "training_session_items": {
+        "before": 14,
+        "after": 14,
+        "byteEqual": true
+      },
+      "training_set_logs": {
+        "before": 18,
+        "after": 18,
+        "byteEqual": true
+      }
+    },
+    "cleanupPass": true,
+    "temporarySessionsRemoved": 1,
+    "temporaryEventsRemoved": 2
+  },
+  "rls": {
+    "scope": "Anonymous SELECT denial for known operator-owned rows; no cross-user or write-denial certification",
+    "tables": {
+      "training_profiles": {
+        "status": 200,
+        "rows": 0,
+        "denied": true
+      },
+      "training_program_instances": {
+        "status": 200,
+        "rows": 0,
+        "denied": true
+      },
+      "training_program_days": {
+        "status": 200,
+        "rows": 0,
+        "denied": true
+      },
+      "training_sessions": {
+        "status": 200,
+        "rows": 0,
+        "denied": true
+      },
+      "training_session_items": {
+        "status": 200,
+        "rows": 0,
+        "denied": true
+      },
+      "training_set_logs": {
+        "status": 200,
+        "rows": 0,
+        "denied": true
+      }
+    }
+  },
+  "signout": {
+    "runtimeErrors": [],
+    "scope": "local",
+    "signedOutAfterReload": true,
+    "authStorageCleared": true
+  },
+  "webkit": {
+    "engine": "Playwright WebKit on Windows; not physical iPhone Safari",
+    "status": "UNABLE_TO_VERIFY",
+    "runtimeErrors": [],
+    "failure": "browser.newContext: Error setting storage state:\nProtocol error (Console.enable): 'Console' domain was not found"
+  }
+}
