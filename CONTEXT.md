@@ -1,3 +1,13 @@
+## 2026-11-02 - Web friend beta on isolated spike branch
+
+Work is confined to C:/Reclaim-web-lite on spike/web-lite. Added email/password
+signup, explicit browser auth storage, safe-area/keyboard viewport handling and
+canonical performed-set history. Full gate 1534/209 passes; simulated browser
+journey passes without live writes. Dedicated email confirmation/live journey and
+physical Safari remain pending. Preliminary EAS preview only; no production alias,
+Supabase settings, operator programme writes or EIF acceptance. See
+`docs/spikes/web-lite/FRIEND_BETA.md` and its validation inventory.
+
 ## 2026-11-02 - Web Lite feasibility spike (separate branch)
 
 Isolated spike/web-lite worktree based on 06dcbe9; fix/training-confident-ux remains unchanged. New web-only entry/adapters export and run online manual training against real Supabase. Desktop and 390x844 Chromium: one-time-link sign-in, weekly plan, setup steps through Save, preview, canonical applySetCompletion/performed.sets logging, reload, explicit offline rejection and local-scope sign-out verified. Operator explicitly authorized use of the operator account; setup was not saved to preserve the active programme. Temporary test sessions/items/logs/events removed and six-table full-row snapshots restored. Real iPhone Safari, token expiry, password/OAuth, setup-save and cross-user RLS remain unverified. Native app source/config/dependencies unchanged; no Android binary identity claim. No deployment, schema/policy changes or EIF acceptance. Report and validation/failure receipts: docs/spikes/web-lite/README.md. The separate programme resumes from docs/eif/PROGRESS.md as before.

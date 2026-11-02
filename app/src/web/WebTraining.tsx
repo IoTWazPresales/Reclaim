@@ -60,6 +60,8 @@ export default function WebTraining({ userId }: { userId: string }) {
   const [preview, setPreview] = useState<{ day: ProgramDayRow; plan: SessionPlan } | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyId, setHistoryId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const programme = useQuery({ queryKey: ['web-lite', userId, 'programme'], queryFn: async () => {
     const program = await getActiveProgramInstance();
@@ -67,6 +69,8 @@ export default function WebTraining({ userId }: { userId: string }) {
     const [days, seed] = await Promise.all([getProgramDays(program.id), loadTrainingPerformanceSeed()]);
     return { program, days, profile: withTrainingPerformanceSeed(program.profile_snapshot, seed) };
   }});
+  const history = useQuery({ queryKey: ['web-lite', userId, 'history'], queryFn: () => listTrainingSessions(50) });
+  const historySession = useQuery({ queryKey: ['web-lite', userId, 'history', historyId], queryFn: () => getTrainingSession(historyId!), enabled: !!historyId });
   const programId = programme.data?.program.id;
   useEffect(() => {
     if (!programme.data) return;
@@ -97,7 +101,7 @@ export default function WebTraining({ userId }: { userId: string }) {
       if (!active.isSuccess) throw new Error('Wait for the active session check before starting.');
       if (active.data) { setSessionId(active.data); setPreview(null); return; }
       assertStartableProgramme(preview.plan);
-      const id = `web_lite_${crypto.randomUUID()}`;
+      const id = `web_lite_${(globalThis.crypto?.randomUUID?.() ?? `${Date.now()}_${Math.random().toString(36).slice(2)}`)}`;
       const items = materializePlannedSessionItems(id, preview.plan);
       await createTrainingSession({ id, mode: 'manual', goals: { ...preview.plan.goals },
         startedAt: new Date().toISOString(), programId: programme.data.program.id,
@@ -123,20 +127,36 @@ export default function WebTraining({ userId }: { userId: string }) {
       await updateTrainingSession(sessionId, { endedAt: new Date().toISOString() });
       setSessionId(null);
       qc.setQueryData(['web-lite', userId, 'active'], null);
-      await qc.invalidateQueries({ queryKey: ['web-lite', userId, 'programme'] });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['web-lite', userId, 'programme'] }),
+        qc.invalidateQueries({ queryKey: ['web-lite', userId, 'history'] }),
+      ]);
     } catch (reason) { setError(reason instanceof Error ? reason.message : String(reason)); }
     finally { setBusy(false); }
   }
-  if (setup) return <TrainingSetupScreen onComplete={() => {
+  if (setup) return <><Button onPress={() => setSetup(false)}>Back to weekly plan</Button><TrainingSetupScreen onComplete={() => {
     setSetup(false);
     void qc.invalidateQueries({ queryKey: ['web-lite', userId, 'programme'] });
-  }} />;
-  const queryError = programme.error || session.error || active.error;
+  }} /></>;
+  const queryError = programme.error || session.error || active.error || history.error || historySession.error;
   return <>
     <Text accessibilityRole="alert">{error || (queryError instanceof Error ? queryError.message : '')}</Text>
-    {sessionId ? <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+    {!sessionId ? <Button onPress={() => { setShowHistory(!showHistory); setHistoryId(null); }}>{showHistory ? 'Weekly plan' : 'History'}</Button> : null}
+    {showHistory && !sessionId ? <ScrollView contentContainerStyle={{ gap: 12, paddingBottom: 40 }}>
+      <Text variant="headlineSmall" accessibilityRole="header">Training history</Text>
+      {history.isPending ? <Text>Loading history...</Text> : null}
+      {history.data?.filter(value => value.ended_at).map(value => <Button key={value.id} onPress={() => setHistoryId(value.id)}>
+        {new Date(value.started_at || value.created_at).toLocaleDateString()} - Manual session
+      </Button>)}
+      {history.data && !history.data.some(value => value.ended_at) ? <Text>No finished sessions yet.</Text> : null}
+      {historyId && historySession.isPending ? <Text>Loading saved sets...</Text> : null}
+      {historySession.data?.items.map(item => <View key={item.id}>
+        <Text variant="titleMedium">{getExerciseById(item.exercise_id)?.name ?? item.exercise_id}</Text>
+        {getPerformedSetsFromItem(item).map(set => <Text key={set.setIndex}>Set {set.setIndex}: {set.weight} kg x {set.reps} reps</Text>)}
+      </View>)}
+    </ScrollView> : sessionId ? <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
       <Text variant="headlineSmall" accessibilityRole="header">Manual session</Text>
-      <Text>Log the work you performed. No rest timers or background guidance.</Text>
+      <Text>Log what you actually lift. Edit weight/reps before saving if they differ.</Text>
       {session.isPending ? <Text>Loading frozen session…</Text> : null}
       {session.data?.items.map(item => <View key={item.id} style={{ marginVertical: 16 }}>
         <Text variant="titleLarge">{getExerciseById(item.exercise_id)?.name ?? item.exercise_id}</Text>
@@ -157,7 +177,7 @@ export default function WebTraining({ userId }: { userId: string }) {
           const unavailable = !plan || plan.template === 'run';
           return <View key={day.id} style={{ paddingVertical: 12, gap: 8 }}>
             <Text variant="titleMedium">{day.date} · {day.label}</Text>
-            <Text>{unavailable ? 'Run tracking is unavailable on web.' : `${plan.exercises.length} exercises`}</Text>
+            <Text>{unavailable ? 'Not available on web: run tracking.' : `${plan.exercises.length} exercises`}</Text>
             <Button mode="outlined" disabled={unavailable || busy || !active.isSuccess} onPress={() => plan && setPreview({ day, plan })}>Preview {day.label}</Button>
           </View>;
         })}

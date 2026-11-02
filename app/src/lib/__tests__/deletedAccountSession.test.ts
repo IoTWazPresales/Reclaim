@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { startupRouteTarget } from '@/startup/startupRouteTarget';
 
-const state = vi.hoisted(() => ({ secure: new Map<string, string>(), fallback: new Map<string, string>(), failRemoval: false }));
+const state = vi.hoisted(() => ({ secure: new Map<string, string>(), fallback: new Map<string, string>(), failRemoval: false, platform: 'android' }));
+vi.mock('react-native', async importOriginal => {
+  const actual = await importOriginal<typeof import('react-native')>();
+  return { ...actual, Platform: { ...actual.Platform, get OS() { return state.platform; } } };
+});
 vi.mock('expo-secure-store', () => ({
   getItemAsync: vi.fn(async (key: string) => state.secure.get(key) ?? null),
   setItemAsync: vi.fn(async (key: string, value: string) => { state.secure.set(key, value); }),
@@ -38,7 +42,7 @@ function deferred<T>() {
 }
 beforeEach(() => {
   vi.resetModules();
-  state.secure.clear(); state.fallback.clear(); state.failRemoval = false;
+  state.secure.clear(); state.fallback.clear(); state.failRemoval = false; state.platform = 'android';
   vi.stubEnv('EXPO_PUBLIC_SUPABASE_URL', 'https://test.supabase.co');
   vi.stubEnv('EXPO_PUBLIC_SUPABASE_ANON_KEY', 'test-key');
   // Fail any unexpected network call: local deletion must not require logout connectivity.
@@ -175,4 +179,21 @@ it('real functions SDK honors an explicit captured token over its current sessio
   await client.functions.invoke('delete-account', { body: {}, headers: { Authorization: `Bearer ${token}` } });
   const request = vi.mocked(fetch).mock.calls[0][1]!;
   expect(new Headers(request.headers).get('Authorization')).toBe(`Bearer ${token}`);
+});
+
+
+it('web restores and persists password sessions in browser fallback storage without SecureStore', async () => {
+  state.platform = 'web';
+  vi.stubGlobal('window', {});
+  vi.clearAllMocks();
+  const SecureStore = await import('expo-secure-store');
+  const session = makeSession('web-friend');
+  state.fallback.set(`@reclaim/supabase/fallback/${storageKey}`, JSON.stringify(session));
+  const mod = await import('../supabase'); client = mod.supabase;
+  expect((await client.auth.getSession()).data.session?.user.id).toBe('web-friend');
+  expect(SecureStore.getItemAsync).not.toHaveBeenCalled();
+  vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 204 }));
+  expect((await client.auth.signOut({ scope: 'local' })).error).toBeNull();
+  expect(state.fallback.has(`@reclaim/supabase/fallback/${storageKey}`)).toBe(false);
+  expect(SecureStore.deleteItemAsync).not.toHaveBeenCalled();
 });

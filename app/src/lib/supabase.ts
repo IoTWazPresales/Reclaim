@@ -1,4 +1,5 @@
 // src/lib/supabase.ts
+import { Platform } from 'react-native';
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -69,6 +70,10 @@ async function removeFallbackItem(key: string) {
 // ✅ Enhanced storage with guard for large payloads
 const storage = {
   getItem: async (key: string): Promise<string | null> => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const value = await AsyncStorage.getItem(`${FALLBACK_PREFIX}${key}`);
+      return key === AUTH_STORAGE_KEY && value && belongsToDeletedAccount(value) ? null : value;
+    }
     try {
       const secureValue = await SecureStore.getItemAsync(key);
       if (secureValue !== null) {
@@ -84,6 +89,10 @@ const storage = {
     if (key === AUTH_STORAGE_KEY) assertAuthIdentityMayPersist(JSON.parse(value)?.user?.id);
     // A late refresh must not re-persist an identity the server has deleted.
     if (key === AUTH_STORAGE_KEY && belongsToDeletedAccount(value)) return;
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      await AsyncStorage.setItem(`${FALLBACK_PREFIX}${key}`, value);
+      return;
+    }
     if (value && value.length > SECURESTORE_LIMIT) {
       await setFallbackItem(key, value);
       try {
@@ -102,6 +111,10 @@ const storage = {
     }
   }),
   removeItem: (key: string): Promise<void> => serializeStorageMutation(async () => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      await AsyncStorage.removeItem(`${FALLBACK_PREFIX}${key}`);
+      return;
+    }
     try {
       await SecureStore.deleteItemAsync(key);
     } catch (error) {

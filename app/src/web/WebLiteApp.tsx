@@ -29,20 +29,14 @@ function Content() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [creatingAccount, setCreatingAccount] = useState(false);
   useEffect(() => {
     let active = true;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, next) => {
       if (active) { setSession(next); setReady(true); }
     });
     async function restoreSession() {
-      const params = new URLSearchParams(window.location.search || window.location.hash.slice(1));
-      const tokenHash = params.get('token_hash');
-      if (tokenHash && params.get('type') === 'magiclink') {
-        // Remove one-time credentials from the address bar before restoring UI.
-        window.history.replaceState(null, '', window.location.pathname);
-        const verified = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'magiclink' });
-        if (verified.error) throw verified.error;
-      }
       return supabase.auth.getSession();
     }
     void restoreSession().then(({ data, error: authError }) => {
@@ -50,10 +44,18 @@ function Content() {
     }).catch(reason => { if (active) { setError(String(reason)); setReady(true); } });
     return () => { active = false; subscription.unsubscribe(); };
   }, []);
-  async function signIn() {
-    setBusy(true); setError('');
+  async function authenticate() {
+    if (busy) return;
+    setBusy(true); setError(''); setNotice('');
     try {
-      const result = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      const credentials = { email: email.trim(), password };
+      const result = creatingAccount
+        ? await supabase.auth.signUp({ ...credentials, options: { emailRedirectTo: `${window.location.origin}/` } })
+        : await supabase.auth.signInWithPassword(credentials);
+      if (creatingAccount && !result.error && !result.data.session) {
+        setNotice('Check your email to confirm your account, then return here and sign in.');
+        setCreatingAccount(false);
+      }
       if (result.error) throw result.error;
       setPassword('');
     } catch (reason) { setError(reason instanceof Error ? reason.message : String(reason)); }
@@ -63,26 +65,45 @@ function Content() {
     const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' });
     if (signOutError) { setError(signOutError.message); return; }
     queryClient.clear();
+    setNotice('');
   }
   if (!ready) return <Text>Loading sign-in…</Text>;
-  return <View style={{ flex: 1, width: '100%', maxWidth: 1100, alignSelf: 'center', padding: 16 }}>
+  return <View style={{ flex: 1, width: '100%', maxWidth: 1100, alignSelf: 'center', padding: 16, paddingLeft: 'max(16px, env(safe-area-inset-left))' as unknown as number, paddingRight: 'max(16px, env(safe-area-inset-right))' as unknown as number, paddingTop: 'max(16px, env(safe-area-inset-top))' as unknown as number, paddingBottom: 'max(16px, env(safe-area-inset-bottom))' as unknown as number }}>
     <Text variant="headlineMedium" accessibilityRole="header">Reclaim Web Lite</Text>
-    <Text style={{ marginVertical: 12 }}>Manual training only. Guided sessions, rest alarms, notifications, Health Connect and Wear are unavailable.</Text>
+    <Text style={{ marginVertical: 12 }}>Not available on web: guided timers, notifications, rest alarms, Health Connect, Wear and offline logging.</Text>
     {error ? <Text accessibilityRole="alert">{error}</Text> : null}
+    {notice ? <Text accessibilityLiveRegion="polite">{notice}</Text> : null}
     {session ? <>
       <Button onPress={() => void signOut()}>Sign out</Button>
       <WebTraining key={session.user.id} userId={session.user.id} />
     </> : <ScrollView contentContainerStyle={{ maxWidth: 480, gap: 16, paddingVertical: 24 }}>
-      <Text variant="titleLarge">Sign in</Text>
+      <Text variant="titleLarge">{creatingAccount ? 'Create account' : 'Sign in'}</Text>
       <TextInput label="Email" accessibilityLabel="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" />
-      <TextInput label="Password" accessibilityLabel="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" onSubmitEditing={() => void signIn()} />
-      <Button mode="contained" disabled={busy || !email || !password} loading={busy} onPress={() => void signIn()}>Sign in</Button>
+      <TextInput label="Password" accessibilityLabel="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete={creatingAccount ? "new-password" : "current-password"} onSubmitEditing={() => void authenticate()} />
+      <Button mode="contained" disabled={busy || !email || !password} loading={busy} onPress={() => void authenticate()}>{creatingAccount ? 'Create account' : 'Sign in'}</Button>
+      <Button disabled={busy} onPress={() => { setCreatingAccount(!creatingAccount); setError(''); }}>{creatingAccount ? 'Already have an account? Sign in' : 'New here? Create account'}</Button>
       <Text>Training is saved to the account you sign in with.</Text>
     </ScrollView>}
   </View>;
 }
 
 export default function WebLiteApp() {
+  useEffect(() => {
+    const viewport = document.querySelector('meta[name="viewport"]');
+    const previous = viewport?.getAttribute('content');
+    viewport?.setAttribute('content', 'width=device-width, initial-scale=1, viewport-fit=cover');
+    const root = document.getElementById('root');
+    const resize = () => { if (root) root.style.height = `${window.visualViewport?.height ?? window.innerHeight}px`; };
+    resize();
+    window.addEventListener('resize', resize);
+    window.visualViewport?.addEventListener('resize', resize);
+    return () => {
+      window.removeEventListener('resize', resize);
+      window.visualViewport?.removeEventListener('resize', resize);
+      if (root) root.style.height = '';
+      if (previous) viewport?.setAttribute('content', previous);
+    };
+  }, []);
   return <SafeAreaProvider><QueryClientProvider client={queryClient}>
     <ReclaimFontsProvider><AppThemeProvider><Content /></AppThemeProvider></ReclaimFontsProvider>
   </QueryClientProvider></SafeAreaProvider>;

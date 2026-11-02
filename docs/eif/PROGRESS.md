@@ -1,3 +1,11 @@
+<!-- Isolated spike/web-lite activity; no programme node/acceptance mutation. -->
+- **Web friend beta source checkpoint, 2026-11-02:** Resume on spike/web-lite in
+  C:/Reclaim-web-lite at `docs/spikes/web-lite/FRIEND_BETA.md`. Full1534/209,
+  focused12, types, dual31, catalogue357/0 and export pass. Simulated browser flow
+  passes; dedicated email/password live journey and physical Safari pending.
+  No operator setup/set writes, Supabase changes or EIF acceptance. Existing node
+  table/status unchanged. Do not resume programme nodes from this task.
+
 # EIF programme progress — PRG-20260917T222550
 
 Durable resume file. Next session: start at the first unfinished node below. Do not reconstruct from chat.
