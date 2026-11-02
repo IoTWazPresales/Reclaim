@@ -1,3 +1,15 @@
+<!-- Scoped beta/build completion; no EIF node or acceptance mutation. -->
+- **Android preview and hosted beta verified, 2026-11-02:** Resume/result pointer
+  `docs/spikes/web-lite/FRIEND_BETA_VERIFICATION.md` and `ANDROID_PREVIEW.md`.
+  Beta deployed application source 70de865; real dedicated-account journey passes
+  after Gmail confirmation, including canonical 12 kg x 7 read-back and reload.
+  Post-confirmation shards all exit0: 1534 tests/209 unique files; types/dual31/
+  catalogue357/0 pass, wrapper3 skips. Initial full run INCOMPLETE; fallback closes
+  the gate. Android build 5fced763 finished from 06dcbe9 at1.0.5/vc15; APK/signature
+  verified, local Debug signer incompatible; Play cert unavailable. Operator account
+  untouched; no Supabase settings, production alias, OTA, submission or EIF acceptance.
+  Existing node table/status unchanged. Stop this task after reporting both parts.
+
 <!-- Web beta only; no programme node/acceptance mutation. -->
 - **Stable beta deployed, 2026-11-02:** Source 70de865 pushed; deployment tuefyoucce
   at https://eliasonw-reclaim-app--beta.expo.app. Hosted entry hashes match;

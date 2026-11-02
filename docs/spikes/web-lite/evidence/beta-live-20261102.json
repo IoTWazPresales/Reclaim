@@ -1,0 +1,101 @@
+{
+  "status": "PASS",
+  "betaUrl": "https://eliasonw-reclaim-app--beta.expo.app",
+  "email": "warren.eliason+reclaimweb@gmail.com",
+  "userId": "509b209b-06de-4459-8830-c86fe178d1f5",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "mockedResponses": false,
+  "operatorAccountRequests": 0,
+  "operatorAccountWrites": 0,
+  "pageErrors": [],
+  "httpErrors": [],
+  "dialogs": [],
+  "writes": [
+    {
+      "method": "POST",
+      "table": "training_profiles"
+    },
+    {
+      "method": "POST",
+      "table": "training_program_instances"
+    },
+    {
+      "method": "POST",
+      "table": "training_program_days"
+    },
+    {
+      "method": "POST",
+      "table": "training_events"
+    },
+    {
+      "method": "POST",
+      "table": "training_events"
+    },
+    {
+      "method": "POST",
+      "table": "training_sessions"
+    },
+    {
+      "method": "POST",
+      "table": "training_session_items"
+    },
+    {
+      "method": "PATCH",
+      "table": "training_sessions"
+    },
+    {
+      "method": "POST",
+      "table": "training_set_logs"
+    },
+    {
+      "method": "PATCH",
+      "table": "training_session_items"
+    },
+    {
+      "method": "POST",
+      "table": "training_events"
+    },
+    {
+      "method": "PATCH",
+      "table": "training_sessions"
+    }
+  ],
+  "stages": [
+    "password-sign-in",
+    "setup-save",
+    "weekly-plan",
+    "session-preview",
+    "manual-set-log",
+    "history"
+  ],
+  "checkedAt": "2026-11-02T09:28:06.775Z",
+  "emailConfirmed": true,
+  "beforeCounts": {
+    "training_profiles": 0,
+    "training_program_instances": 0,
+    "training_program_days": 0,
+    "training_sessions": 0
+  },
+  "reloadKeepsAuthentication": true,
+  "programId": "98beec00-5d9c-4356-9419-a5bfe1f00159",
+  "savedProgramDays": 12,
+  "sessionId": "web_lite_ec40cf5d-8da8-4c3a-898c-5f2332569f04",
+  "sessionItemId": "web_lite_ec40cf5d-8da8-4c3a-898c-5f2332569f04_item_0",
+  "frozenPlannedSha256": "24025232a4b98c0fcfc7a2116fe1edc88483b4eff09b7d84866ad378b5995543",
+  "canonicalReadback": {
+    "performedSets": 1,
+    "setLogRows": 1,
+    "weightKg": 12,
+    "reps": 7,
+    "frozenPlannedUnchanged": true
+  },
+  "reloadRestoresManualSession": true,
+  "reloadRetainsSavedSet": true,
+  "reloadRetainsHistory": true,
+  "noOpenSession": true,
+  "horizontalOverflow": false,
+  "supabaseSettingsChanged": false
+}

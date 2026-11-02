@@ -1,3 +1,24 @@
+## 2026-11-02 - Friend beta live verified and Android preview complete
+
+Stable non-production web alias https://eliasonw-reclaim-app--beta.expo.app serves
+70de865b94aa16b51386bbc371da1d920c9a7e8b. Operator confirmed the dedicated Gmail
+signup. Real password sign-in, setup Save, 12 programme days, weekly plan, preview,
+manual artificial 12 kg x 7 log, History and reload all pass; canonical DB read-back
+matches and started planned sets are frozen. Operator account requests/writes 0/0;
+no open test session remains. Post-confirmation four-shard gate: 1534/209, every
+process exit0 and every file accounted for. Types/dual31/catalogue357/0 pass;
+wrapper3 skipped (runtime absent). Initial full-suite stall retained as INCOMPLETE.
+
+Android cloud build 5fced763-5db2-4fd0-a580-17eb5b1df150 finished at original source
+06dcbe9dfe250f17824234ac438f5fb1c498b8e3, 1.0.5/vc15/runtime1.0.5. EAS remote
+14->15 was explicitly approved. APK downloaded, hash/signature/runtime verified;
+EAS-managed signer differs from the verified local Debug signer (uninstall needed).
+Play app-signing cert unavailable, so Play install-over remains unverified. Temporary
+archive filter removed; Android product source unchanged. No Supabase config,
+production alias, OTA, store submission or EIF acceptance. No further programme
+nodes are authorized by this task. Results: docs/spikes/web-lite/FRIEND_BETA.md,
+FRIEND_BETA_VERIFICATION.md and ANDROID_PREVIEW.md. Stop after final report.
+
 ## 2026-11-02 - Stable beta deployed before real signup
 
 Stable non-production alias https://eliasonw-reclaim-app--beta.expo.app serves
