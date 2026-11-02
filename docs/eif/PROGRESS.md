@@ -1,3 +1,11 @@
+<!-- Web beta only; no programme node/acceptance mutation. -->
+- **Stable beta deployed, 2026-11-02:** Source 70de865 pushed; deployment tuefyoucce
+  at https://eliasonw-reclaim-app--beta.expo.app. Hosted entry hashes match;
+  simulated signup without redirect and training flow pass. Full1534/209, types,
+  export and dual31 pass. Next: dedicated email signup, pause for confirmed, then
+  live journey and post-confirmation gate/evidence. Operator account untouched;
+  Supabase settings and programme node table/status unchanged.
+
 <!-- Scoped web beta continuation only; no EIF mutation/acceptance. -->
 - **Beta confirmation preparation, 2026-11-02:** On spike/web-lite, remove signup
   emailRedirectTo, retain existing Supabase auth settings and deploy to alias beta.

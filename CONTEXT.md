@@ -1,3 +1,14 @@
+## 2026-11-02 - Stable beta deployed before real signup
+
+Stable non-production alias https://eliasonw-reclaim-app--beta.expo.app serves
+70de865b94aa16b51386bbc371da1d920c9a7e8b (deployment tuefyoucce). Entry hashes
+match. Full1534/209, types, export and dual31 pass. Simulated hosted signup proves
+no redirect override; training flow passes. Next: run the prepared private browser
+signup once for warren.eliason+reclaimweb@gmail.com, then pause for operator confirmed.
+Credentials are generated and retained outside Git in the OS temporary directory;
+never print the password. No live training writes before confirmation. No Supabase
+settings, production alias or EIF acceptance changes.
+
 ## 2026-11-02 - Operator-directed beta confirmation flow
 
 On spike/web-lite only, signup now omits emailRedirectTo and uses the existing

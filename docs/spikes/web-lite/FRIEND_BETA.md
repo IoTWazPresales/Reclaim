@@ -2,6 +2,11 @@
 
 Preview: https://eliasonw-reclaim-app--beta.expo.app
 
+Deployed source commit: `70de865b94aa16b51386bbc371da1d920c9a7e8b`.
+Deployment `tuefyoucce`; alias `beta`. The three entry scripts match the local
+export byte-for-byte. Hosted simulated signup verifies no redirect override, and
+the simulated training journey passes with zero page errors at 390 x 844.
+
 The stable **beta** alias is non-production. The updated deployment removes the
 signup redirect override; the existing Supabase Site URL handles confirmation.
 The dedicated real-account journey is awaiting email confirmation.

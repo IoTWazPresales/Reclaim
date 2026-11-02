@@ -305,5 +305,33 @@
     "intendedAlias": "beta",
     "testEmail": "warren.eliason+reclaimweb@gmail.com",
     "liveJourney": "PENDING signup and operator email confirmation"
+  },
+  "betaDeployment": {
+    "url": "https://eliasonw-reclaim-app--beta.expo.app",
+    "identifier": "tuefyoucce",
+    "alias": "beta",
+    "productionAlias": false,
+    "deployedSourceCommit": "70de865b94aa16b51386bbc371da1d920c9a7e8b",
+    "entryAssets": [
+      {
+        "asset": "/_expo/static/js/web/__expo-metro-runtime-37844bfe9405ed99797bdb43820a0459.js",
+        "sha256": "3588bc29acc3f4ae1c22f5dc38085c8e60ecd8132f6b5d8f55ed53e873c7da63"
+      },
+      {
+        "asset": "/_expo/static/js/web/__common-d75279936902aa8a835fa4d6d28b0168.js",
+        "sha256": "0d3cf071a94f317094cbb5443175546fec3f77089d06013e63d50d1d473e805d"
+      },
+      {
+        "asset": "/_expo/static/js/web/AppEntry-63b3e5e1a28ff1a2ec2785a5e407b8ff.js",
+        "sha256": "eed7b3d02a00e24bd6a7de9b0e24d39cca54ddae26eacfbfbb2963b6d4d953f1"
+      }
+    ],
+    "simulatedSignupNoRedirectPassed": true,
+    "simulatedHostedJourneyPassed": true,
+    "pageErrors": 0,
+    "horizontalOverflow": false,
+    "supabaseSettingsChanged": false,
+    "realSignup": "NEXT: sign up once on beta and pause for operator confirmation",
+    "liveJourney": "PENDING operator confirmed reply"
   }
 }
