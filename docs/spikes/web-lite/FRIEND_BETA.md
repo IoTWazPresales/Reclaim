@@ -1,6 +1,11 @@
 # Reclaim Web Friend Beta
 
-Preview: https://eliasonw-reclaim-app--77x8x4nmmq.expo.app
+Preview: https://eliasonw-reclaim-app--qctwxfguwl.expo.app
+
+Deployed source commit: `41cb722685ab39645fac034f6815d543d4cdd549` (pushed).
+Deployment: `qctwxfguwl`; preview only, no production alias. Hosted entry scripts
+match the export byte-for-byte. Hosted signup UI and simulated hosted flow pass;
+the real Supabase account journey is still pending.
 
 Verification status: sign-up UI and signed-out 390 x 844 Chromium layout checked.
 Source gate: **1,534 tests / 209 files pass**, typecheck passes, dual-path 31/31,
@@ -57,7 +62,7 @@ health information out of screenshots.
 ## Operator configuration and verification
 
 No Supabase settings were changed. For this preview the exact confirmation return
-URL is `https://eliasonw-reclaim-app--77x8x4nmmq.expo.app/`. Add that exact URL to
+URL is `https://eliasonw-reclaim-app--qctwxfguwl.expo.app/`. Add that exact URL to
 Supabase Auth **Redirect URLs** before testing email confirmation on this domain.
 If this beta becomes the intended default web auth destination, its **Site URL**
 would be that same exact URL. Do not replace an existing production/mobile Site URL

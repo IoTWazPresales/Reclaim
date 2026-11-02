@@ -1,3 +1,11 @@
+## 2026-11-02 - Final EAS preview source verified, live account pending
+
+Preview `https://eliasonw-reclaim-app--qctwxfguwl.expo.app` serves pushed source
+`41cb722685ab39645fac034f6815d543d4cdd549`; entry asset hashes match the export.
+Hosted 390x844 signup and simulated training flow pass. Real email/password
+signup and hosted write/read-back remain pending a dedicated inbox and operator
+email confirmation. No production alias or Supabase setting changes.
+
 ## 2026-11-02 - Web friend beta on isolated spike branch
 
 Work is confined to C:/Reclaim-web-lite on spike/web-lite. Added email/password

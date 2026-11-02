@@ -255,5 +255,37 @@
     "app/src/lib/__tests__/deletedAccountSession.test.ts": "80225f7c702ce036f5cdbc894347058fd08b3445bad4e9d457a26a34ee3a5779",
     "app/src/web/WebLiteApp.tsx": "f03aa19b7482f109c6db21c20ee63ab838f79a9751e75e3a31b15496756cf205",
     "app/src/web/WebTraining.tsx": "60cd12be85b6645a46dae08485b9e06cdab4d7e6ddea41f6340a1d8db9e714ec"
-  }
+  },
+  "hosting": {
+    "url": "https://eliasonw-reclaim-app--qctwxfguwl.expo.app",
+    "identifier": "qctwxfguwl",
+    "deployedSourceCommit": "41cb722685ab39645fac034f6815d543d4cdd549",
+    "productionAlias": false,
+    "entryAssets": [
+      {
+        "asset": "/_expo/static/js/web/__expo-metro-runtime-37844bfe9405ed99797bdb43820a0459.js",
+        "sha256": "3588bc29acc3f4ae1c22f5dc38085c8e60ecd8132f6b5d8f55ed53e873c7da63"
+      },
+      {
+        "asset": "/_expo/static/js/web/__common-d75279936902aa8a835fa4d6d28b0168.js",
+        "sha256": "0d3cf071a94f317094cbb5443175546fec3f77089d06013e63d50d1d473e805d"
+      },
+      {
+        "asset": "/_expo/static/js/web/AppEntry-519b007b92f8cc6da8e1e4596316f78f.js",
+        "sha256": "4ae3e116106daad45c9e2ebd30311fef60a3cc05702b7536fb3fdce9d608c64a"
+      }
+    ],
+    "signupUiPassed": true,
+    "simulatedHostedJourneyPassed": true,
+    "realSupabaseJourney": "PENDING dedicated test email and confirmation",
+    "simulatedWithoutCryptoRandomUuidPassed": true
+  },
+  "priorAttempts": [
+    "Focused browser auth fixture initially counted native mock calls from earlier cases; reset mocks for isolation.",
+    "Focused logout fixture rejected offline auth logout; mock a successful 204 response.",
+    "First full run stopped after browser storage was found executing in Node without window; final source guards browser context. Final full run exits zero.",
+    "Initial browser probe raced the export and could not find signup; completed export and final local/hosted probes pass.",
+    "Operator read-only browser probe stopped before navigation because previous storageState was absent; no operator sign-in or write occurred.",
+    "Minimal default equipment fixture rejected as infeasible before writes. Full-gym fixture saved 12 days and completed the simulated journey."
+  ]
 }

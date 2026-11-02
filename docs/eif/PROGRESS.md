@@ -1,3 +1,10 @@
+<!-- Isolated web preview receipt; programme node table/status unchanged. -->
+- **Web preview deployed, 2026-11-02:** Source `41cb722` pushed and deployed to
+  `https://eliasonw-reclaim-app--qctwxfguwl.expo.app`; hosted entry hashes match.
+  Hosted signup layout and simulated Save/plan/preview/log/history pass. Resume
+  `docs/spikes/web-lite/FRIEND_BETA.md` only after dedicated email confirmation.
+  Real-account journey pending; no live account writes or EIF acceptance.
+
 <!-- Isolated spike/web-lite activity; no programme node/acceptance mutation. -->
 - **Web friend beta source checkpoint, 2026-11-02:** Resume on spike/web-lite in
   C:/Reclaim-web-lite at `docs/spikes/web-lite/FRIEND_BETA.md`. Full1534/209,
