@@ -1,3 +1,12 @@
+## 2026-11-02 - Operator-directed beta confirmation flow
+
+On spike/web-lite only, signup now omits emailRedirectTo and uses the existing
+Supabase Site URL. No Supabase settings changes are authorized. Deploy to the
+non-production EAS Hosting alias beta. Dedicated test inbox is
+warren.eliason+reclaimweb@gmail.com. After signup, pause for the operator to click
+the confirmation email and reply confirmed; do not run live training writes first.
+Password reset is unsupported. Resume docs/spikes/web-lite/FRIEND_BETA.md.
+
 ## 2026-11-02 - Final EAS preview source verified, live account pending
 
 Preview `https://eliasonw-reclaim-app--qctwxfguwl.expo.app` serves pushed source

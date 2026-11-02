@@ -253,7 +253,7 @@
   "sourceSha256": {
     "app/src/lib/supabase.ts": "4ebf30fc755af49d4449dbfcd438266b7f0b244e22759e5b613b7ec902addb93",
     "app/src/lib/__tests__/deletedAccountSession.test.ts": "80225f7c702ce036f5cdbc894347058fd08b3445bad4e9d457a26a34ee3a5779",
-    "app/src/web/WebLiteApp.tsx": "f03aa19b7482f109c6db21c20ee63ab838f79a9751e75e3a31b15496756cf205",
+    "app/src/web/WebLiteApp.tsx": "c69b8202e830ec6798ddb119664e2485457a2224c87ca40900cdfd118be4404b",
     "app/src/web/WebTraining.tsx": "60cd12be85b6645a46dae08485b9e06cdab4d7e6ddea41f6340a1d8db9e714ec"
   },
   "hosting": {
@@ -287,5 +287,23 @@
     "Initial browser probe raced the export and could not find signup; completed export and final local/hosted probes pass.",
     "Operator read-only browser probe stopped before navigation because previous storageState was absent; no operator sign-in or write occurred.",
     "Minimal default equipment fixture rejected as infeasible before writes. Full-gym fixture saved 12 days and completed the simulated journey."
-  ]
+  ],
+  "betaPreparation": {
+    "fullSuite": {
+      "command": "npm test -- --reporter=verbose --sequence.shuffle.files --sequence.seed=20261102",
+      "exitCode": 0,
+      "filesPassed": 209,
+      "testsPassed": 1534,
+      "durationSeconds": 406.11,
+      "everyFileAccountedFor": true
+    },
+    "typecheckExitCode": 0,
+    "exportExitCode": 0,
+    "signupRedirectOverride": false,
+    "supabaseSettingsChanged": false,
+    "passwordResetSupported": false,
+    "intendedAlias": "beta",
+    "testEmail": "warren.eliason+reclaimweb@gmail.com",
+    "liveJourney": "PENDING signup and operator email confirmation"
+  }
 }

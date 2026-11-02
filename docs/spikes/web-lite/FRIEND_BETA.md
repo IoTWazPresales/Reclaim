@@ -1,11 +1,10 @@
 # Reclaim Web Friend Beta
 
-Preview: https://eliasonw-reclaim-app--qctwxfguwl.expo.app
+Preview: https://eliasonw-reclaim-app--beta.expo.app
 
-Deployed source commit: `41cb722685ab39645fac034f6815d543d4cdd549` (pushed).
-Deployment: `qctwxfguwl`; preview only, no production alias. Hosted entry scripts
-match the export byte-for-byte. Hosted signup UI and simulated hosted flow pass;
-the real Supabase account journey is still pending.
+The stable **beta** alias is non-production. The updated deployment removes the
+signup redirect override; the existing Supabase Site URL handles confirmation.
+The dedicated real-account journey is awaiting email confirmation.
 
 Verification status: sign-up UI and signed-out 390 x 844 Chromium layout checked.
 Source gate: **1,534 tests / 209 files pass**, typecheck passes, dual-path 31/31,
@@ -15,15 +14,19 @@ history, with frozen planned sets unchanged and zero page errors. This is not a
 live account check. [Validation and complete file inventory](evidence/friend-beta-validation.json).
 
 Dedicated-account setup Save, hosted sign-in/reload, weekly plan, Session Preview,
-manual logging and history still need live verification. The operator is choosing a dedicated test inbox; Supabase email confirmation is
-required and signup is enabled. No test account has been created yet. This preview is not yet cleared for the friend invitation.
+manual logging and history still need live verification. The dedicated test email is `warren.eliason+reclaimweb@gmail.com`. Supabase email
+confirmation is required; the operator will confirm before live training checks. This preview is not yet cleared for the friend invitation.
 No setup or set writes were made to the operator account.
 
 ## Sign up and sign in
 
 Choose **New here? Create account**, enter your email and a new password, then
 choose **Create account**. If asked, confirm the email Supabase sends you, return
-to this same preview URL and sign in with your email and password. Google sign-in
+to this beta URL and sign in with your email and password.
+
+After clicking the confirmation email you may land on an unrelated page; ignore it, open the beta URL and sign in.
+
+Password reset is not supported in the beta. Google sign-in
 is unavailable on web. Use a dedicated test account to verify setup before inviting
 friends; never replace the operator's active programme as a test.
 
@@ -61,17 +64,11 @@ health information out of screenshots.
 
 ## Operator configuration and verification
 
-No Supabase settings were changed. For this preview the exact confirmation return
-URL is `https://eliasonw-reclaim-app--qctwxfguwl.expo.app/`. Add that exact URL to
-Supabase Auth **Redirect URLs** before testing email confirmation on this domain.
-If this beta becomes the intended default web auth destination, its **Site URL**
-would be that same exact URL. Do not replace an existing production/mobile Site URL
-just to allow a preview: the app supplies `emailRedirectTo`, so the additional
-redirect allow-list entry is sufficient. Repeat the exact entry for the final
-preview URL when a new deployment is used. Password sign-in itself uses no redirect.
-
-[Supabase redirect documentation](https://supabase.com/docs/guides/auth/redirect-urls)
-and [EAS preview deployments](https://docs.expo.dev/eas/hosting/).
+No Supabase settings were changed, including Site URL or Redirect URLs. Signup
+passes email/password only, with no `emailRedirectTo`. Confirmation uses the
+existing Site URL; after confirming, open the beta URL and sign in with your email
+and password. No redirect entry, config push or Management API auth change is
+needed for this beta flow. Google OAuth and password reset are not supported.
 
 Pending live check: create and confirm a new email/password account; sign in; save
 setup; verify the saved weekly plan and Session Preview; enter an artificial weight

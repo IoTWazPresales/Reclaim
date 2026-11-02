@@ -1,3 +1,10 @@
+<!-- Scoped web beta continuation only; no EIF mutation/acceptance. -->
+- **Beta confirmation preparation, 2026-11-02:** On spike/web-lite, remove signup
+  emailRedirectTo, retain existing Supabase auth settings and deploy to alias beta.
+  Test inbox warren.eliason+reclaimweb@gmail.com; pause after confirmation email,
+  then resume hosted live journey only after operator replies confirmed. Guide:
+  `docs/spikes/web-lite/FRIEND_BETA.md`. Programme nodes/table/status unchanged.
+
 <!-- Isolated web preview receipt; programme node table/status unchanged. -->
 - **Web preview deployed, 2026-11-02:** Source `41cb722` pushed and deployed to
   `https://eliasonw-reclaim-app--qctwxfguwl.expo.app`; hosted entry hashes match.

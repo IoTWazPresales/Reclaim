@@ -50,10 +50,10 @@ function Content() {
     try {
       const credentials = { email: email.trim(), password };
       const result = creatingAccount
-        ? await supabase.auth.signUp({ ...credentials, options: { emailRedirectTo: `${window.location.origin}/` } })
+        ? await supabase.auth.signUp(credentials)
         : await supabase.auth.signInWithPassword(credentials);
       if (creatingAccount && !result.error && !result.data.session) {
-        setNotice('Check your email to confirm your account, then return here and sign in.');
+        setNotice('Check your email to confirm your account. After clicking the confirmation email you may land on an unrelated page; ignore it, open the beta URL and sign in.');
         setCreatingAccount(false);
       }
       if (result.error) throw result.error;
@@ -82,7 +82,7 @@ function Content() {
       <TextInput label="Password" accessibilityLabel="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete={creatingAccount ? "new-password" : "current-password"} onSubmitEditing={() => void authenticate()} />
       <Button mode="contained" disabled={busy || !email || !password} loading={busy} onPress={() => void authenticate()}>{creatingAccount ? 'Create account' : 'Sign in'}</Button>
       <Button disabled={busy} onPress={() => { setCreatingAccount(!creatingAccount); setError(''); }}>{creatingAccount ? 'Already have an account? Sign in' : 'New here? Create account'}</Button>
-      <Text>Training is saved to the account you sign in with.</Text>
+      <Text>Training is saved to the account you sign in with. Password reset is not supported in the beta.</Text>
     </ScrollView>}
   </View>;
 }
