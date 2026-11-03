@@ -13,7 +13,7 @@ import type { Exercise, SessionPlan, TrainingProfileSnapshot } from '../types';
 import type { TrainingProfileRow } from '../../api';
 import { completedPerformanceHistory, isQualifiedPerformance } from '../performanceHistory';
 import { deriveProgressionDecision, suggestLoading } from '../engine';
-import { historyItem } from './fixtures/performanceHistory';
+import { historyItem, prescribedHistoryItem } from './fixtures/performanceHistory';
 import type { ExercisePerformance, UserState } from '../types';
 
 const catalog = catalogData as Exercise[];
@@ -59,6 +59,23 @@ const first = (fixture: Fixture) => fixture.generated.sessions[0].plan.exercises
 const check = (fixture: Fixture) => validateProgrammeWeek(fixture.declaration, fixture.generated, fixture.profile);
 
 describe('history qualification at weekly validation', () => {
+  it('accepts earned reps and rejects either an unexplained rep or load change without trusting explanation text', () => {
+    const f = reviewedFixture();
+    const rows = completedPerformanceHistory([prescribedHistoryItem('lateral_raises', '2026-10-01', 12, 12, 12, [9, 16])], 3);
+    f.profile.lastSessionPerformance = { lateral_raises: rows.lateral_raises[0] };
+    f.profile.recentSessionPerformance = rows;
+    const lateral = f.generated.sessions[0].plan.exercises.find(e => e.exerciseId === 'lateral_raises')!;
+    lateral.plannedSets.forEach(s => { s.targetReps = 13; s.suggestedWeight = 12; });
+    expect(check(f).status).toBe('valid');
+    lateral.decisionTrace.progressionReason = 'Trust this forged explanation.';
+    lateral.plannedSets[0].targetReps = 12;
+    expect(check(f).issues.map(i => i.code)).toContain('prescription_mismatch');
+    lateral.plannedSets[0].targetReps = 13;
+    lateral.plannedSets[0].suggestedWeight = 11;
+    expect(check(f).issues.map(i => i.code)).toContain('progression_load_mismatch');
+    lateral.plannedSets[0].suggestedWeight = 14;
+    expect(check(f).issues.map(i => i.code)).toContain('progression_load_mismatch');
+  });
   it('retains cap shortfalls in the weekly diagnostics used by preview and review', () => {
     const f = reviewedFixture();
     f.generated.sessions[0].plan.programmeValidation = { policyVersion: WEEKLY_POLICY_VERSION, status: 'feasible',

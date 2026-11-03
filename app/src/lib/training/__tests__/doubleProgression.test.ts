@@ -39,9 +39,9 @@ const pushUp = exercise({
 const sets = (entries: Array<[number, number, number?]>) =>
   entries.map(([weight, reps, rpe]) => ({ weight, reps, rpe }));
 
-describe('decideDoubleProgression', () => {
+describe('explicit v1 double-progression replay', () => {
   it('all sets at top of range with RPE <= 8 → +2.5kg upper body', () => {
-    const d = decideDoubleProgression({
+    const d = decideDoubleProgression({ historicalReplay: true,
       exercise: bench,
       lastSets: sets([[60, 8, 7], [60, 8, 7], [60, 8, 8]]),
       repRange: [6, 8],
@@ -52,7 +52,7 @@ describe('decideDoubleProgression', () => {
   });
 
   it('all sets at top of range → +5kg lower body', () => {
-    const d = decideDoubleProgression({
+    const d = decideDoubleProgression({ historicalReplay: true,
       exercise: squat,
       lastSets: sets([[100, 8, 7], [100, 8, 7], [100, 8, 7]]),
       repRange: [6, 8],
@@ -63,7 +63,7 @@ describe('decideDoubleProgression', () => {
   });
 
   it('reps below range → hold with a rep goal', () => {
-    const d = decideDoubleProgression({
+    const d = decideDoubleProgression({ historicalReplay: true,
       exercise: bench,
       lastSets: sets([[60, 8, 7], [60, 7, 8], [60, 6, 8]]),
       repRange: [6, 8],
@@ -75,7 +75,7 @@ describe('decideDoubleProgression', () => {
   });
 
   it('RPE 9-10 → hold even at top of rep range', () => {
-    const d = decideDoubleProgression({
+    const d = decideDoubleProgression({ historicalReplay: true,
       exercise: bench,
       lastSets: sets([[60, 8, 8], [60, 8, 9], [60, 8, 9]]),
       repRange: [6, 8],
@@ -85,7 +85,7 @@ describe('decideDoubleProgression', () => {
   });
 
   it('two consecutive holds → deload 10% rounded to step', () => {
-    const d = decideDoubleProgression({
+    const d = decideDoubleProgression({ historicalReplay: true,
       exercise: squat,
       lastSets: sets([[100, 6, 9], [100, 6, 9], [100, 5, 9]]),
       repRange: [6, 8],
@@ -98,7 +98,7 @@ describe('decideDoubleProgression', () => {
   });
 
   it('bodyweight at 3×12 → suggest adding weight, never prescribe 0kg copy', () => {
-    const d = decideDoubleProgression({
+    const d = decideDoubleProgression({ historicalReplay: true,
       exercise: pushUp,
       lastSets: sets([[0, 12, 7], [0, 12, 7], [0, 12, 8]]),
       repRange: [8, 12],
@@ -110,7 +110,7 @@ describe('decideDoubleProgression', () => {
   });
 
   it('bodyweight below cap → progress by reps', () => {
-    const d = decideDoubleProgression({
+    const d = decideDoubleProgression({ historicalReplay: true,
       exercise: pushUp,
       lastSets: sets([[0, 10, 7], [0, 10, 7], [0, 10, 7]]),
       repRange: [8, 10],
@@ -122,27 +122,27 @@ describe('decideDoubleProgression', () => {
 
   it('returns null with no history', () => {
     expect(
-      decideDoubleProgression({ exercise: bench, lastSets: [], repRange: [6, 8] }),
+      decideDoubleProgression({ historicalReplay: true, exercise: bench, lastSets: [], repRange: [6, 8] }),
     ).toBeNull();
   });
 });
 
-describe('countHoldStreak', () => {
+describe('explicit v1 hold-streak replay', () => {
   const failing = { sets: sets([[100, 6, 9], [100, 5, 9]]) };
   const passing = { sets: sets([[100, 8, 7], [100, 8, 7]]) };
 
   it('counts consecutive failed sessions at the same weight (newest first)', () => {
-    expect(countHoldStreak([failing, failing, passing], [6, 8])).toBe(2);
+    expect(countHoldStreak([failing, failing, passing], [6, 8], 8, true)).toBe(2);
   });
 
   it('breaks streak when a session met the increase criteria', () => {
-    expect(countHoldStreak([passing, failing], [6, 8])).toBe(0);
+    expect(countHoldStreak([passing, failing], [6, 8], 8, true)).toBe(0);
   });
 
   it('breaks streak when weight moved up between sessions', () => {
     const heavier = { sets: sets([[105, 6, 9]]) };
     const lighter = { sets: sets([[100, 8, 7]]) };
-    expect(countHoldStreak([heavier, lighter], [6, 8])).toBe(1);
+    expect(countHoldStreak([heavier, lighter], [6, 8], 8, true)).toBe(1);
   });
 });
 

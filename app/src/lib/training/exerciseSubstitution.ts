@@ -1,6 +1,6 @@
 import type { TrainingProfileRow, TrainingSessionItemRow } from '@/lib/api';
 import { resolveExperienceLevel } from './experienceLevel';
-import { getExerciseById, listExercises, suggestLoading, getRepRange, getExerciseTargetReps, getRestSeconds, getExercisePrescriptionOverride, explainAppliedProgression, deriveProgressionDecision } from './engine';
+import { getExerciseById, listExercises, suggestPrescription, getRepRange, getExerciseTargetReps, getRestSeconds, getExercisePrescriptionOverride } from './engine';
 import { getExerciseLoadingProfile } from './exerciseLoadingProfile';
 import { evaluateExerciseEligibility } from './exerciseEligibility';
 import { isQualifiedPerformance } from './performanceHistory';
@@ -58,17 +58,17 @@ export function prescribeReplacement(item: TrainingSessionItemRow, replacement: 
     recentSessionPerformance: profile.recentSessionPerformance,
   };
   const repRange = getRepRange(priority, profile.goals);
-  const hasHistory = isQualifiedPerformance(replacement, profile.lastSessionPerformance?.[replacement.id]) &&
-    profile.performanceHistory?.status === 'available' && profile.performanceHistory.requestedExerciseIds.includes(replacement.id) &&
-    deriveProgressionDecision(replacement, userState, repRange) !== null;
+  const resolved = suggestPrescription({ exercise: replacement, plannedReps: getExerciseTargetReps(replacement, repRange), priority,
+    goalWeights: profile.goals, userState, plannedSetCount: item.planned.sets.length });
+  const hasHistory = !!resolved.progression || isQualifiedPerformance(replacement, profile.lastSessionPerformance?.[replacement.id]) &&
+    profile.performanceHistory?.status === 'available' && profile.performanceHistory.requestedExerciseIds.includes(replacement.id);
   const bodyweight = loading.loadDisplayMode === 'bodyweight';
   const calibrated = bodyweight || hasBaseline || hasHistory;
-  const targetReps = getExerciseTargetReps(replacement, repRange);
-  const suggestedWeight = bodyweight || !calibrated ? 0 : suggestLoading({ exercise: replacement, plannedReps: targetReps, priority, goalWeights: profile.goals, userState });
+  const targetReps = resolved.reps;
+  const suggestedWeight = bodyweight || !calibrated ? 0 : resolved.weight;
   const progressionReason = !calibrated
     ? 'Uncalibrated replacement: enter a load for this exercise. No weight was transferred from the previous exercise.'
-    : bodyweight ? 'Bodyweight replacement; no external load transferred.'
-      : explainAppliedProgression(replacement, userState, repRange, suggestedWeight, targetReps) ?? 'Uses this replacement exercise own baseline.';
+    : resolved.reason ?? (bodyweight ? 'Bodyweight replacement; no external load transferred.' : 'Uses this replacement exercise own baseline.');
   return {
     sets: item.planned.sets.map(set => ({ setIndex: set.setIndex, targetReps, suggestedWeight,
       ...(requiresLoadConfirmation(replacement, suggestedWeight, userState) ? { loadRequiresConfirmation: true } : {}),
@@ -80,6 +80,7 @@ export function prescribeReplacement(item: TrainingSessionItemRow, replacement: 
       replacedAt: new Date().toISOString(), loadCalibration: calibrated ? bodyweight ? 'bodyweight' : 'exercise_specific' : 'uncalibrated',
       loadDisplayMode: loading.loadDisplayMode, prescriptionType: loading.prescriptionType, progressionReason,
       performanceHistory: profile.performanceHistory,
+      ...(resolved.prescriptionContext ? { prescriptionContext: resolved.prescriptionContext } : {}),
     },
   };
 }

@@ -1,3 +1,17 @@
+## Approved prescription progression correction ? 2026-11-03
+
+Operator approved the contract after read-only reproduction and isolated simulations, then authorized implementation with **no dual workflows**. For new prescriptions, the existing double-progression decision governs **both reps and weight**. Original planned targets, original loads, policy/range context and adjustment presence survive canonical performance-history projection. No second planner, completion path, replica history or schema migration is introduced.
+
+- Complete all frozen working targets at their prescribed uniform load, with no reported RPE above 8: add one rep per set below the current range maximum. Optional/missing RPE retains its accepted meaning; it is not fabricated as RPE 8.
+- Complete the prescribed maximum: add the existing equipment increment and reset reps to the range minimum. Overperforming a lower target still advances only one rep.
+- One missed target or difficult attempt repeats the prescription. Two consecutive comparable unsuccessful attempts without improved target-capped reps or comparable reported effort retain the existing approximately 10% equipment-rounded deload and reset reps to the minimum. Successful prescribed work never counts as stagnation. Set counts never change through this rule.
+- Partial, skipped, unfinished, mixed-load or adjusted work interrupts the comparison. A valid frozen prescription can be repeated, but no progression or stagnation penalty is earned. A first complete uniform performance against an explicitly uncalibrated load establishes a repeat prescription, not an immediate increase.
+- A newer explicit baseline still wins, never overwrites entered values and resets comparison. Ties/invalid baseline timestamps favor the baseline; cleared timestamps do not govern. Otherwise a qualified prescription decision is authoritative: an Epley estimate derived from that same submaximal performance must not cap it back down. Estimates remain calibration/re-anchoring policy, not a scientifically validated measurement of remaining capacity.
+- Changed/unknown range or policy context starts a fresh comparison. Repeat an in-range frozen target once; re-anchor out-of-range work. Missing original targets cannot prove success/stagnation. Off-step loads do not auto-advance; minimum/rounding limits cannot turn a deload into an increase.
+- Bodyweight reps stay within the range; added load requires explicit confirmation. Assistance, carries, time prescriptions, exercise selection, split, volume and running policy remain outside this correction.
+
+This supersedes the history-cap and fixed-next-rep portions of the 30 October / 1 November policies below **for new builds**. Explicit v1 replay and started/guided snapshots remain frozen. Shared input-based validation checks the final pair and cannot accept explanation text as proof. Implementation and evidence: [progression correction](recovery/evidence/prescribed-progression-20261103.md).
+
 # Reclaim training routine / generator audit (AS-IS)
 
 ## Working weight versus ceiling (2026-11-01; new builds only)

@@ -3,9 +3,9 @@ import catalogData from './catalog/exercises.v1.json';
 import { SESSION_SET_CAP, SESSION_MINUTE_CAP } from './balancedHypertrophy';
 import { evaluateExerciseEligibility } from './exerciseEligibility';
 import { getExerciseLoadingProfile } from './exerciseLoadingProfile';
-import { isQualifiedPerformance, PERFORMANCE_HISTORY_SOURCE } from './performanceHistory';
+import { isQualifiedPerformance, performanceHistorySignature, PERFORMANCE_HISTORY_SOURCE } from './performanceHistory';
 import { getPrimarySlotRoleTier, PrimarySlotRoleTier } from './exerciseSessionRole';
-import { epleyWorkingWeightCeiling, getWeightStep } from './progression';
+import { epleyWorkingWeightCeiling, getWeightStep, deriveProgressionDecision, getRepRange, prescriptionContext } from './progression';
 import { isNonLegTrainingTemplate } from './trainingMode';
 import { WEEKLY_POLICY_VERSION, supportsWeeklyPolicy } from './weeklyProgrammeTypes';
 import type { Exercise, ExercisePerformance, PlannedExercise, PlannedSet, SessionPlan, TrainingProfileSnapshot } from './types';
@@ -60,16 +60,6 @@ function isUnqualifiedHistory(exercise: Exercise, history: ExercisePerformance):
   if (duplicate) reasons.push('duplicate_exercise_in_session');
   return evidence.status === (duplicate ? 'unsupported' : incomplete ? 'incomplete' : 'unsupported') &&
     reasons.length === evidence.reasons.length && reasons.every(reason => evidence.reasons.includes(reason));
-}
-
-// Compare the contract fields, independent of object-property insertion order.
-// Never search recent history for an older success when the first entry differs.
-function historySignature(history: ExercisePerformance): unknown[] {
-  const evidence = history.evidence!;
-  return [history.exerciseId, history.date, history.plannedSetCount, history.sessionComplete,
-    history.sets.map(row => [row.setIndex, row.weight, row.reps, row.rpe ?? null, row.completedAt]),
-    evidence.source, evidence.status, [...evidence.reasons].sort(), evidence.sessionId, evidence.itemId,
-    evidence.loadUnit, evidence.loadDisplayMode, evidence.prescriptionType, [...evidence.plannedSetIndices].sort((a, b) => a - b)];
 }
 
 /** Trusted requirements captured before generation. Never reconstruct this input
@@ -312,10 +302,18 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
         if (ownerSets.get(owner)! > 10) add('owner_muscle_set_budget', 'Actual owner-muscle work exceeds the v2 ten-set session cap.', { dayKey, exerciseId: item.exerciseId });
       }
       if (!item.plannedSets.length) add('invalid_prescription', 'Final exercise has no working sets.', { dayKey, exerciseId: item.exerciseId });
+      const nextPrescription = declaration.policyVersion === WEEKLY_POLICY_VERSION && slot ? deriveProgressionDecision(exercise, {
+        experienceLevel: profile.experienceLevel ?? 'beginner', estimated1RM: profile.baselines, baselineUpdatedAt: profile.baselineUpdatedAt,
+        performanceHistory: profile.performanceHistory, lastSessionPerformance: profile.lastSessionPerformance, recentSessionPerformance: profile.recentSessionPerformance,
+      }, getRepRange(slot.priority, profile.goals), slot.setCount) : null;
+      if (item.decisionTrace.prescriptionContext && slot && !same(item.decisionTrace.prescriptionContext, prescriptionContext(getRepRange(slot.priority, profile.goals)))) {
+        add('prescription_context_mismatch', 'Frozen comparison context differs from the governing goal range and policy.', { dayKey, exerciseId: item.exerciseId });
+      }
       item.plannedSets.forEach((set, index) => {
         workingSets++;
         if (!positiveInteger(set.targetReps) || !nonnegative(set.restSeconds) || set.setIndex !== index + 1) add('invalid_prescription', 'Actual reps/rest/set indices are invalid.', { dayKey, exerciseId: item.exerciseId });
-        if (slot && (set.targetReps !== slot.reps || set.restSeconds !== slot.restSeconds)) add('prescription_mismatch', 'Actual reps/rest differ from allocated prescription.', { dayKey, slotId: slot.slotId });
+        if (slot && (set.targetReps !== (nextPrescription?.nextReps ?? slot.reps) || set.restSeconds !== slot.restSeconds)) add('prescription_mismatch', 'Actual reps/rest differ from the allocated prescription and qualified progression decision.', { dayKey, slotId: slot.slotId });
+        if (nextPrescription && set.suggestedWeight !== nextPrescription.nextWeight) add('progression_load_mismatch', 'Actual load differs from the governing prescription decision.', { dayKey, exerciseId: item.exerciseId });
         if (index < item.plannedSets.length - 1 && nonnegative(set.restSeconds)) restSeconds += set.restSeconds;
         if (!nonnegative(set.suggestedWeight)) add('invalid_load', 'Actual load must be finite and nonnegative.', { dayKey, exerciseId: item.exerciseId });
         else {
@@ -326,9 +324,9 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
           const validHistoryStructure = hasValidHistoryStructure(exercise, history);
           const recent = profile.recentSessionPerformance?.[exercise.id];
           const consistentHistory = validHistoryStructure && (recent === undefined ||
-            (Array.isArray(recent) && hasValidHistoryStructure(exercise, recent[0]) && same(historySignature(history), historySignature(recent[0]))));
+            (Array.isArray(recent) && hasValidHistoryStructure(exercise, recent[0]) && same(performanceHistorySignature(history), performanceHistorySignature(recent[0]))));
           const qualifiedHistory = consistentHistory && isQualifiedPerformance(exercise, history);
-          const ownEvidence = ownBaseline || qualifiedHistory;
+          const ownEvidence = ownBaseline || qualifiedHistory || !!nextPrescription;
           if (history !== undefined && index === 0) {
             if (!consistentHistory || (!qualifiedHistory && !isUnqualifiedHistory(exercise, history))) add('invalid_load_evidence', 'Exercise history has invalid numeric values, identity, qualification metadata or last/recent consistency.', { dayKey, exerciseId: exercise.id });
             else if (!qualifiedHistory && !ownBaseline) warning('history_evidence_unverified', 'Incomplete or unsupported history is a progression barrier, not qualified load evidence.', { dayKey, exerciseId: exercise.id });
@@ -360,7 +358,7 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
             }
             if (best > 0) { ceiling1RM = best; historyGoverns = true; }
           }
-          if (ceiling1RM > 0 && Number.isFinite(ceiling1RM) && positiveInteger(set.targetReps) && set.suggestedWeight > epleyWorkingWeightCeiling(ceiling1RM, set.targetReps, getWeightStep(exercise))) add(historyGoverns ? 'history_ceiling_exceeded' : 'baseline_ceiling_exceeded', 'Actual load exceeds the governing exercise-specific evidence ceiling.', { dayKey, exerciseId: item.exerciseId, provenance: routine });
+          if (!nextPrescription && ceiling1RM > 0 && Number.isFinite(ceiling1RM) && positiveInteger(set.targetReps) && set.suggestedWeight > epleyWorkingWeightCeiling(ceiling1RM, set.targetReps, getWeightStep(exercise))) add(historyGoverns ? 'history_ceiling_exceeded' : 'baseline_ceiling_exceeded', 'Actual load exceeds the governing exercise-specific evidence ceiling.', { dayKey, exerciseId: item.exerciseId, provenance: routine });
         }
       });
       // Existing ROUTINE_AUDIT warm-up policy, independently evaluated from

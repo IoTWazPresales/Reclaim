@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { epleyWorkingWeightCeiling } from '../progression';
 import { completedPerformanceHistory, isQualifiedPerformance } from '../performanceHistory';
 import { buildSession, deriveProgressionDecision, explainAppliedProgression, getExerciseById, suggestLoading } from '../engine';
-import { historyItem } from './fixtures/performanceHistory';
+import { historyItem, prescribedHistoryItem } from './fixtures/performanceHistory';
 import { buildProgramDaySession } from '../buildProgramDaySession';
 import { programmeWeekProposal } from '../programmeWeekProposal';
 import { buildFourWeekPlan } from '../programPlanner';
@@ -18,7 +18,7 @@ function state(items: ReturnType<typeof historyItem>[]): UserState {
 
 describe('canonical history to decision', () => {
   it('uses frozen working sets without a set-log replica and does not mutate stored rows', () => {
-    const item = historyItem();
+    const item = prescribedHistoryItem();
     const before = structuredClone(item);
     const user = state([item]);
     expect(isQualifiedPerformance(bench, user.lastSessionPerformance![bench.id])).toBe(true);
@@ -47,14 +47,14 @@ describe('canonical history to decision', () => {
   });
 
   it('does not skip an incomplete session to construct two stagnant sessions', () => {
-    const middle = historyItem(bench.id, '2026-10-02', 6);
+    const middle = prescribedHistoryItem(bench.id, '2026-10-02', 6, 60, 8);
     middle.performed!.sets!.pop();
-    expect(deriveProgressionDecision(bench, state([historyItem(bench.id, '2026-10-03', 6), middle, historyItem(bench.id, '2026-10-01', 6)]), [6, 8])?.action).toBe('hold');
+    expect(deriveProgressionDecision(bench, state([prescribedHistoryItem(bench.id, '2026-10-03', 6, 60, 8), middle, prescribedHistoryItem(bench.id, '2026-10-01', 6, 60, 8)]), [6, 8])?.action).toBe('hold');
   });
 
   it('recognizes improving reps below the top and preserves the two-hold deload', () => {
-    const older = historyItem(bench.id, '2026-10-01', 6);
-    const improved = historyItem(bench.id, '2026-10-02', 7);
+    const older = prescribedHistoryItem(bench.id, '2026-10-01', 6, 60, 8);
+    const improved = prescribedHistoryItem(bench.id, '2026-10-02', 7, 60, 8);
     expect(deriveProgressionDecision(bench, state([older, improved]), [6, 8])?.action).toBe('hold');
     improved.performed!.sets!.forEach(set => { set.reps = 6; });
     const decision = deriveProgressionDecision(bench, state([older, improved]), [6, 8]);
@@ -78,9 +78,9 @@ describe('canonical history to decision', () => {
 
   it('distinguishes bodyweight zero, assistance and carry/time units', () => {
     const push = getExerciseById('push_ups')!;
-    const user = state([historyItem(push.id, '2026-10-01', 12, 0)]);
+    const user = state([prescribedHistoryItem(push.id, '2026-10-01', 12, 0, 12, [8, 12])]);
     expect(deriveProgressionDecision(push, user, [8, 12])?.action).toBe('add_weight');
-    expect(explainAppliedProgression(push, user, [8, 12], 0, 10)).toContain('10 reps per set, no added load');
+    expect(explainAppliedProgression(push, user, [8, 12], 0, 10)).toContain('Confirm any added load explicitly');
     for (const id of ['farmer_walk', 'plank', 'assisted_pull_ups']) {
       const exercise = getExerciseById(id)!;
       expect(exercise).toBeTruthy();
@@ -88,16 +88,16 @@ describe('canonical history to decision', () => {
     }
   });
 
-  it('reports rounded increments and deload targets without promising an unapplied change', () => {
-    const user = state([historyItem(bench.id, '2026-10-01', 8, 61)]);
+  it('holds off-step observations and never increases load when a deload reaches the equipment floor', () => {
+    const user = state([prescribedHistoryItem(bench.id, '2026-10-01', 8, 61)]);
     const decision = deriveProgressionDecision(bench, user, [6, 8])!;
-    expect(decision.nextWeight).toBe(62.5);
-    expect(decision.incrementKg).toBe(1.5);
-    expect(explainAppliedProgression(bench, user, [6, 8], 62.5, 7)).toContain('+1.5kg');
-    const stuck = state([historyItem(bench.id, '2026-10-01', 6, 2.5), historyItem(bench.id, '2026-10-02', 6, 2.5)]);
+    expect(decision.nextWeight).toBe(61);
+    expect(decision.incrementKg).toBe(0);
+    expect(explainAppliedProgression(bench, user, [6, 8], 61, 8)).toContain('equipment-compatible load');
+    const stuck = state([prescribedHistoryItem(bench.id, '2026-10-01', 6, 2.5, 8), prescribedHistoryItem(bench.id, '2026-10-02', 6, 2.5, 8)]);
     const floor = deriveProgressionDecision(bench, stuck, [6, 8])!;
     expect(floor.nextWeight).toBe(2.5);
-    expect(floor.reason).toContain('target, rounded to implement step/minimum');
+    expect(floor.reason).toContain('equipment minimum');
   });
 
   it('rejects a recent incomplete session even when a caller passes an older successful last map', () => {
@@ -108,18 +108,18 @@ describe('canonical history to decision', () => {
   });
 
   it('applies newer qualified evidence without changing the progression increment', () => {
-    const user = state([historyItem(bench.id, '2026-10-01', 12, 80), historyItem(bench.id, '2026-10-02', 12, 82.5), historyItem(bench.id, '2026-10-03', 12, 85)]);
+    const user = state([prescribedHistoryItem(bench.id, '2026-10-01', 12, 80, 12, [6, 12]), prescribedHistoryItem(bench.id, '2026-10-02', 12, 82.5, 12, [6, 12]), prescribedHistoryItem(bench.id, '2026-10-03', 12, 85, 12, [6, 12])]);
     user.estimated1RM = { [bench.id]: 80 };
-    const proposed = deriveProgressionDecision(bench, user, [8, 12]);
+    const proposed = deriveProgressionDecision(bench, user, [6, 12]);
     const applied = suggestLoading({ exercise: bench, userState: user, goalWeights: goals, plannedReps: 10 });
     expect(proposed?.nextWeight).toBe(87.5);
-    expect(applied).toBe(85);
+    expect(applied).toBe(87.5);
     expect(user.estimated1RM[bench.id]).toBe(80);
-    const reason = explainAppliedProgression(bench, user, [8, 12], applied, 10);
-    expect(reason).toContain('Prescribed 85kg for 10 reps per set');
+    const reason = explainAppliedProgression(bench, user, [6, 12], applied, 6);
+    expect(reason).toContain('Prescribed 87.5kg for 6 reps per set');
     expect(reason).toContain('87.5kg');
-    expect(reason).toContain('Most recent qualified history governs');
-    expect(reason).toContain('RPE 8 working limit (2 reps in reserve): 85kg');
+    expect(reason).toContain('Restart at 6 reps');
+    expect(reason).not.toContain('working limit');
   });
 
   it('uses a newer baseline, or a baseline with no history, and preserves v1 replay', () => {

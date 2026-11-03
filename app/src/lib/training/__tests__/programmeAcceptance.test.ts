@@ -13,7 +13,7 @@ import { recommendSessionAdjustment } from '../autoregulationOverlay';
 import { getAdjustedSetParams } from '../sessionDerivedState';
 import { buildNotificationWorkChain } from '../trainingSessionProgression';
 import { prescribeReplacement, replacementCandidates } from '../exerciseSubstitution';
-import { historyItem } from './fixtures/performanceHistory';
+import { historyItem, prescribedHistoryItem } from './fixtures/performanceHistory';
 import type { TrainingSessionItemRow } from '../../api';
 import oracle from '../../../../../docs/training/recovery/evidence/R10-requirements.json';
 import historical from '../../../../../docs/training/recovery/evidence/R10-before-programmes.json';
@@ -240,16 +240,16 @@ describe('R10 programme evolution and effective work', () => {
     }
     captures.push({ scenario: `goal-${JSON.stringify(goals)}-baseline-reps-${baselineReps}`, policyStatus: f.plan.weeks[0].compilation?.policyStatus });
   });
-  it('qualified 80 kg achievement proposes 82.5 while its history-derived RPE 8 limit governs the applied 75', () => {
+  it('qualified prescribed 80 kg maximum advances to 82.5 without a history formula cancelling it', () => {
     const bench = getExerciseById('barbell_bench_press')!;
-    const history = completedPerformanceHistory([historyItem(bench.id, '2026-10-13', 9, 80)], 3);
+    const history = completedPerformanceHistory([prescribedHistoryItem(bench.id, '2026-10-13', 9, 80, 9, [5, 9])], 3);
     const user = { experienceLevel: 'advanced' as const, estimated1RM: { [bench.id]: 104 }, recentSessionPerformance: history, lastSessionPerformance: { [bench.id]: history[bench.id][0] } };
     const recommendation = deriveProgressionDecision(bench, user, [5, 9]);
     expect(recommendation?.nextWeight).toBe(82.5);
     const weight = suggestLoading({ exercise: bench, userState: user, goalWeights: { build_muscle: 0.5, build_strength: 0.5, lose_fat: 0, get_fitter: 0 }, plannedReps: 9 });
-    expect(weight).toBe(75);
-    expect(explainAppliedProgression(bench, user, [5, 9], weight, 9)).toContain('Most recent qualified history governs');
-    expect(explainAppliedProgression(bench, user, [5, 9], weight, 9)).toContain('qualified history limits it');
+    expect(weight).toBe(82.5);
+    expect(recommendation?.nextReps).toBe(5);
+    expect(explainAppliedProgression(bench, user, [5, 9], weight, 5)).not.toContain('history limits');
     expect(explainAppliedProgression(bench, user, [5, 9], weight, 9)).toContain('82.5kg');
   });
 
@@ -265,8 +265,8 @@ describe('R10 programme evolution and effective work', () => {
       const proposals = programmeWeekProposal(f.plan, week, snapshot);
       for (const session of proposals.values()) expect(session.userState.performanceHistory?.status).toBe(info.status);
       const decision = deriveProgressionDecision(getExerciseById('barbell_bench_press')!, [...proposals.values()][0].userState, [5, 9]);
-      if (status === 'improving') expect(decision?.action).toBe('hold');
-      else expect(decision).toBeNull();
+      // These historical fixtures lack frozen targets: numeric improvement alone is not earned progression.
+      expect(decision).toBeNull();
     }
     expect(f.plan).toEqual(before);
   });

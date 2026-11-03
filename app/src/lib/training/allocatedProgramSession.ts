@@ -18,7 +18,7 @@ export function buildAllocatedProgramSession(input: {
   template: SessionTemplate;
   weekIndex?: number;
   profile: TrainingProfileSnapshot;
-  loading: (exercise: Exercise, reps: number, priority: ExercisePriority) => { weight: number; reason?: string };
+  loading: (exercise: Exercise, reps: number, priority: ExercisePriority, setCount: number) => import('./types').ExercisePrescription;
 }): SessionPlan {
   const catalog = catalogData as Exercise[];
   const { profile, allocation } = input;
@@ -45,7 +45,8 @@ export function buildAllocatedProgramSession(input: {
     const ownHistory = isQualifiedPerformance(exercise, profile.lastSessionPerformance?.[exercise.id]) &&
       (!profile.performanceHistory || (profile.performanceHistory.status === 'available' && profile.performanceHistory.requestedExerciseIds.includes(exercise.id)));
     const unknownLoad = slot.loadPolicy === 'none' && !ownBaseline && !ownHistory;
-    const loading = unknownLoad ? { weight: 0, reason: 'Choose a load for this exercise; no load is inferred from another implement.' } : input.loading(exercise, slot.reps, slot.priority);
+    const resolved = input.loading(exercise, slot.reps, slot.priority, slot.setCount);
+    const loading = unknownLoad && !resolved.progression ? { ...resolved, weight: 0, reason: 'Choose a load for this exercise; no load is inferred from another implement.' } : resolved;
     const warmup = exercises.length === 0 && slot.compound ? warmupSetsForWorkingWeight(loading.weight, getWeightStep(exercise)) : [];
     const alternatives = slot.candidateExerciseIds.filter((id) => id !== exercise.id && (() => {
       const candidate = catalog.find((entry) => entry.id === id);
@@ -53,7 +54,7 @@ export function buildAllocatedProgramSession(input: {
     })());
     exercises.push({
       exerciseId: exercise.id, exercise, orderIndex: exercises.length, priority: slot.priority, intents: exercise.intents,
-      plannedSets: Array.from({ length: slot.setCount }, (_, index) => ({ setIndex: index + 1, targetReps: slot.reps, suggestedWeight: loading.weight, restSeconds: slot.restSeconds })),
+      plannedSets: Array.from({ length: slot.setCount }, (_, index) => ({ setIndex: index + 1, targetReps: loading.reps, suggestedWeight: loading.weight, restSeconds: slot.restSeconds })),
       ...(warmup.length ? { warmupSets: warmup } : {}),
       decisionTrace: {
         intent: [slot.intent], goalBias: profile.goals,
@@ -61,6 +62,7 @@ export function buildAllocatedProgramSession(input: {
         selectionReason: `${slot.setCount} sets allocated from the week's ${slot.owner} ${slot.dose} requirement.`,
         rankedAlternatives: alternatives, rankedAlternativeIds: alternatives,
         progressionReason: loading.reason, confidence: 0.8, selectionPhase: 'required',
+        ...(loading.prescriptionContext ? { prescriptionContext: loading.prescriptionContext } : {}),
       },
     });
   }
@@ -75,7 +77,7 @@ export function buildAllocatedProgramSession(input: {
   return annotateLoadConfirmation({
     id: `session_${Date.now()}`, template: input.template, goals: profile.goals,
     constraints: { availableEquipment: profile.equipment_access, injuries: profile.constraints?.injuries ?? [], forbiddenMovements: (profile.constraints?.forbiddenMovements ?? []) as SessionPlan['constraints']['forbiddenMovements'], preferences: profile.constraints?.preferences, timeBudgetMinutes: SESSION_MINUTE_CAP },
-    userState: { experienceLevel: profile.experienceLevel ?? 'beginner', estimated1RM: profile.baselines, performanceHistory: profile.performanceHistory, lastSessionPerformance: profile.lastSessionPerformance, recentSessionPerformance: profile.recentSessionPerformance },
+    userState: { experienceLevel: profile.experienceLevel ?? 'beginner', estimated1RM: profile.baselines, baselineUpdatedAt: profile.baselineUpdatedAt, performanceHistory: profile.performanceHistory, lastSessionPerformance: profile.lastSessionPerformance, recentSessionPerformance: profile.recentSessionPerformance },
     exercises: capped.exercises,
     // Existing estimate retained; not a proof of actual completion time.
     estimatedDurationMinutes: capped.estimatedDurationMinutes,

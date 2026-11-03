@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { historyItem } from './fixtures/performanceHistory';
+import { historyItem, prescribedHistoryItem } from './fixtures/performanceHistory';
 import catalog from '../catalog/exercises.v1.json';
 import { deriveProgressionDecision, getExerciseById } from '../engine';
 import { TRAINING_PERF_SEED_EXERCISE_IDS, loadLastSessionPerformanceSeed, loadTrainingPerformanceSeed, withTrainingPerformanceSeed } from '../trainingProgramPerformanceSeed';
@@ -21,6 +21,19 @@ const profile = { goals: { build_muscle: 1, build_strength: 0, lose_fat: 0, get_
 beforeEach(() => { vi.clearAllMocks(); mocks.getUser.mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }); });
 
 describe('production API and seed boundary', () => {
+  it('transports original targets and adjustment evidence through the existing API/seed', async () => {
+    const item = prescribedHistoryItem();
+    item.autoregulation_adjustments = { '2': { weight: 55, reps: 7 } };
+    const before = structuredClone(item);
+    const q = query([{ data: [item], error: null }]);
+    const seed = await loadTrainingPerformanceSeed(['barbell_bench_press']);
+    expect(q.select).toHaveBeenCalledWith(expect.stringContaining('autoregulation_adjustments'));
+    expect(seed.lastSessionPerformance.barbell_bench_press.prescription).toMatchObject({
+      adjusted: true, sets: [{ setIndex: 1, targetReps: 8, suggestedWeight: 60 }, { setIndex: 2, targetReps: 8, suggestedWeight: 60 }, { setIndex: 3, targetReps: 8, suggestedWeight: 60 }],
+    });
+    expect(deriveProgressionDecision(getExerciseById('barbell_bench_press')!, { ...seed, experienceLevel: 'intermediate' }, [6, 8])).toMatchObject({ action: 'hold', nextReps: 8, nextWeight: 60 });
+    expect(item).toEqual(before);
+  });
   it('reads owned canonical items, never requires a replica, and covers exercises outside the old fixed seed', async () => {
     const outside = catalog.find(ex => !TRAINING_PERF_SEED_EXERCISE_IDS.includes(ex.id))!;
     expect(outside).toBeTruthy();
@@ -63,7 +76,7 @@ describe('production API and seed boundary', () => {
   });
 
   it('distinguishes absent from failed reads and clears stale snapshot evidence in both cases', async () => {
-    query([{ data: [historyItem()], error: null }]);
+    query([{ data: [prescribedHistoryItem()], error: null }]);
     const old = withTrainingPerformanceSeed(profile, await loadTrainingPerformanceSeed(['barbell_bench_press']));
     const bench = getExerciseById('barbell_bench_press')!;
     expect(deriveProgressionDecision(bench, { ...old, experienceLevel: 'intermediate' }, [6, 8])).not.toBeNull();

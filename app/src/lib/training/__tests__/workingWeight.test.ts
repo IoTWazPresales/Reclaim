@@ -24,11 +24,11 @@ function history(id: string): UserState {
 const load = (id: string, userState: UserState, plannedReps = 13) => suggestLoading({ exercise: ex(id), userState, goalWeights: goals, plannedReps });
 
 describe('working load is distinct from the Epley ceiling', () => {
-  it('attributes a lower adaptive load separately when the proposal is already within the working limit', () => {
+  it('labels legacy numeric-only history as a calibration estimate, not earned progression', () => {
     const user = history('shrugs');
     const reason = explainAppliedProgression(ex('shrugs'), user, [5, 9], 19, 3)!;
     expect(reason).toContain('RPE 8 working limit (2 reps in reserve): 21kg');
-    expect(reason).toContain('Qualified history proposed 20kg; the current load adjustment limits it.');
+    expect(reason).toContain('No comparable frozen prescription is available; using an initial load estimate.');
     expect(reason).not.toContain('qualified history limits it at RPE 8');
   });
 
