@@ -1,3 +1,7 @@
+## 2026-11-04 - Split preference (N-0072)
+
+Setup offers Auto / Full body / Upper-Lower where an approved policy exists (strength only). Two-day Upper/Lower is the new strategy `balanced-v1:2-upper-lower`; other choices select existing balanced policies. Stored in the existing preferences JSON; Auto output unchanged. Policy: docs/training/ROUTINE_AUDIT.md (Split preference, 2026-11-04).
+
 ## 2026-11-04 - Weekly policy v4: mixed-goal exposures and accessory dose (N-0072)
 
 New builds use `weekly-20261104-v4`: accessory follow-ups take accessory dose, goal shares round to 0.05, and with build-strength and build-muscle each at least 0.3 the first own-load heavy exposure trains strength (5 reps, 3-6) while repeats and heavy variants train hypertrophy (8 reps, 6-12). Exercise ranking keeps slot order over baselines and stops cross-requirement reuse of the deadlift/squat. Saved v3 programmes and frozen sessions replay unchanged. Policy and citations: docs/training/ROUTINE_AUDIT.md (2026-11-04); evidence: docs/training/recovery/evidence/mixed-goal-exposures-20261104.md.

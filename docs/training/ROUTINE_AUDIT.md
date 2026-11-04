@@ -1,3 +1,11 @@
+## Split preference (2026-11-04)
+
+Setup offers a weekly split: **Auto** (the existing day-count policy, unchanged), **Full body** and **Upper/Lower**. A choice is shown only when an approved weekly policy of that shape exists for the selected day count, and only in strength mode, so hybrid run placement (D-P2-03) is not decided by it. Full body maps to the existing balanced 2- and 3-day weeks; Upper/Lower maps to the existing balanced 4-day week and to one new policy, `balanced-v1:2-upper-lower`. The choice is stored in the existing training-profile preferences JSON with no schema change, and only new builds read it.
+
+Two-day Upper/Lower: Upper is bench, heavy row, overhead press, pulldown, lateral raise, curl and pushdown; Lower is squat, heavy hinge (RDL first), quad follow-up, hinge follow-up and calf raise. Doses are the weekly policy v4 doses above, so at 50/50 Upper is 24 sets (the session cap) and about 51 estimated minutes, Lower 17 sets; no owner muscle exceeds 7 sets in a session. As in the two-day full-body week, each owner muscle is trained once a week. Weekly sets are about the same (41 against 40 at 50/50): chest gets 4 instead of 6 because the specified Upper day has no fly, and calves gain 3.
+
+Setup line: "Upper body one day, lower body the other. Each muscle is still trained once a week, as in the two-day full-body plan, with about the same weekly sets." Evidence: with weekly sets matched, Schoenfeld, Grgic and Krieger found no significant hypertrophy difference between training frequencies (*J Sports Sci.* 2019;37(11):1286-1295. PMID [30558493](https://pubmed.ncbi.nlm.nih.gov/30558493/)), and in Grgic and colleagues' volume-matched strength studies frequency had no significant effect (P = 0.421; *Sports Med.* 2018;48(5):1207-1220. PMID [29470825](https://pubmed.ncbi.nlm.nih.gov/29470825/)). Both are pooled associations, not a promise for one lifter; the two-day split changes how sessions are organised, not the weekly dose.
+
 ## Mixed-goal exposures and accessory dose (2026-11-04)
 
 Operator-requested correction for **new builds only** (weekly policy `weekly-20261104-v4`). Saved `weekly-20261030-v3` programmes are declared and validated with the earlier rules, and started or guided sessions keep their frozen sets. Load arithmetic (the RPE 8 working weight, ceilings and exercise increments) is unchanged.

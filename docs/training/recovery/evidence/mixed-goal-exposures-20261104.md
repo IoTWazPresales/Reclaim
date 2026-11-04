@@ -131,3 +131,36 @@ Allocation deviations: Tuesday heavy hinge is **Sumo Deadlift 4×8**, not RDL �
 - `med-catalog-qa`: pass. Ledger wrapper pytest: 3 passed.
 
 Deferred: session-only exercise replacement still uses priority × goal range (not the replaced exposure's declared range).
+
+## Package 2 — split preference
+
+`constraints.preferences.splitPreference` (existing JSON preferences, written only when not Auto; **no schema change**). Options appear only where a policy exists, strength mode only (hybrid run placement D-P2-03 untouched): 2 days Auto/Full body/Upper-Lower; 3 days Auto/Full body; 4 days Auto/Upper-Lower; 5–6 days Auto only. Full body (2, 3) and Upper/Lower (4) select the existing balanced policies; 2-day Upper/Lower is the new approved strategy `balanced-v1:2-upper-lower` (day strategies `twoUpper`/`twoLower`), accepted by the compiler, `buildAllocatedProgramSession` and R05. Setup line: "Upper body one day, lower body the other. Each muscle is still trained once a week, as in the two-day full-body plan, with about the same weekly sets." Cited in ROUTINE_AUDIT (Split preference, 2026-11-04).
+
+### Probe — operator profile, Mon/Thu, Upper/Lower
+
+```
+Mon — Upper Body (24 sets, est 51 min)
+  Barbell Bench Press          4x5       rest 180s  load 97.5kg  [bench strength primary]
+  Barbell Row                  4x5       rest 180s  load 70kg  [row-heavy strength primary]
+  Overhead Press               4x5       rest 180s  load 85kg  [ohp strength primary]
+  Lat Pulldown                 3x9       rest  90s  load 0kg  [pulldown accessory]
+  Lateral Raises               3x12      rest  55s  load 0kg  [lateral isolation]
+  Barbell Curl                 3x12      rest  55s  load 25kg  [curl isolation]
+  Tricep Pushdown              3x12      rest  55s  load 40kg  [pushdown isolation]
+
+Thu — Lower Body (17 sets, est 45 min)
+  Barbell Back Squat           4x5       rest 180s  load 90kg  [squat strength primary]
+  Conventional Deadlift        4x8       rest  90s  load 95kg  [hingeHeavy hypertrophy primary]
+  Hack Squat                   3x9       rest  90s  load 0kg  [quadFollow accessory]
+  Romanian Deadlift            3x9       rest  90s  load 0kg  [hingeFollow accessory]
+  Calf Raises                  3x12      rest  55s  load 0kg  [calf isolation]
+
+Owner-muscle weekly sets: {"pectorals":4,"lats":7,"anterior_deltoids":4,"lateral_deltoids":3,"biceps":3,"triceps":3,"quadriceps":7,"hamstrings":7,"calves":3}
+Region line: Chest 4 · Back 11 · Shoulders 15 · Arms 17 · Legs 17
+R05: unresolved errors: []
+R05 warnings: {"load_requires_confirmation":15}
+```
+
+Gate: full **1629 passed / 211 files**, typecheck 0, dual-path 31/31, med catalogue pass; splitPreference tests 16.
+
+Same days on Auto (two-day full body): Mon 19 sets, Thu 21 sets; owners chest 6, lats 7, quads 7, hamstrings 7; total 40 vs Upper/Lower 41 (chest 4, calves +3). Upper/Lower Lower-day heavy hinge is Conventional Deadlift 4×8 because RDL is held by the hinge follow-up (no leg-curl machine) and this strategy has no separate deadlift requirement.

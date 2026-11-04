@@ -143,7 +143,8 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
   const week = generated.allocation;
   if (week.status !== 'feasible' && week.status !== 'infeasible') add('invalid_allocation_status', 'Allocation status is not supported.');
   if (![declaration.policyStatus, week.policyStatus].every((status) => status === 'accepted' || status === 'legacy_pending_review')) add('invalid_policy_status', 'Policy status is not a supported accepted/unresolved state.');
-  if (!/^balanced-v1:[2-6]$/.test(declaration.strategyId) && declaration.strategyId !== 'running-v1' && !(declaration.strategyId === 'legacy-intents-v1' && declaration.policyStatus === 'legacy_pending_review')) add('unsupported_strategy', 'No approved weekly strategy exists for this identifier.');
+  // Approved weekly strategies: balanced 2-6 days and the 2-day Upper/Lower split (2026-11-04).
+  if (!/^balanced-v1:(?:[2-6]|2-upper-lower)$/.test(declaration.strategyId) && declaration.strategyId !== 'running-v1' && !(declaration.strategyId === 'legacy-intents-v1' && declaration.policyStatus === 'legacy_pending_review')) add('unsupported_strategy', 'No approved weekly strategy exists for this identifier.');
   if (!positiveInteger(declaration.weekIndex) || declaration.weekIndex > 4 || generated.weekIndex !== declaration.weekIndex) add('week_identity_mismatch', 'Generated week does not match a declared week 1–4.');
   if (!supportsWeeklyPolicy(declaration.policyVersion) || week.policyVersion !== declaration.policyVersion || week.strategyId !== declaration.strategyId) add('policy_identity_mismatch', 'Policy/version differs from the approved declaration.');
   if (typeof declaration.provenance !== 'string' || !declaration.provenance.trim()) add('declaration_provenance_missing', 'Approved requirements need explicit provenance.');

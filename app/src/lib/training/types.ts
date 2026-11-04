@@ -91,6 +91,8 @@ export interface TrainingConstraints {
     /** When true, Skill-tier movements (e.g. handstand) may be auto-selected. Default false. */
     includeSkillWork?: boolean;
     muscle_frequency_preference?: 'once' | 'twice' | 'auto';
+    /** Weekly split shape (2026-11-04); absent means Auto. */
+    splitPreference?: 'auto' | 'full_body' | 'upper_lower';
   };
 }
 

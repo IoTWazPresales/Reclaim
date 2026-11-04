@@ -41,11 +41,12 @@ export function programmeWeekProposal(
   // The saved policy version selects the dose rules, so a v3 programme is
   // declared exactly as it was built; only new builds use v4 exposure doses.
   const policyVersion = week.compilation.policyVersion;
-  const exposurePolicies: ProgrammeWeekDeclaration['exposurePolicies'] = balanced ? declareExposurePolicies(plan.selectedWeekdays.length, profile, policyVersion) : {};
+  const strategyId = week.compilation.strategyId;
+  const exposurePolicies: ProgrammeWeekDeclaration['exposurePolicies'] = balanced ? declareExposurePolicies(plan.selectedWeekdays.length, profile, policyVersion, strategyId) : {};
   const declaration: ProgrammeWeekDeclaration = {
     weekIndex, policyVersion, strategyId: week.compilation.strategyId,
     policyStatus: week.compilation.policyStatus,
-    requirements: balanced ? defineWeeklyRequirements(plan.selectedWeekdays.length, profile, policyVersion) : [],
+    requirements: balanced ? defineWeeklyRequirements(plan.selectedWeekdays.length, profile, policyVersion, strategyId) : [],
     exposurePolicies, calendar: Object.values(week.days), runRequirement: week.compilation.runRequirement,
     provenance: 'docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md',
   };

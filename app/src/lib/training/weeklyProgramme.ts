@@ -11,7 +11,7 @@ import { evaluateExerciseEligibility } from './exerciseEligibility';
 import { getExerciseLoadingProfile } from './exerciseLoadingProfile';
 import { getPrimarySlotRoleTier, PrimarySlotRoleTier } from './exerciseSessionRole';
 import { getRepRange } from './progression';
-import { BALANCED_WEEKLY_OBJECTIVES, type WeeklyObjectivePolicy } from './weeklyProgrammePolicy';
+import { WEEKLY_STRATEGY_DAY_KEYS, weeklyObjectivesFor, type WeeklyObjectivePolicy } from './weeklyProgrammePolicy';
 import {
   WEEKLY_POLICY_VERSION, usesExposureDosePolicy,
   type AllocatedSlot, type CompiledProgrammeWeek, type ExposureRole, type ProgrammeIssue, type WeeklyPolicyVersion, type WeeklyProgrammeInputDay, type WeeklyRequirement,
@@ -19,21 +19,22 @@ import {
 import type { Exercise, ExercisePriority, GoalWeights, TrainingProfileSnapshot } from './types';
 
 const catalogue = catalogData as Exercise[];
-const strategies: Record<number, string[]> = {
-  2: ['twoA', 'twoB'],
-  3: ['threeA', 'threeB', 'threeC'],
-  4: ['fourUpperA', 'fourLowerA', 'fourUpperB', 'fourLowerB'],
-  5: ['fiveUpper', 'fiveSquat', 'fivePush', 'fivePull', 'fiveDead'],
-  6: ['sixPushA', 'sixPullA', 'sixLegsA', 'sixPushB', 'sixPullB', 'sixLegsB'],
-};
 
-export function balancedStrategyId(daysPerWeek: number, dayOrdinal: number): string | undefined {
-  const key = strategies[daysPerWeek]?.[dayOrdinal];
+/** The default balanced weekly strategy for a day count. */
+export const defaultWeeklyStrategyId = (daysPerWeek: number) => `balanced-v1:${daysPerWeek}`;
+
+export function balancedStrategyId(daysPerWeek: number, dayOrdinal: number, weeklyStrategyId = defaultWeeklyStrategyId(daysPerWeek)): string | undefined {
+  const key = WEEKLY_STRATEGY_DAY_KEYS[weeklyStrategyId]?.[dayOrdinal];
   return key ? `balanced-v1:${key}` : undefined;
 }
 
 export function isBalancedDayStrategyId(strategyId: string): boolean {
-  return Object.values(strategies).flat().some((key) => strategyId === `balanced-v1:${key}`);
+  return Object.values(WEEKLY_STRATEGY_DAY_KEYS).flat().some((key) => strategyId === `balanced-v1:${key}`);
+}
+
+/** An approved weekly strategy whose day count matches the selected calendar. */
+export function isApprovedWeeklyStrategy(strategyId: string, daysPerWeek: number): boolean {
+  return !!weeklyObjectivesFor(strategyId) && WEEKLY_STRATEGY_DAY_KEYS[strategyId]?.length === daysPerWeek;
 }
 
 /** Both goals must hold at least this share before heavy exposures take separate roles. */
@@ -95,9 +96,9 @@ export type DeclaredExposurePolicy = {
   reps: number; restSeconds: number; setCount?: number; repRange?: [number, number]; exposure?: ExposureRole;
 };
 
-export function declareExposurePolicies(daysPerWeek: number, profile: TrainingProfileSnapshot, policyVersion: WeeklyPolicyVersion | string = WEEKLY_POLICY_VERSION): Record<string, DeclaredExposurePolicy> {
+export function declareExposurePolicies(daysPerWeek: number, profile: TrainingProfileSnapshot, policyVersion: WeeklyPolicyVersion | string = WEEKLY_POLICY_VERSION, strategyId = defaultWeeklyStrategyId(daysPerWeek)): Record<string, DeclaredExposurePolicy> {
   const v4 = usesExposureDosePolicy(policyVersion);
-  return Object.fromEntries((BALANCED_WEEKLY_OBJECTIVES[daysPerWeek] ?? []).flatMap((objective) => objective.positions.map(([ordinal, index], position) => {
+  return Object.fromEntries((weeklyObjectivesFor(strategyId) ?? []).flatMap((objective) => objective.positions.map(([ordinal, index], position) => {
     const slot = objective.slot;
     const reference = catalogue.find((exercise) => exercise.id === slot.candidates[0]) as Exercise;
     const dose = exposureDose(objective, position, profile.goals, policyVersion);
@@ -133,9 +134,9 @@ function preferenceOrder(exercise: Exercise, profile: TrainingProfileSnapshot): 
 }
 
 /** Define the accepted weekly objectives without inspecting any calendar or exercise pool. */
-export function defineWeeklyRequirements(daysPerWeek: number, profile: TrainingProfileSnapshot, policyVersion: WeeklyPolicyVersion | string = WEEKLY_POLICY_VERSION): WeeklyRequirement[] {
+export function defineWeeklyRequirements(daysPerWeek: number, profile: TrainingProfileSnapshot, policyVersion: WeeklyPolicyVersion | string = WEEKLY_POLICY_VERSION, strategyId = defaultWeeklyStrategyId(daysPerWeek)): WeeklyRequirement[] {
   const v4 = usesExposureDosePolicy(policyVersion);
-  return (BALANCED_WEEKLY_OBJECTIVES[daysPerWeek] ?? []).map((objective) => {
+  return (weeklyObjectivesFor(strategyId) ?? []).map((objective) => {
     const counts = objective.positions.map((_, position) => exposureDose(objective, position, profile.goals, policyVersion).setCount);
     return {
       id: objective.id, owner: objective.owner, dose: objective.slot.dose,
@@ -158,11 +159,13 @@ export function compileProgrammeWeek(
   const issues: ProgrammeIssue[] = [];
   const balanced = specification?.strategyId.startsWith('balanced-v1:') ?? calendar.some((day) => day.strategyId?.startsWith('balanced-v1:'));
   const daysPerWeek = specification?.daysPerWeek ?? calendar.length;
-  const strategyId = specification?.strategyId ?? (balanced ? `balanced-v1:${daysPerWeek}` : 'legacy-intents-v1');
+  const strategyId = specification?.strategyId ?? (balanced ? defaultWeeklyStrategyId(daysPerWeek) : 'legacy-intents-v1');
   // This is the authority. Calendar/day templates do not create requirements.
-  const requirements = balanced ? defineWeeklyRequirements(daysPerWeek, profile) : [];
+  const approved = balanced && isApprovedWeeklyStrategy(strategyId, daysPerWeek);
+  const objectives = approved ? weeklyObjectivesFor(strategyId)! : [];
+  const requirements = approved ? defineWeeklyRequirements(daysPerWeek, profile, WEEKLY_POLICY_VERSION, strategyId) : [];
   const days: CompiledProgrammeWeek['days'] = {};
-  if (balanced && strategyId !== `balanced-v1:${daysPerWeek}`) issues.push({ code: 'unsupported_weekly_strategy', severity: 'error', message: 'The weekly strategy identifier does not match an approved policy.' });
+  if (balanced && !approved) issues.push({ code: 'unsupported_weekly_strategy', severity: 'error', message: 'The weekly strategy identifier does not match an approved policy.' });
   for (const day of calendar) {
     const dayKey = String(day.weekday);
     if (days[day.weekday]) issues.push({ code: 'duplicate_calendar_day', severity: 'error', message: 'A selected weekday occurs more than once.', dayKey });
@@ -170,13 +173,13 @@ export function compileProgrammeWeek(
   }
   if (balanced && !requirements.length) issues.push({ code: 'unsupported_weekly_strategy', severity: 'error', message: 'No approved weekly objectives exist for this strategy.' });
   if (!balanced && profile.trainingMode !== 'running') issues.push({ code: 'legacy_policy_review', severity: 'warning', message: 'Once-frequency/fat/fitter intent prescriptions retain accepted legacy behavior pending weekly-policy review.' });
-  const listedByOtherRequirement = (requirementId: string, exerciseId: string) => (BALANCED_WEEKLY_OBJECTIVES[daysPerWeek] ?? [])
+  const listedByOtherRequirement = (requirementId: string, exerciseId: string) => objectives
     .some((objective) => objective.id !== requirementId && objective.slot.candidates.includes(exerciseId));
   for (const requirement of requirements) {
-    const objective = BALANCED_WEEKLY_OBJECTIVES[daysPerWeek].find((entry) => entry.id === requirement.id)!;
+    const objective = objectives.find((entry) => entry.id === requirement.id)!;
     const slot = objective.slot;
     requirement.positions.forEach(([ordinal, index], position) => {
-      const day = calendar.find((entry) => entry.strategyId === balancedStrategyId(daysPerWeek, ordinal));
+      const day = calendar.find((entry) => entry.strategyId === balancedStrategyId(daysPerWeek, ordinal, strategyId));
       const slotId = `${ordinal}:${index}`;
       if (!day || day.template === 'run') {
         issues.push({ code: 'missing_exposure_day', severity: 'error', message: `No selected strength day can hold ${requirement.id} exposure ${slotId}.`, slotId });
@@ -227,8 +230,8 @@ export function compileProgrammeWeek(
       if ([...holders].some((requirementId) => requirementId !== slot.requirementId)) return 2;
       return slot.loadPolicy === 'own' ? 0 : 1;
     };
-    const listed = (slot: AllocatedSlot, id: string) => Number(!(BALANCED_WEEKLY_OBJECTIVES[daysPerWeek]
-      ?.find((objective) => objective.id === slot.requirementId)?.slot.candidates.includes(id)));
+    const listed = (slot: AllocatedSlot, id: string) => Number(!objectives
+      .find((objective) => objective.id === slot.requirementId)?.slot.candidates.includes(id));
     const assign = (slot: AllocatedSlot, visited: Set<string>): boolean => {
       // Reuse only reorders the slot's own listed candidates; an off-list fill
       // never outranks the list. Stable sort keeps candidate order per tier.
