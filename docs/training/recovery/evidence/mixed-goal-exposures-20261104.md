@@ -164,3 +164,11 @@ R05 warnings: {"load_requires_confirmation":15}
 Gate: full **1629 passed / 211 files**, typecheck 0, dual-path 31/31, med catalogue pass; splitPreference tests 16.
 
 Same days on Auto (two-day full body): Mon 19 sets, Thu 21 sets; owners chest 6, lats 7, quads 7, hamstrings 7; total 40 vs Upper/Lower 41 (chest 4, calves +3). Upper/Lower Lower-day heavy hinge is Conventional Deadlift 4×8 because RDL is held by the hinge follow-up (no leg-curl machine) and this strategy has no separate deadlift requirement.
+
+## Web beta redeploy
+
+`spike/web-lite` merged `fix/training-confident-ux` 407bb27 as `c4e13cf` (only conflict: add-only `CONTEXT.md`, both sides kept, newest first). Merged worktree: typecheck 0, training/components/web tests 929/90 pass, `npx expo export -p web` OK. `eas deploy --alias beta` → deployment `kiuocudv7k`; **https://eliasonw-reclaim-app--beta.expo.app** serves `AppEntry-312ebd74e79d9fc0f6d67a82ab6b4047.js`, identical to the local export (HTTP 200). No production alias, Supabase setting or OTA change. Doc update pushed as `spike/web-lite` 5746a3f.
+
+## Android
+
+Fresh release APK from 407bb27 installed over the existing release; six renders and receipt in `.eif/audit/N-0072/renders/` (queued in AWAITING_APPROVAL). Saved v3 programme replays with 0 errors and unchanged prescriptions; new copy and split row render as designed. No Save; read-only check confirms no account writes.
