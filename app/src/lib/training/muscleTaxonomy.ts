@@ -9,8 +9,8 @@
  * and `rectus_abdominis` were not in the private map), RA-021 (ontology drift),
  * and the catalogue snapshot of `exercises.v1.json`.
  *
- * `formatWeeklyMuscleSetLine` still adds one count per primary tag. Two
- * primaries that share a bucket add twice. That rule predates this module.
+ * `formatWeeklyMuscleSetLine` adds an exercise's sets once per distinct bucket
+ * of its primary tags (2026-11-04). Two primaries that share a bucket count once.
  */
 
 export const VOLUME_BUCKET_ORDER = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core'] as const;

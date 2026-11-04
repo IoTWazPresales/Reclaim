@@ -1,3 +1,29 @@
+## Mixed-goal exposures and accessory dose (2026-11-04)
+
+Operator-requested correction for **new builds only** (weekly policy `weekly-20261104-v4`). Saved `weekly-20261030-v3` programmes are declared and validated with the earlier rules, and started or guided sessions keep their frozen sets. Load arithmetic (the RPE 8 working weight, ceilings and exercise increments) is unchanged.
+
+**Accessory dose.** A follow-up accessory (pulldown, quad and hinge follow-ups, row follow-up) takes its own accessory sets, reps and rest from `rules/rules.v1.json`. Before this, every non-primary slot took the isolation rep and rest blend, and a follow dose took isolation sets, while progression already used the accessory range. Fly stays an isolation. At 50/50 an accessory is 3 sets of 9 at 90 s (range 7–12); a fly is 2 sets of 12 at 55 s. The weekly compiler and the older non-weekly session path use the same rule.
+
+**Stable blend.** Goal weights are expressed as shares rounded to the nearest 0.05 before sets, reps and rest are blended, so a slider that rests at 50.37/49.63 is treated as 50/50. Unrounded, 0.5037 × 3 + 0.4963 × 4 = 3.496 rounded to 3 heavy sets; at 50/50 the existing blend gives 4. This is an input-stability rule, not a new dose.
+
+**Strength and hypertrophy exposures.** When both build-strength and build-muscle hold at least 0.3 of the mix, heavy exposures take separate roles instead of all using one blended range:
+
+- The first weekly exposure of an own-load heavy lift (bench, squat, deadlift, overhead press, heavy row, pull-up) is a strength exposure: the build-strength primary range (3–6), target 5 reps, 180 s rest.
+- A repeat exposure of the same lift (for example the second bench day) and every heavy no-own-load variant (heavy hinge, heavy knee-dominant lift, incline) is a hypertrophy exposure: the build-muscle primary range (6–12), target 8 reps, 90 s rest.
+- Both keep the blended heavy set count. Each exposure declares its own sets, and the weekly target is the sum of those declarations rather than an assumed even split. Caps are unchanged: at most 5 sets per exercise, 10 per owner muscle and 24 per session, and the 60-minute estimate.
+
+The targets 5 and 8 are operator-approved values inside the two single-goal ranges already in `rules.v1.json`; the ranges are not new constants. Pure goals (100% muscle or 100% strength) take no exposure roles, so their heavy, isolation and support prescriptions are as before; the accessory correction above is the only change they see.
+
+Evidence: hypertrophy in sets taken to failure was similar across low and high loads, while maximal strength gains were associated with heavier loads. Schoenfeld, Grgic, Ogborn and Krieger pooled 21 studies (*J Strength Cond Res.* 2017;31(12):3508-3523. PMID [28834797](https://pubmed.ncbi.nlm.nih.gov/28834797/)). Lopez and colleagues' network meta-analysis of 28 studies and 747 adults found strength gains associated with high and moderate loads over low loads and hypertrophy that did not differ meaningfully by load (*Med Sci Sports Exerc.* 2021;53(6):1206-1216. PMID [33433148](https://pubmed.ncbi.nlm.nih.gov/33433148/)). One heavy exposure in the 3–6 range therefore carries the strength-specific stimulus, and a moderate-load exposure keeps the hypertrophy dose without lowering weekly sets. Weekly sets, not exposure count, remain the volume measure: see Schoenfeld, Ogborn and Krieger 2017 (PMID [27433992](https://pubmed.ncbi.nlm.nih.gov/27433992/)) and Schoenfeld, Grgic and Krieger 2019 (PMID [30558493](https://pubmed.ncbi.nlm.nih.gov/30558493/)) in *Small-muscle volume* and *Balanced week* below. Currier and colleagues ranked higher-load, multiple-set training highest for strength (PMID [37414459](https://pubmed.ncbi.nlm.nih.gov/37414459/)). These are associations from pooled trials, not a guarantee for any one lifter.
+
+**Exercise ranking (selection, not science).** A slot's own candidate order outranks "has a baseline"; a baseline only breaks ties among off-list fills. An exercise already held by a different weekly requirement ranks below the slot's other listed candidates. An off-list fill never outranks the list, never takes a lift that another requirement lists itself (the deadlift belongs to the deadlift day), leads with the slot's owner muscle, and then ranks by movement role. With a leg-curl machine the five-day squat day is squat, RDL and leg curl; without one, RDL is the only eligible hinge follow-up and the heavy hinge falls to an owner-led variant (sumo deadlift for the operator's equipment).
+
+**Weekly region line.** An exercise adds its sets once to each distinct region of its primary muscles. A row tagged lats, rhomboids and middle traps is Back once, not three times.
+
+**Preview copy.** Issue codes, day/slot/requirement identifiers and source paths appear only in development builds. Identical warnings show once, and every starting-weight confirmation for the day is one block naming the exercises.
+
+**Deferred.** A session-only exercise replacement still uses the priority × goal range, not the replaced exposure's declared range.
+
 ## Approved prescription progression correction ? 2026-11-03
 
 Operator approved the contract after read-only reproduction and isolated simulations, then authorized implementation with **no dual workflows**. For new prescriptions, the existing double-progression decision governs **both reps and weight**. Original planned targets, original loads, policy/range context and adjustment presence survive canonical performance-history projection. No second planner, completion path, replica history or schema migration is introduced.

@@ -7,7 +7,7 @@ import { isQualifiedPerformance, performanceHistorySignature, PERFORMANCE_HISTOR
 import { getPrimarySlotRoleTier, PrimarySlotRoleTier } from './exerciseSessionRole';
 import { epleyWorkingWeightCeiling, getWeightStep, deriveProgressionDecision, getRepRange, prescriptionContext } from './progression';
 import { isNonLegTrainingTemplate } from './trainingMode';
-import { WEEKLY_POLICY_VERSION, supportsWeeklyPolicy } from './weeklyProgrammeTypes';
+import { supportsWeeklyPolicy, usesCappedWeeklyPolicy, usesExposureDosePolicy } from './weeklyProgrammeTypes';
 import type { Exercise, ExercisePerformance, PlannedExercise, PlannedSet, SessionPlan, TrainingProfileSnapshot } from './types';
 import type { AllocatedSlot, CompiledProgrammeWeek, ProgrammeIssue, WeeklyProgrammeInputDay, WeeklyRequirement } from './weeklyProgrammeTypes';
 
@@ -71,7 +71,11 @@ export type ProgrammeWeekDeclaration = {
   policyStatus: 'accepted' | 'legacy_pending_review';
   requirements: readonly WeeklyRequirement[];
   /** Approved prescription fields, independent of selected exercises/output. */
-  exposurePolicies: Readonly<Record<string, Pick<AllocatedSlot, 'intent' | 'reps' | 'restSeconds' | 'priority' | 'loadPolicy'> & { approvedExerciseIds: readonly string[]; selectionKind: 'primary_role' | 'isolation' }>>;
+  exposurePolicies: Readonly<Record<string, Pick<AllocatedSlot, 'intent' | 'reps' | 'restSeconds' | 'priority' | 'loadPolicy' | 'exposure'> & {
+    approvedExerciseIds: readonly string[]; selectionKind: 'primary_role' | 'isolation';
+    /** Policy v4: every exposure declares its own sets and progression range. */
+    setCount?: number; repRange?: readonly [number, number];
+  }>>;
   runRequirement?: CompiledProgrammeWeek['runRequirement'];
   calendar: readonly WeeklyProgrammeInputDay[];
   provenance: string;
@@ -87,7 +91,7 @@ export type ProgrammeValidationResult = {
 const positiveInteger = (value: number) => Number.isFinite(value) && Number.isInteger(value) && value > 0;
 const nonnegative = (value: number) => Number.isFinite(value) && value >= 0;
 const same = (left: unknown, right: unknown) => JSON.stringify(left) === JSON.stringify(right);
-const requirementSignature = (row: WeeklyRequirement | undefined) => row && [row.id, row.owner, row.dose, row.targetSets, row.targetExposures, row.positions, row.exposureSlotIds, row.provenance];
+const requirementSignature = (row: WeeklyRequirement | undefined) => row && [row.id, row.owner, row.dose, row.targetSets, row.targetExposures, row.positions, row.exposureSlotIds, row.exposureSetCounts, row.provenance];
 const runSignature = (row: CompiledProgrammeWeek['runRequirement']) => row && [row.id, row.targetExposures, [...row.dayKeys].sort(), row.provenance];
 const exerciseSignature = (row: Exercise) => [row.id, row.intents, row.equipment, row.equipmentAll, row.equipmentAny, row.musclesPrimary, row.contraindications, row.difficulty];
 const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every((item) => typeof item === 'string');
@@ -129,6 +133,9 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
     issues.push({ code, severity: 'error', message, weekIndex: declaration.weekIndex, ...location, provenance });
   };
   const warning = (code: string, message: string, location: Partial<ProgrammeValidationIssue> = {}) => add(code, message, { severity: 'warning', ...location });
+  const exposureDoses = usesExposureDosePolicy(declaration?.policyVersion);
+  const cappedPolicy = usesCappedWeeklyPolicy(declaration?.policyVersion);
+  const validRange = (range: unknown): range is [number, number] => Array.isArray(range) && range.length === 2 && positiveInteger(range[0]) && positiveInteger(range[1]) && range[0] <= range[1];
   if (!completeShape(declaration, generated, profile)) {
     issues.push({ code: 'invalid_payload', severity: 'error', message: 'Declaration/allocation/final sessions lack required records or arrays.', provenance: routine });
     return finish(issues, coverage);
@@ -157,14 +164,21 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
   for (const row of declaration.requirements) {
     if (!row.id || requirements.has(row.id)) add('duplicate_requirement', 'Declared requirement IDs must be nonempty and unique.', { requirementId: row.id });
     requirements.set(row.id, row);
-    if (!positiveInteger(row.targetSets) || !positiveInteger(row.targetExposures) || row.targetSets % row.targetExposures !== 0 || row.exposureSlotIds.length !== row.targetExposures || row.positions.length !== row.targetExposures || !row.owner || !row.provenance) add('invalid_requirement', 'Requirement dose, ownership, exposures and provenance must be explicit and consistent.', { requirementId: row.id });
+    // v4 targets are the sum of declared exposure doses; earlier versions split evenly.
+    const declaredCounts = exposureDoses ? row.exposureSlotIds.map((slotId) => declaration.exposurePolicies[slotId]?.setCount) : [];
+    const distribution = exposureDoses
+      ? Array.isArray(row.exposureSetCounts) && row.exposureSetCounts.length === row.targetExposures && row.exposureSetCounts.every(positiveInteger) &&
+        same(row.exposureSetCounts, declaredCounts) && row.exposureSetCounts.reduce((total, count) => total + count, 0) === row.targetSets
+      : row.targetSets % row.targetExposures === 0;
+    if (!positiveInteger(row.targetSets) || !positiveInteger(row.targetExposures) || !distribution || row.exposureSlotIds.length !== row.targetExposures || row.positions.length !== row.targetExposures || !row.owner || !row.provenance) add('invalid_requirement', 'Requirement dose, ownership, exposures and provenance must be explicit and consistent.', { requirementId: row.id });
     row.positions.forEach(([ordinal, index], position) => {
       const slotId = row.exposureSlotIds[position];
       if (!Number.isInteger(ordinal) || ordinal < 0 || ordinal >= orderedCalendar.length || !Number.isInteger(index) || index < 0 || slotId !== `${ordinal}:${index}`) add('invalid_exposure_position', 'Declared exposure positions do not identify selected calendar slots.', { requirementId: row.id });
       if (declaredSlotIds.has(slotId)) add('duplicate_exposure', 'Declared exposure ID is duplicated.', { requirementId: row.id, slotId });
       declaredSlotIds.add(slotId);
       const policy = declaration.exposurePolicies[slotId];
-      if (!policy || !strings(policy.approvedExerciseIds) || !['isolation', 'primary_role'].includes(policy.selectionKind) || !positiveInteger(policy.reps) || !nonnegative(policy.restSeconds) || !['primary', 'accessory', 'isolation'].includes(policy.priority) || !['own', 'population', 'none'].includes(policy.loadPolicy)) add('exposure_policy_missing', 'Exposure needs a complete trusted reps/rest/load policy.', { requirementId: row.id, slotId });
+      if (!policy || !strings(policy.approvedExerciseIds) || !['isolation', 'primary_role'].includes(policy.selectionKind) || !positiveInteger(policy.reps) || !nonnegative(policy.restSeconds) || !['primary', 'accessory', 'isolation'].includes(policy.priority) || !['own', 'population', 'none'].includes(policy.loadPolicy) ||
+          exposureDoses && (!positiveInteger(policy.setCount ?? NaN) || !validRange(policy.repRange) || policy.exposure !== undefined && !['strength', 'hypertrophy'].includes(policy.exposure))) add('exposure_policy_missing', 'Exposure needs a complete trusted sets/reps/rest/load policy.', { requirementId: row.id, slotId });
     });
   }
   const mode = profile.trainingMode ?? 'strength';
@@ -190,7 +204,7 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
     if (session.plan.weekIndex !== undefined && session.plan.weekIndex !== declaration.weekIndex) add('week_identity_mismatch', 'Final session belongs to a different week.', { dayKey: session.dayKey });
     if ((session.kind === 'run') !== (session.plan.template === 'run') || session.kind === 'strength' && expectedDay?.template !== session.plan.template) add('session_template_mismatch', 'Actual session type differs from its declared placement.', { dayKey: session.dayKey });
     if (session.plan.programmeValidation?.status === 'infeasible' || session.plan.programmeValidation?.issues.some((issue) => issue.severity === 'error')) add('session_infeasible', 'Final session carries an allocation error.', { dayKey: session.dayKey });
-    if (declaration.policyVersion === WEEKLY_POLICY_VERSION) for (const issue of session.plan.programmeValidation?.issues ?? []) {
+    if (cappedPolicy) for (const issue of session.plan.programmeValidation?.issues ?? []) {
       if (issue.code === 'volume_cap_shortfall') warning(issue.code, issue.message, { dayKey: session.dayKey, provenance: routine });
     }
   }
@@ -224,9 +238,10 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
       const row = requirements.get(slot.requirementId);
       if (!row || !row.exposureSlotIds.includes(slot.slotId) || slot.owner !== row.owner || slot.dose !== row.dose) add('unknown_allocation', 'Allocation does not belong to its approved weekly requirement.', { dayKey, slotId: slot.slotId, requirementId: slot.requirementId });
       const policy = declaration.exposurePolicies[slot.slotId];
-      if (!policy || slot.intent !== policy.intent || slot.reps !== policy.reps || slot.restSeconds !== policy.restSeconds || slot.priority !== policy.priority || slot.loadPolicy !== policy.loadPolicy) add('exposure_policy_mismatch', 'Allocated prescription differs from independently declared exposure policy.', { dayKey, slotId: slot.slotId });
+      if (!policy || slot.intent !== policy.intent || slot.reps !== policy.reps || slot.restSeconds !== policy.restSeconds || slot.priority !== policy.priority || slot.loadPolicy !== policy.loadPolicy ||
+          exposureDoses && (!same(slot.repRange, policy.repRange) || slot.exposure !== policy.exposure)) add('exposure_policy_mismatch', 'Allocated prescription differs from independently declared exposure policy.', { dayKey, slotId: slot.slotId });
       if (!positiveInteger(slot.setCount) || !positiveInteger(slot.reps) || !nonnegative(slot.restSeconds)) add('invalid_prescription', 'Allocated sets/reps/rest contain invalid values.', { dayKey, slotId: slot.slotId });
-      if (row && slot.setCount !== row.targetSets / row.targetExposures) add('set_allocation_mismatch', 'Exposure dose differs from approved weekly distribution.', { dayKey, slotId: slot.slotId, requirementId: slot.requirementId });
+      if (row && slot.setCount !== (exposureDoses ? policy?.setCount : row.targetSets / row.targetExposures)) add('set_allocation_mismatch', 'Exposure dose differs from approved weekly distribution.', { dayKey, slotId: slot.slotId, requirementId: slot.requirementId });
       const exercise = slot.exerciseId ? catalogue.get(slot.exerciseId) : undefined;
       if (!exercise) add('unavailable_slot', 'Required allocation has no catalogue exercise.', { dayKey, slotId: slot.slotId });
       else checkEligibility(exercise, slot, dayKey);
@@ -295,18 +310,21 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
           if (!alternative || !slot.candidateExerciseIds.includes(id) || !evaluateExerciseEligibility(alternative, profile, eligibilityOptions(slot)).eligible || !alternative.intents.includes(slot.intent) || !ownsSlot(alternative, slot) || !fitsPrescription(alternative, slot)) add('ineligible_final_alternative', 'Final offered alternative violates the selected slot or user constraints.', { dayKey, slotId: slot.slotId, exerciseId: id });
         }
       }
-      if (declaration.policyVersion === WEEKLY_POLICY_VERSION) {
+      if (cappedPolicy) {
         const owner = slot?.owner ?? prescriptionOwner(item);
         ownerSets.set(owner, (ownerSets.get(owner) ?? 0) + item.plannedSets.length);
         if (item.plannedSets.length > 5) add('exercise_set_budget', 'Actual exercise exceeds the v2 five-set cap.', { dayKey, exerciseId: item.exerciseId });
         if (ownerSets.get(owner)! > 10) add('owner_muscle_set_budget', 'Actual owner-muscle work exceeds the v2 ten-set session cap.', { dayKey, exerciseId: item.exerciseId });
       }
       if (!item.plannedSets.length) add('invalid_prescription', 'Final exercise has no working sets.', { dayKey, exerciseId: item.exerciseId });
-      const nextPrescription = declaration.policyVersion === WEEKLY_POLICY_VERSION && slot ? deriveProgressionDecision(exercise, {
+      // v4 progression uses the declared exposure range, never the allocation's own copy.
+      const declaredRange = slot && exposureDoses ? declaration.exposurePolicies[slot.slotId]?.repRange : undefined;
+      const governingRange: [number, number] | undefined = slot ? (validRange(declaredRange) ? [declaredRange[0], declaredRange[1]] : getRepRange(slot.priority, profile.goals)) : undefined;
+      const nextPrescription = cappedPolicy && slot && governingRange ? deriveProgressionDecision(exercise, {
         experienceLevel: profile.experienceLevel ?? 'beginner', estimated1RM: profile.baselines, baselineUpdatedAt: profile.baselineUpdatedAt,
         performanceHistory: profile.performanceHistory, lastSessionPerformance: profile.lastSessionPerformance, recentSessionPerformance: profile.recentSessionPerformance,
-      }, getRepRange(slot.priority, profile.goals), slot.setCount) : null;
-      if (item.decisionTrace.prescriptionContext && slot && !same(item.decisionTrace.prescriptionContext, prescriptionContext(getRepRange(slot.priority, profile.goals)))) {
+      }, governingRange, slot.setCount) : null;
+      if (item.decisionTrace.prescriptionContext && slot && governingRange && !same(item.decisionTrace.prescriptionContext, prescriptionContext(governingRange))) {
         add('prescription_context_mismatch', 'Frozen comparison context differs from the governing goal range and policy.', { dayKey, exerciseId: item.exerciseId });
       }
       item.plannedSets.forEach((set, index) => {
@@ -344,7 +362,7 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
           let historyGoverns = false;
           const baselineAt = ownBaseline ? profile.baselineUpdatedAt?.[exercise.id] : undefined;
           const historyAvailable = !profile.performanceHistory || profile.performanceHistory.status === 'available' && profile.performanceHistory.requestedExerciseIds.includes(exercise.id);
-          if (declaration.policyVersion === WEEKLY_POLICY_VERSION && qualifiedHistory && historyAvailable &&
+          if (cappedPolicy && qualifiedHistory && historyAvailable &&
               (!ownBaseline || !baselineAt || Number.isFinite(Date.parse(baselineAt)) && Date.parse(history!.date) > Date.parse(baselineAt))) {
             let best = 0;
             let newer = Infinity;

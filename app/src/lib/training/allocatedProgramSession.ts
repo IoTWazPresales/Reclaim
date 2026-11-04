@@ -6,7 +6,7 @@ import { evaluateExerciseEligibility } from './exerciseEligibility';
 import { getWeightStep } from './progression';
 import { warmupSetsForWorkingWeight } from './warmupSets';
 import type { AllocatedProgrammeDay, ProgrammeIssue } from './weeklyProgrammeTypes';
-import { WEEKLY_POLICY_VERSION, supportsWeeklyPolicy } from './weeklyProgrammeTypes';
+import { supportsWeeklyPolicy, usesCappedWeeklyPolicy } from './weeklyProgrammeTypes';
 import { capNewSession } from './sessionCapPolicy';
 import { isBalancedDayStrategyId } from './weeklyProgramme';
 import type { Exercise, ExercisePriority, PlannedExercise, SessionPlan, SessionTemplate, TrainingProfileSnapshot } from './types';
@@ -18,7 +18,8 @@ export function buildAllocatedProgramSession(input: {
   template: SessionTemplate;
   weekIndex?: number;
   profile: TrainingProfileSnapshot;
-  loading: (exercise: Exercise, reps: number, priority: ExercisePriority, setCount: number) => import('./types').ExercisePrescription;
+  /** repRange is the declared v4 exposure range; absent for earlier policy versions. */
+  loading: (exercise: Exercise, reps: number, priority: ExercisePriority, setCount: number, repRange?: [number, number]) => import('./types').ExercisePrescription;
 }): SessionPlan {
   const catalog = catalogData as Exercise[];
   const { profile, allocation } = input;
@@ -45,7 +46,7 @@ export function buildAllocatedProgramSession(input: {
     const ownHistory = isQualifiedPerformance(exercise, profile.lastSessionPerformance?.[exercise.id]) &&
       (!profile.performanceHistory || (profile.performanceHistory.status === 'available' && profile.performanceHistory.requestedExerciseIds.includes(exercise.id)));
     const unknownLoad = slot.loadPolicy === 'none' && !ownBaseline && !ownHistory;
-    const resolved = input.loading(exercise, slot.reps, slot.priority, slot.setCount);
+    const resolved = input.loading(exercise, slot.reps, slot.priority, slot.setCount, slot.repRange);
     const loading = unknownLoad && !resolved.progression ? { ...resolved, weight: 0, reason: 'Choose a load for this exercise; no load is inferred from another implement.' } : resolved;
     const warmup = exercises.length === 0 && slot.compound ? warmupSetsForWorkingWeight(loading.weight, getWeightStep(exercise)) : [];
     const alternatives = slot.candidateExerciseIds.filter((id) => id !== exercise.id && (() => {
@@ -70,7 +71,7 @@ export function buildAllocatedProgramSession(input: {
       10 + allocation.slots.reduce((total, slot) => total + (slot.compound ? 8 : 3), 0) > SESSION_MINUTE_CAP) {
     issues.push({ code: 'allocation_budget_exceeded', severity: 'error', message: 'Saved weekly requirements exceed the accepted session budget; no sets were silently trimmed.' });
   }
-  const capped = allocation.policyVersion === WEEKLY_POLICY_VERSION
+  const capped = usesCappedWeeklyPolicy(allocation.policyVersion)
     ? capNewSession(exercises, undefined, SESSION_MINUTE_CAP, exercises.map(ex => allocation.slots.find(s => s.exerciseId === ex.exerciseId)!.owner), exercises.map(ex => allocation.slots.find(s => s.exerciseId === ex.exerciseId)!.compound ? 8 : 3))
     : { exercises, issues: [], estimatedDurationMinutes: 10 + allocation.slots.filter(slot => slot.exerciseId).reduce((n, slot) => n + (slot.compound ? 8 : 3), 0) };
   issues.push(...capped.issues);

@@ -45,6 +45,28 @@
     "fiveDayPlacementNote": "Upper press/row, squat, push-with-no-pull, pull-with-no-press, deadlift order is prescribed literally in Small-muscle volume. Secondary slot placement is not exhaustively specified here; weekly owner totals remain independently mandatory.",
     "requiredFirstOwnersByFiveDayOrdinal": ["pectorals", "quadriceps", "pectorals", "lats", "hamstrings"]
   },
+  "balancedHalfMuscleHalfStrengthV4": {
+    "appliesTo": "New builds under weekly policy weekly-20261104-v4. Saved v3 programmes keep balancedHalfMuscleHalfStrength above.",
+    "provenance": "docs/training/ROUTINE_AUDIT.md#mixed-goal-exposures-and-accessory-dose-2026-11-04",
+    "goals": { "build_muscle": 0.5, "build_strength": 0.5, "lose_fat": 0, "get_fitter": 0 },
+    "roleRule": "Both goals at least 0.3 of the 0.05-rounded mix. A heavy own-load lift's first exposure in the week is strength; its repeat exposure and every heavy no-own-load variant are hypertrophy. Follow-up sets, reps and rest use the slot's own priority (accessory or isolation); support stays three sets.",
+    "dose": {
+      "strength": { "sets": 4, "reps": 5, "restSeconds": 180, "repRange": [3, 6] },
+      "hypertrophy": { "sets": 4, "reps": 8, "restSeconds": 90, "repRange": [6, 12] },
+      "accessory": { "sets": 3, "reps": 9, "restSeconds": 90, "repRange": [7, 12] },
+      "isolation": { "sets": 2, "reps": 12, "restSeconds": 55, "repRange": [9, 16] },
+      "support": { "sets": 3, "reps": 12, "restSeconds": 55, "repRange": [9, 16] }
+    },
+    "doseProvenance": "Hand-computed from rules/rules.v1.json single-goal rows at 50/50: heavy 0.5x3+0.5x4=3.5->4; accessory 0.5x2+0.5x3=2.5->3, range [6.5,11.5]->[7,12], target 9, rest 90; isolation 1.5->2, [9,16], target 12, rest 52.5->55. Strength/hypertrophy targets 5 and 8 are the operator-approved exposure targets.",
+    "weeklySetsPerMajorOwner": {
+      "2": { "pectorals": 6, "lats": 7, "quadriceps": 7, "hamstrings": 7 },
+      "3": { "pectorals": 10, "lats": 11, "quadriceps": 11, "hamstrings": 11 },
+      "4": { "pectorals": 12, "lats": 14, "quadriceps": 14, "hamstrings": 14 },
+      "5": { "pectorals": 12, "lats": 14, "quadriceps": 14, "hamstrings": 14 },
+      "6": { "pectorals": 12, "lats": 14, "quadriceps": 14, "hamstrings": 14 }
+    },
+    "weeklySetsProvenance": "Sum of the balanced-week placements at the v4 doses above; e.g. five days lats = row 4 + pulldown 3 + pull-up 4 + row follow-up 3 = 14, chest = bench 4+4 + fly 2+2 = 12."
+  },
   "invariants": {
     "maxWorkingSetsPerSession": 24,
     "maxEstimatedMinutesPerSession": 60,

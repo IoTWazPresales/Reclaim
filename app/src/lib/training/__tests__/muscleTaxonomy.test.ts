@@ -73,6 +73,14 @@ describe('muscle taxonomy', () => {
     expect(VOLUME_BUCKET_ORDER).toEqual(['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core']);
   });
 
+  it('counts an exercise once per distinct bucket, not once per primary tag', () => {
+    // Rows tag lats + rhomboids + middle traps: all Back. Three sets stay three sets.
+    expect(formatWeeklyMuscleSetLine([planWithPrimaries(['lats', 'rhomboids', 'middle_traps'], 3)])).toBe('Back 3');
+    // A deadlift-style tag set still reaches each distinct region once.
+    expect(formatWeeklyMuscleSetLine([planWithPrimaries(['hamstrings', 'glutes', 'erector_spinae'], 4)])).toBe('Back 4 · Legs 4');
+    expect(formatWeeklyMuscleSetLine([planWithPrimaries(['quadriceps', 'glutes'], 2), planWithPrimaries(['quadriceps'], 3)])).toBe('Legs 5');
+  });
+
   it('reads buckets from muscleTaxonomy, not a private map', () => {
     const source = readFileSync(path.join(__dirname, '../weeklyVolumeSummary.ts'), 'utf8');
     expect(source).toContain("from './muscleTaxonomy'");

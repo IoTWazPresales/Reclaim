@@ -10,6 +10,8 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **N-0072 Package 1 — mixed-goal exposures + accessory dose, 2026-11-04:** Weekly policy `weekly-20261104-v4` for new builds only; saved v3 replays unchanged (v3 R05 fixture passes). Accessory slots use their own priority (both compile paths); goal shares rounded to 0.05 (0.5037/0.4963 -> 4 heavy sets); 50/50 heavy exposures split strength (3-6, 5 reps) / hypertrophy (6-12, 8 reps) with per-exposure set declarations; candidate order outranks baseline, deadlift/squat once each; region line once per bucket; preview internals `__DEV__`-only, deduped, one starting-weight block. Full **1613/210**, types 0, dual **31**, catalogue pass, wrapper **3**. [Evidence and printed week](../training/recovery/evidence/mixed-goal-exposures-20261104.md); policy cited in ROUTINE_AUDIT. Squat/deadlift strength loads 90/100 (5 kg lower-body increment, unchanged). Package 2 (split preference) next under the same node.
+
 - **Prescription progression source correction, 2026-11-03:** Operator-approved combined reps/load decision implemented through the existing planner, builder and canonical history paths; no dual workflow. Following displayed work now advances reps to the maximum, then the existing load increment with a rep reset. Newer baseline precedence and frozen sessions retained. Final full **1549/209**, focused **188**, types, dual **31**, catalogue **357/0**, wrapper **3** pass. [Scope, policy and evidence](../training/recovery/evidence/prescribed-progression-20261103.md). Android/web runtime and independent/operator acceptance remain pending in [human checks](../training/recovery/evidence/prescribed-progression-human-checks-20261103.md); wrapper queue note recorded. No live data, deployment, OTA, schema or completion-path change. N-0070 remains open; do not continue the broader programme mandate for this task.
 
 | Scoped work | Source validation | Node/runtime state |
@@ -821,3 +823,6 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-11-03T15:25:35Z` run `R20261103PROGRESSION` — node.lease.release N-0070 lease released
 - `2026-11-03T15:25:42Z` run `R20261103PROGRESSION` — node.lease.acquire N-0070 lease acquired
 - `2026-11-03T15:27:12Z` run `R20261103PROGRESSION` — node.stage_note N-0070 HUMAN_CHECK steps=prescribed-progression-human-checks-20261103.md
+- `2026-11-04T21:00:21Z` run `R20261104SPLIT` — node.add N-0072 “50/50 routine policy fix and split preference” class=feature risk=R3
+- `2026-11-04T21:00:24Z` run `R20261104SPLIT` — node.patch N-0072 exact acceptance criteria from C:/Users/WARREN~1/AppData/Local/Temp/claude/a56d178ccdb59bc8/4f1098d8-fd69-4c34-a67c-2381035542f7/scratchpad/n0072.txt
+- `2026-11-04T21:00:29Z` run `R20261104SPLIT` — node.lease.acquire N-0072 lease acquired

@@ -34,8 +34,11 @@ export function programme(extra: Partial<TrainingSetupDraft> = {}) {
 
 // Literal requirements from ROUTINE_AUDIT.md, Balanced week (2026-10-09).
 // No defineWeeklyRequirements/policy-table import and no generated targets as oracle.
-const majorSets = Object.fromEntries(Object.entries(oracle.balancedHalfMuscleHalfStrength.weekly).map(([n, requirement]) => [n, requirement.setsPerMajorOwner]));
+// New builds use the v4 oracle section; the v3 section remains for saved-programme replay.
+const v4 = oracle.balancedHalfMuscleHalfStrengthV4;
+const majorSets = v4.weeklySetsPerMajorOwner as Record<string, Record<string, number>>;
 const majorOwners = oracle.balancedHalfMuscleHalfStrength.majorOwners;
+type V4Role = keyof typeof v4.dose;
 const region = (owner: string) => ({ upper_pectorals: 'pectorals', lower_pectorals: 'pectorals', gastrocnemius: 'calves', soleus: 'calves', upper_traps: 'traps' }[owner] ?? owner);
 export function inspectBalanced(f: ReturnType<typeof programme>, weekIndex: number, proposals = programmeWeekProposal(f.plan, weekIndex, f.snapshot)) {
   const errors: string[] = [];
@@ -43,7 +46,8 @@ export function inspectBalanced(f: ReturnType<typeof programme>, weekIndex: numb
   const exposures: Record<string, Set<number>> = {};
   const week = f.plan.weeks.find(w => w.weekIndex === weekIndex)!;
   if (proposals.size !== f.selectedWeekdaysJs.length) errors.push('missing day');
-  for (const day of f.selectedWeekdaysJs) {
+  const seenRequirement = new Set<string>();
+  for (const day of [...f.selectedWeekdaysJs].sort((a, b) => a - b)) {
     const session = proposals.get(day);
     if (!session || !session.exercises.length) { errors.push('empty workout'); continue; }
     const slots = week.days[day].allocation!.slots;
@@ -62,10 +66,15 @@ export function inspectBalanced(f: ReturnType<typeof programme>, weekIndex: numb
       if (owner !== region(slot.owner)) errors.push('owner mismatch');
       counts[owner] = (counts[owner] ?? 0) + item.plannedSets.length;
       (exposures[owner] ??= new Set()).add(day);
-      const expectedSets = slot.dose === 'heavy' ? 4 : slot.dose === 'follow' ? 2 : 3;
-      if (item.plannedSets.length !== expectedSets) errors.push('dose');
-      const expectedReps = slot.dose === 'heavy' ? 7 : 12;
-      const expectedRest = slot.dose === 'heavy' ? 135 : 55;
+      // Role from the literal prose rule; the allocation only locates the exposure.
+      const firstOfRequirement = !seenRequirement.has(slot.requirementId);
+      seenRequirement.add(slot.requirementId);
+      const role: V4Role = slot.dose === 'heavy' ? (slot.loadPolicy === 'own' && firstOfRequirement ? 'strength' : 'hypertrophy')
+        : slot.dose === 'support' ? 'support' : slot.priority === 'accessory' ? 'accessory' : 'isolation';
+      const expected = v4.dose[role];
+      if (item.plannedSets.length !== expected.sets) errors.push('dose');
+      const expectedReps = expected.reps;
+      const expectedRest = expected.restSeconds;
       for (const [i, set] of item.plannedSets.entries()) {
         if (set.setIndex !== i + 1 || set.targetReps !== expectedReps || set.restSeconds !== expectedRest) errors.push('prescription');
         if (!Number.isFinite(set.suggestedWeight) || set.suggestedWeight < 0) errors.push('load');
@@ -74,7 +83,7 @@ export function inspectBalanced(f: ReturnType<typeof programme>, weekIndex: numb
     }
   }
   for (const owner of majorOwners) {
-    if (counts[owner] !== majorSets[f.selectedWeekdaysJs.length]) errors.push(`weekly ${owner}`);
+    if (counts[owner] !== majorSets[f.selectedWeekdaysJs.length][owner]) errors.push(`weekly ${owner}`);
     if (exposures[owner]?.size !== (f.selectedWeekdaysJs.length === 2 ? 1 : 2)) errors.push(`exposure ${owner}`);
   }
   for (const owner of oracle.balancedHalfMuscleHalfStrength.supportOwners) {
@@ -130,10 +139,14 @@ describe('R10 independent whole-programme acceptance', () => {
         totals[region(slot.owner)] = (totals[region(slot.owner)] ?? 0) + item.plannedSets.length;
         expect(item.plannedSets.length).toBeLessThanOrEqual(5);
       }
+      // 0.46/0.46/0.08 rounds to 0.45/0.45/0.10 shares: heavy 3.45 -> 3, accessory 2.45 -> 2, isolation 1.55 -> 2.
       expect(majorOwners.map(owner => totals[owner])).toEqual([10, 10, 10, 10]);
       const chest = [...proposals.values()].flatMap(s => s.exercises.filter(e => e.exerciseId === 'barbell_bench_press'));
       expect(chest).toHaveLength(2);
-      expect(chest[0].plannedSets).toEqual(chest[1].plannedSets);
+      // Same lift and set count; the first exposure trains strength, the repeat hypertrophy.
+      expect(chest.map(e => e.plannedSets.length)).toEqual([3, 3]);
+      expect(chest.map(e => e.plannedSets[0].targetReps)).toEqual([5, 8]);
+      expect(chest.map(e => e.plannedSets[0].restSeconds)).toEqual([180, 90]);
       captures.push({ scenario: 'original-five-day', week, totals, sessions: [...proposals] });
     }
   });

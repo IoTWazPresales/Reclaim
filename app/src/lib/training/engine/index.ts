@@ -25,7 +25,7 @@ import { warmupSetsForWorkingWeight } from '../warmupSets';
 import { buildBalancedProgramSession } from '../balancedHypertrophy';
 import { buildAllocatedProgramSession } from '../allocatedProgramSession';
 import { capNewSession } from '../sessionCapPolicy';
-import { WEEKLY_POLICY_VERSION } from '../weeklyProgrammeTypes';
+import { WEEKLY_POLICY_VERSION, usesCappedWeeklyPolicy } from '../weeklyProgrammeTypes';
 import { evaluateExerciseEligibility } from '../exerciseEligibility';
 import type {
   Exercise,
@@ -889,7 +889,8 @@ export function suggestLoading(input: SuggestLoadingInput): number {
 /** One reps/load resolution for new builds, replacements, preview and start. */
 export function suggestPrescription(input: SuggestLoadingInput): import('../types').ExercisePrescription {
   const { exercise, userState, goalWeights, priority = 'primary' } = input;
-  const range = getRepRange(priority, goalWeights);
+  // A declared weekly exposure range (policy v4) governs; otherwise priority × goal blend.
+  const range = input.repRange ?? getRepRange(priority, goalWeights);
   const decision = deriveProgressionDecision(exercise, userState, range, input.plannedSetCount);
   const historical = userState.prescriptionPolicy === 'v1';
   const reps = historical ? input.plannedReps : decision?.nextReps ?? input.plannedReps;
@@ -1806,7 +1807,7 @@ export function buildSessionFromProgramDay(
     avoidExerciseIds?: string[];
   },
 ): SessionPlan {
-  const policy = programDay.allocation?.policyVersion === WEEKLY_POLICY_VERSION ? 'v2' : 'v1';
+  const policy = usesCappedWeeklyPolicy(programDay.allocation?.policyVersion) ? 'v2' : 'v1';
   if (programDay.template_key === 'run') {
     const weekIndex = acceptedProgramWeekIndex(programDay.weekIndex);
     // RUNNING_DESIGN.md RD-006: 20 minutes, then 30 minutes from week 3.
@@ -1844,9 +1845,9 @@ export function buildSessionFromProgramDay(
     template: programDay.template_key,
     weekIndex,
     profile: profileSnapshot,
-    loading: (exercise, plannedReps, priority, plannedSetCount) => {
+    loading: (exercise, plannedReps, priority, plannedSetCount, repRange) => {
       const userState: UserState = { experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel), baselineUpdatedAt: profileSnapshot.baselineUpdatedAt, prescriptionPolicy: policy, estimated1RM: profileSnapshot.baselines || {}, performanceHistory: profileSnapshot.performanceHistory, lastSessionPerformance: profileSnapshot.lastSessionPerformance, recentSessionPerformance: profileSnapshot.recentSessionPerformance };
-      return suggestPrescription({ exercise, plannedReps, priority, plannedSetCount, goalWeights: profileSnapshot.goals, userState });
+      return suggestPrescription({ exercise, plannedReps, priority, plannedSetCount, goalWeights: profileSnapshot.goals, userState, ...(repRange ? { repRange } : {}) });
     },
   });
 

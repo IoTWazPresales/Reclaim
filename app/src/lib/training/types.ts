@@ -320,6 +320,8 @@ export interface SuggestLoadingInput {
   plannedReps: number;
   priority?: ExercisePriority; // Added: priority affects rep range used for progression
   plannedSetCount?: number;
+  /** Declared weekly exposure range (policy v4); otherwise priority × goal blend. */
+  repRange?: [number, number];
 }
 
 export interface ExercisePrescription {
