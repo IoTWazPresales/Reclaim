@@ -2,7 +2,7 @@ import React from 'react';
 import { createRequire } from 'node:module';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SessionPreviewModal from '../SessionPreviewModal';
-import { previewExerciseIssues, type PreviewDiagnosticLocation } from '../SessionPreviewProgrammeReview';
+import { PreviewProgrammeReview, previewExerciseIssues, type PreviewDiagnosticLocation } from '../SessionPreviewProgrammeReview';
 import { assertStartableProgramme } from '@/lib/training/buildProgramDaySession';
 import { frozenSessionProjection } from '@/lib/training/programmeProjection';
 import type { SessionPlan } from '@/lib/training/types';
@@ -59,17 +59,49 @@ function render(plan: SessionPlan, diagnosticLocation: PreviewDiagnosticLocation
 beforeEach(() => { controls.buttons.length = 0; confirm.mockClear(); });
 
 describe('SessionPreviewModal programme review', () => {
-  it('shows unresolved review, required weight confirmation and original diagnostic without prescribing zero kg', () => {
+  it('shows unresolved review and one starting-weight block without prescribing zero kg', () => {
     const plan = fixture();
     const before = JSON.stringify(plan);
     const html = render(plan);
     expect(html).toContain('Programme week unresolved');
     expect(html).toContain('weight confirmation required');
-    expect(html).toContain('Original load diagnostic.');
-    expect(html).toContain('load_requires_confirmation');
-    expect(html).toContain('synthetic:test');
+    expect(html).toContain('Set starting weights for 1 exercise');
+    expect(html).toContain('Leg Press');
+    expect(html).not.toContain('Original load diagnostic.'); // Collapsed into the block.
+    expect(html).toContain('load_requires_confirmation × 1'); // Development builds only.
     expect(html).not.toMatch(/0\s*kg/);
     expect(JSON.stringify(plan)).toBe(before);
+  });
+
+  it('collapses every selected-day load confirmation into one named block', () => {
+    const exercise = catalog.find(ex => ex.id === 'hack_squat')!;
+    const plan = fixture([issue(), issue({ exerciseId: 'hack_squat', message: 'Second load diagnostic.' }), issue({ dayKey: '5', exerciseId: 'calf_raises' })]);
+    plan.exercises.push({ ...plan.exercises[0], exerciseId: exercise.id, exercise: exercise as unknown as SessionPlan['exercises'][number]['exercise'], orderIndex: 1 });
+    const html = render(plan, { ...location, slots: [] });
+    expect(html.match(/Set starting weights/g)).toHaveLength(1);
+    expect(html).toContain('Set starting weights for 2 exercises');
+    expect(html).toContain('Leg Press · Hack Squat');
+    expect(html).not.toContain('Calf Raises'); // Another day.
+    expect(html).not.toContain('Second load diagnostic.');
+  });
+
+  it('keeps codes, identifiers and source paths out of production copy', () => {
+    const plan = fixture([issue(),
+      issue({ code: 'history_evidence_unverified', message: 'Original history barrier.', slotId: '1:0', requirementId: 'quadHeavy', provenance: 'docs/training/ROUTINE_AUDIT.md: balanced week' }),
+      issue({ code: 'policy_unresolved', message: 'Policy review pending (docs/training/ROUTINE_AUDIT.md).', dayKey: undefined, exerciseId: undefined, provenance: 'docs/training/ROUTINE_AUDIT.md' })]);
+    const production = renderToStaticMarkup(<>
+      <PreviewProgrammeReview plan={plan} location={location} developerDetails={false} />
+      <PreviewProgrammeReview issues={previewExerciseIssues(plan, location, 'leg_press')} developerDetails={false} />
+    </>);
+    expect(production).toContain('Set starting weights for 1 exercise');
+    expect(production).toContain('Original history barrier.');
+    expect(production).toContain('Policy review pending');
+    for (const internal of ['load_requires_confirmation', 'history_evidence_unverified', 'policy_unresolved', 'docs/', 'Source:', 'Slot 1:0', 'quadHeavy', 'Day 3', 'leg_press', 'synthetic:test']) {
+      expect(production).not.toContain(internal);
+    }
+    const development = renderToStaticMarkup(<PreviewProgrammeReview issues={previewExerciseIssues(plan, location, 'leg_press')} developerDetails />);
+    expect(development).toContain('history_evidence_unverified');
+    expect(development).toContain('Source: docs/training/ROUTINE_AUDIT.md');
   });
 
   it('explains incomplete history as a barrier to automatic progression', () => {
@@ -105,11 +137,12 @@ describe('SessionPreviewModal programme review', () => {
   });
 
   it('matches original day, exercise, week and optional slot without borrowing another exposure', () => {
+    const history = (overrides: Partial<ProgrammeValidationIssue>) => issue({ code: 'history_evidence_unverified', ...overrides });
     const plan = fixture([
-      issue({ message: 'Selected exposure.', slotId: '1:0' }),
-      issue({ message: 'Other day.', dayKey: '5' }), issue({ message: 'Other exercise.', exerciseId: 'bench_press' }),
-      issue({ message: 'Other slot.', slotId: '1:9' }), issue({ message: 'Other week.', weekIndex: 2 }),
-      issue({ message: 'Week warning.', dayKey: undefined, exerciseId: undefined }),
+      history({ message: 'Selected exposure.', slotId: '1:0' }),
+      history({ message: 'Other day.', dayKey: '5' }), history({ message: 'Other exercise.', exerciseId: 'bench_press' }),
+      history({ message: 'Other slot.', slotId: '1:9' }), history({ message: 'Other week.', weekIndex: 2 }),
+      history({ message: 'Week warning.', dayKey: undefined, exerciseId: undefined }),
     ]);
     expect(previewExerciseIssues(plan, location, 'leg_press').map(i => i.message)).toEqual(['Selected exposure.']);
     const html = render(plan);
@@ -122,11 +155,13 @@ describe('SessionPreviewModal programme review', () => {
     expect(html.match(/Other slot\./g)).toHaveLength(1);
   });
 
-  it('retains repeated genuine issue occurrences without multiplying the weekly result per exercise', () => {
-    const plan = fixture([issue(), issue(), issue({ dayKey: '5', message: 'Later exposure.' }),
-      issue({ dayKey: undefined, exerciseId: undefined, message: 'Week only.' })]);
+  it('shows identical warnings once without multiplying the weekly result per exercise', () => {
+    const history = (overrides: Partial<ProgrammeValidationIssue> = {}) => issue({ code: 'history_evidence_unverified', message: 'Original history barrier.', ...overrides });
+    const plan = fixture([history(), history(), history({ dayKey: '5', message: 'Later exposure.' }),
+      issue({ dayKey: undefined, exerciseId: undefined, code: 'policy_unresolved', message: 'Week only.' }),
+      issue({ dayKey: undefined, exerciseId: undefined, code: 'policy_unresolved', message: 'Week only.' })]);
     const html = render(plan);
-    expect(html.match(/Original load diagnostic\./g)).toHaveLength(2);
+    expect(html.match(/Original history barrier\./g)).toHaveLength(1);
     expect(html.match(/Week only\./g)).toHaveLength(1);
     expect(html).not.toContain('Later exposure.');
     expect(render(plan, { ...location, dayKey: '5' })).toContain('Later exposure.');
@@ -141,18 +176,19 @@ describe('SessionPreviewModal programme review', () => {
         sessionMode="normal" onSessionModeChange={vi.fn()} onCancel={vi.fn()} onConfirm={confirm} />);
       expect(html).toContain('Exercise warning locations unavailable');
       expect(html).not.toContain('Original load diagnostic.');
+      expect(html).not.toContain('Set starting weights');
     }
   });
 
   it('keeps ambiguous repeated exercise IDs and unmatched slots in selected-day review once', () => {
-    const plan = fixture([issue({ slotId: '1:0' })]);
+    const plan = fixture([issue({ code: 'history_evidence_unverified', message: 'Original history barrier.', slotId: '1:0' })]);
     expect(previewExerciseIssues(plan, { ...location, slots: [] }, 'leg_press')).toEqual([]);
-    expect(render(plan, { ...location, slots: [] }).match(/Original load diagnostic\./g)).toHaveLength(1);
+    expect(render(plan, { ...location, slots: [] }).match(/Original history barrier\./g)).toHaveLength(1);
     plan.exercises.push({ ...plan.exercises[0], orderIndex: 1 });
     expect(previewExerciseIssues(plan, location, 'leg_press')).toEqual([]);
     const html = render(plan);
     expect(html).toContain('Selected-day review');
-    expect(html.match(/Original load diagnostic\./g)).toHaveLength(1);
+    expect(html.match(/Original history barrier\./g)).toHaveLength(1);
   });
 
   it('does not project current warnings onto frozen prescriptions, including empty snapshots', () => {

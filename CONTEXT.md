@@ -1,3 +1,15 @@
+## 2026-11-04 - Split preference (N-0072)
+
+Setup offers Auto / Full body / Upper-Lower where an approved policy exists (strength only). Two-day Upper/Lower is the new strategy `balanced-v1:2-upper-lower`; other choices select existing balanced policies. Stored in the existing preferences JSON; Auto output unchanged. Policy: docs/training/ROUTINE_AUDIT.md (Split preference, 2026-11-04).
+
+## 2026-11-04 - Weekly policy v4: mixed-goal exposures and accessory dose (N-0072)
+
+New builds use `weekly-20261104-v4`: accessory follow-ups take accessory dose, goal shares round to 0.05, and with build-strength and build-muscle each at least 0.3 the first own-load heavy exposure trains strength (5 reps, 3-6) while repeats and heavy variants train hypertrophy (8 reps, 6-12). Exercise ranking keeps slot order over baselines and stops cross-requirement reuse of the deadlift/squat. Saved v3 programmes and frozen sessions replay unchanged. Policy and citations: docs/training/ROUTINE_AUDIT.md (2026-11-04); evidence: docs/training/recovery/evidence/mixed-goal-exposures-20261104.md.
+
+## 2026-11-03 - Prescribed progression correction, source validated
+
+Operator approved the combined reps/load contract and implementation with no dual workflows. The existing double-progression decision now compares frozen prescribed targets, advances reps first, then equipment load with a rep reset; successful prescribed work cannot cause stagnation or be mechanically reduced by its own history estimate. Newer baselines win; partial/mixed/adjusted work is a barrier; started/guided snapshots stay frozen. One planner, one product builder and the canonical completion path remain. Final full1549/209, focused188, types, dual31, catalogue357/0 and wrapper3 pass. Evidence: docs/training/recovery/evidence/prescribed-progression-20261103.md. Runtime steps queued separately; no account/database access, installation, deployment, OTA or migration. N-0070 remains open. Finish scoped commit/push and evidence registration only; the broader programme mandate stays overridden.
+
 ## 2026-11-02 - Friend beta live verified and Android preview complete
 
 Stable non-production web alias https://eliasonw-reclaim-app--beta.expo.app serves

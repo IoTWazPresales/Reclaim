@@ -1,15 +1,29 @@
 import catalog from './catalog/exercises.v1.json';
 import { getExerciseLoadingProfile } from './exerciseLoadingProfile';
-import type { Exercise, ExercisePerformance } from './types';
+import type { Exercise, ExercisePerformance, PlannedSet, PrescriptionContext } from './types';
 
 export const PERFORMANCE_HISTORY_SOURCE = 'training_session_items.performed.sets' as const;
+
+/** Semantic comparison survives JSON key reordering; frozen targets are part of the evidence. */
+export function performanceHistorySignature(performance?: ExercisePerformance): unknown[] | null {
+  const evidence = performance?.evidence;
+  if (!performance || !evidence || !Array.isArray(performance.sets) || !Array.isArray(evidence.reasons) || !Array.isArray(evidence.plannedSetIndices)) return null;
+  const prescription = performance.prescription;
+  return [performance.exerciseId, performance.date, performance.plannedSetCount, performance.sessionComplete,
+    performance.sets.map(set => set && [set.setIndex, set.weight, set.reps, set.rpe ?? null, set.completedAt]),
+    evidence.source, evidence.status, [...evidence.reasons].sort(), evidence.sessionId, evidence.itemId,
+    evidence.loadUnit, evidence.loadDisplayMode, evidence.prescriptionType, [...evidence.plannedSetIndices].sort((a, b) => a - b),
+    prescription && [prescription.adjusted, prescription.context?.policyVersion, prescription.context?.repRange,
+      Array.isArray(prescription.sets) ? prescription.sets.map(set => set && [set.setIndex, set.targetReps, set.suggestedWeight, set.loadRequiresConfirmation === true]) : null]];
+}
 
 export type PerformanceHistoryItem = {
   id: string;
   session_id: string;
   exercise_id: string;
   skipped?: boolean;
-  planned?: { sets?: Array<{ setIndex: number }> } | null;
+  planned?: { sets?: Array<{ setIndex: number } & Partial<PlannedSet>>; decisionTrace?: { prescriptionContext?: PrescriptionContext } } | null;
+  autoregulation_adjustments?: Record<string, unknown> | null;
   performed?: { sets?: ExercisePerformance['sets'] } | null;
   training_sessions: { started_at: string | null; ended_at: string | null } | null;
 };
@@ -57,6 +71,15 @@ export function completedPerformanceHistory(items: PerformanceHistoryItem[], lim
     (result[item.exercise_id] ??= []).push({
       exerciseId: item.exercise_id, date: session.started_at, sets: [...sets].sort((a, b) => a.setIndex - b.setIndex),
       plannedSetCount: indices.length, sessionComplete: ended,
+      ...(planned.length && planned.every(set => Number.isInteger(set.targetReps) && set.targetReps! > 0 &&
+        Number.isFinite(set.suggestedWeight) && set.suggestedWeight! >= 0) ? {
+        prescription: {
+          sets: planned.map(set => ({ setIndex: set.setIndex, targetReps: set.targetReps!, suggestedWeight: set.suggestedWeight!,
+            ...(set.loadRequiresConfirmation === true ? { loadRequiresConfirmation: true } : {}) })).sort((a, b) => a.setIndex - b.setIndex),
+          ...(item.planned?.decisionTrace?.prescriptionContext ? { context: JSON.parse(JSON.stringify(item.planned.decisionTrace.prescriptionContext)) } : {}),
+          adjusted: !!item.autoregulation_adjustments && Object.keys(item.autoregulation_adjustments).length > 0,
+        },
+      } : {}),
       evidence: {
         source: PERFORMANCE_HISTORY_SOURCE, status: incomplete ? 'incomplete' : reasons.length ? 'unsupported' : 'qualified', reasons,
         sessionId: item.session_id, itemId: item.id, loadUnit: 'kg',

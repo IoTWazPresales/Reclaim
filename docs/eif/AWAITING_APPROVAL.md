@@ -1,5 +1,10 @@
 # Awaiting visual approval — PRG-20260917T222550
 
+
+## N-0070 prescription progression ? runtime review pending (2026-11-03)
+
+The operator approved the reps/load contract and implementation. This is not approval of rendered behaviour. The prospective changes preserve successful loads while advancing reps, increase weight only at the prescribed maximum, and explain repeats/deloads from actual frozen targets. No current-build renders exist; no `await-approval` render registration or visual pass is claimed. Runtime verification is tracked in [HUMAN_CHECKS](HUMAN_CHECKS.md) and the [scoped steps](../training/recovery/evidence/prescribed-progression-human-checks-20261103.md). N-0070 remains open. No deployment or OTA.
+
 ## N-0070 granularity and guided-session verification (2026-11-01)
 
 Wrapper `await-approval` succeeded at20:41UTC under `R20261101RELEASEVERIFY` for `.eif/audit/N-0070/android-20261101/release-verification/session-renders` (7 scoped actual screenshots), then released lease. All4 rounded-equality rows satisfy operator granularity rule: unroundedRPE8 working < rawceiling; no raw-ceiling defect. One guided session:6items/16frozen sets match preview; notification+nativehealthFGS observed and retained after resume. Exactly oneBench100x7set persisted in canonical sets and setlog, then Cancel & delete direct checks0session/0items/0logs; original5sessions/14items/18logs preserved. No source/migration/EIF acceptance. [Current receipt](../../.eif/audit/N-0070/android-20261101/release-verification/session-result.md). Numeric OHP90x8/deadlift100x5 retained from earlier confirmations; new standing-barbell variant/correction clarification remains open. This supersedes the rounded-ceiling stop under the operator rule; queue note grants no visual approval or full-node acceptance.

@@ -2581,7 +2581,7 @@ export async function getRecentExercisePerformances(
   // Do not silently let Supabase's response cap erase exercises outside an old seed.
   for (let offset = 0; ; offset += pageSize) {
     const { data, error } = await supabase.from('training_session_items')
-      .select('id, session_id, exercise_id, planned, performed, skipped, training_sessions!inner(started_at, ended_at, user_id)')
+      .select('id, session_id, exercise_id, planned, performed, skipped, autoregulation_adjustments, training_sessions!inner(started_at, ended_at, user_id)')
       .in('exercise_id', [...new Set(exerciseIds)])
       .eq('training_sessions.user_id', user.id)
       .not('training_sessions.started_at', 'is', null)

@@ -1,14 +1,10 @@
 /** Application projection of the committed compiler, builder and R05 validator contracts. */
-import catalog from './catalog/exercises.v1.json';
 import { buildProgramDaySession, type ProgramDaySessionOptions } from './buildProgramDaySession';
 import { programDayInput } from './programmeProjection';
 import type { FourWeekProgramPlan } from './programPlanner';
-import { defineWeeklyRequirements } from './weeklyProgramme';
-import { BALANCED_WEEKLY_OBJECTIVES } from './weeklyProgrammePolicy';
-import { blendedReps, blendedCount } from './balancedHypertrophy';
-import { getExerciseLoadingProfile } from './exerciseLoadingProfile';
+import { declareExposurePolicies, defineWeeklyRequirements } from './weeklyProgramme';
 import { validateProgrammeWeek, type ProgrammeWeekDeclaration } from './weeklyProgrammeValidator';
-import type { Exercise, SessionPlan, TrainingProfileSnapshot } from './types';
+import type { SessionPlan, TrainingProfileSnapshot } from './types';
 import { computeWeeklyMuscleSessionCounts } from './weeklyVolumeSummary';
 
 export function programmeWeekProposal(
@@ -42,20 +38,15 @@ export function programmeWeekProposal(
     return proposals; // Only historical programmes may lack the weekly contract.
   }
   const balanced = week.compilation.strategyId.startsWith('balanced-v1:');
-  const objectives = balanced ? BALANCED_WEEKLY_OBJECTIVES[plan.selectedWeekdays.length] ?? [] : [];
-  const exposurePolicies: ProgrammeWeekDeclaration['exposurePolicies'] = Object.fromEntries(objectives.flatMap(objective => objective.positions.map(([ordinal, index]) => {
-    const slot = objective.slot;
-    const reference = catalog.find(exercise => exercise.id === slot.candidates[0]) as Exercise;
-    return [`${ordinal}:${index}`, { intent: slot.intent, priority: slot.priority, loadPolicy: slot.load,
-      approvedExerciseIds: [...slot.candidates],
-      selectionKind: getExerciseLoadingProfile(reference).compoundClassification === 'isolation' ? 'isolation' : 'primary_role',
-      reps: blendedReps(profile.goals, slot.priority === 'primary' ? 'primary' : 'isolation'),
-      restSeconds: blendedCount(profile.goals, slot.priority === 'primary' ? 'primary' : 'isolation', 'rest') ?? 90 }];
-  })));
+  // The saved policy version selects the dose rules, so a v3 programme is
+  // declared exactly as it was built; only new builds use v4 exposure doses.
+  const policyVersion = week.compilation.policyVersion;
+  const strategyId = week.compilation.strategyId;
+  const exposurePolicies: ProgrammeWeekDeclaration['exposurePolicies'] = balanced ? declareExposurePolicies(plan.selectedWeekdays.length, profile, policyVersion, strategyId) : {};
   const declaration: ProgrammeWeekDeclaration = {
-    weekIndex, policyVersion: week.compilation.policyVersion, strategyId: week.compilation.strategyId,
+    weekIndex, policyVersion, strategyId: week.compilation.strategyId,
     policyStatus: week.compilation.policyStatus,
-    requirements: balanced ? defineWeeklyRequirements(plan.selectedWeekdays.length, profile) : [],
+    requirements: balanced ? defineWeeklyRequirements(plan.selectedWeekdays.length, profile, policyVersion, strategyId) : [],
     exposurePolicies, calendar: Object.values(week.days), runRequirement: week.compilation.runRequirement,
     provenance: 'docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09; docs/training/RUNNING_DESIGN.md',
   };

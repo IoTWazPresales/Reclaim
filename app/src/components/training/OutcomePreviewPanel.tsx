@@ -14,6 +14,7 @@ export function OutcomePreviewPanel({
   constraints,
   baselines,
   muscleFrequency = 'auto',
+  splitPreference = 'auto',
   baselineReps, baselineUpdatedAt, experienceLevel, includeSkillWork, trainingMode, runningGoal, runningDistanceKm,
 }: OutcomePreviewPanelProps) {
   const theme = useTheme();
@@ -28,10 +29,10 @@ export function OutcomePreviewPanel({
       equipment,
       constraints,
       baselines,
-      muscleFrequency, baselineReps, baselineUpdatedAt, experienceLevel, includeSkillWork, trainingMode, runningGoal, runningDistanceKm,
+      muscleFrequency, splitPreference, baselineReps, baselineUpdatedAt, experienceLevel, includeSkillWork, trainingMode, runningGoal, runningDistanceKm,
     };
     return generatePreview(settings);
-  }, [goals, selectedWeekdays, equipment, constraints, baselines, muscleFrequency, baselineReps, baselineUpdatedAt, experienceLevel, includeSkillWork, trainingMode, runningGoal, runningDistanceKm]);
+  }, [goals, selectedWeekdays, equipment, constraints, baselines, muscleFrequency, splitPreference, baselineReps, baselineUpdatedAt, experienceLevel, includeSkillWork, trainingMode, runningGoal, runningDistanceKm]);
 
   if (!preview) {
     return (

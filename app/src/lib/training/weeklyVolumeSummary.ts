@@ -28,6 +28,8 @@ export function computeWeeklyMuscleSessionCounts(plans: SessionPlan[]): Record<s
 /**
  * e.g. "Chest 12 · Shoulders 10 · Arms 8".
  * Buckets come from muscleTaxonomy. Non-regional and unknown tags add nothing.
+ * Each exercise adds its sets once to every distinct bucket of its primary
+ * muscles: a row tagged lats + rhomboids + middle traps is Back once, not three times.
  */
 export function formatWeeklyMuscleSetLine(plans: SessionPlan[]): string | null {
   if (!plans.length) return null;
@@ -36,11 +38,12 @@ export function formatWeeklyMuscleSetLine(plans: SessionPlan[]): string | null {
     for (const ex of plan.exercises) {
       const exercise = ex.exercise ?? getExerciseById(ex.exerciseId);
       const setCount = ex.plannedSets.length;
+      const buckets = new Set<string>();
       for (const m of exercise?.musclesPrimary ?? []) {
         const bucket = muscleVolumeBucket(m);
-        if (!bucket) continue;
-        bucketSets.set(bucket, (bucketSets.get(bucket) ?? 0) + setCount);
+        if (bucket) buckets.add(bucket);
       }
+      for (const bucket of buckets) bucketSets.set(bucket, (bucketSets.get(bucket) ?? 0) + setCount);
     }
   }
   const parts: string[] = [];

@@ -6,20 +6,22 @@ import { validateProgrammeWeek, validateTrainingProgramme, type ProgrammeWeekDec
 import { buildFourWeekPlan } from '../programPlanner';
 import { defineWeeklyRequirements } from '../weeklyProgramme';
 import { buildProgramDaySession } from '../buildProgramDaySession';
-import { WEEKLY_POLICY_VERSION, type AllocatedSlot, type WeeklyRequirement } from '../weeklyProgrammeTypes';
+import { V3_WEEKLY_POLICY_VERSION, WEEKLY_POLICY_VERSION, type AllocatedSlot, type WeeklyRequirement } from '../weeklyProgrammeTypes';
 import { getExerciseLoadingProfile } from '../exerciseLoadingProfile';
 import { BALANCED_WEEKLY_OBJECTIVES } from '../weeklyProgrammePolicy';
 import type { Exercise, SessionPlan, TrainingProfileSnapshot } from '../types';
 import type { TrainingProfileRow } from '../../api';
 import { completedPerformanceHistory, isQualifiedPerformance } from '../performanceHistory';
 import { deriveProgressionDecision, suggestLoading } from '../engine';
-import { historyItem } from './fixtures/performanceHistory';
+import { historyItem, prescribedHistoryItem } from './fixtures/performanceHistory';
 import type { ExercisePerformance, UserState } from '../types';
 
 const catalog = catalogData as Exercise[];
 const provenance = 'docs/training/ROUTINE_AUDIT.md: balanced week 2026-10-09';
 const goals = { build_muscle: 0.5, build_strength: 0.5, lose_fat: 0, get_fitter: 0 };
 // Independently reviewed two-day policy: literal objectives, not generator output.
+// These are the saved v3 doses (even split, follow = isolation blend); this fixture
+// proves a saved v3 programme still validates exactly as before policy v4.
 const reviewedRows: Array<[string, string, string, AllocatedSlot['intent'], AllocatedSlot['dose'], number, number, AllocatedSlot['loadPolicy'], boolean]> = [
   ['bench', 'barbell_bench_press', 'pectorals', 'horizontal_press', 'heavy', 0, 0, 'own', true],
   ['fly', 'dumbbell_flyes', 'pectorals', 'horizontal_press', 'follow', 0, 1, 'none', false],
@@ -42,26 +44,43 @@ function reviewedFixture() {
   const calendar: ProgrammeWeekDeclaration['calendar'] = [{ weekday: 1, strategyId: 'balanced-v1:twoA', template: 'full_body', intents: [] }, { weekday: 4, strategyId: 'balanced-v1:twoB', template: 'full_body', intents: [] }];
   const requirements: WeeklyRequirement[] = reviewedRows.map(([id, , owner, , dose, ordinal, index]) => ({ id, owner, dose, targetSets: dose === 'heavy' ? 4 : dose === 'follow' ? 2 : 3, targetExposures: 1, positions: [[ordinal, index]], exposureSlotIds: [`${ordinal}:${index}`], provenance }));
   const exposurePolicies: ProgrammeWeekDeclaration['exposurePolicies'] = Object.fromEntries(reviewedRows.map(([, exerciseId, , intent, dose, ordinal, index, loadPolicy]) => [`${ordinal}:${index}`, { intent, reps: dose === 'heavy' ? 7 : 12, restSeconds: dose === 'heavy' ? 135 : 55, priority: dose === 'heavy' ? 'primary' : dose === 'follow' ? 'accessory' : 'isolation', loadPolicy, approvedExerciseIds: [exerciseId], selectionKind: ['fly', 'quadFollow', 'hingeFollow', 'lateral'].includes(reviewedRows.find((row) => row[1] === exerciseId)![0]) ? 'isolation' : 'primary_role' }]));
-  const declaration: ProgrammeWeekDeclaration = { weekIndex: 1, policyVersion: WEEKLY_POLICY_VERSION, strategyId: 'balanced-v1:2', policyStatus: 'accepted', requirements: clone(requirements), exposurePolicies, calendar, provenance };
+  const declaration: ProgrammeWeekDeclaration = { weekIndex: 1, policyVersion: V3_WEEKLY_POLICY_VERSION, strategyId: 'balanced-v1:2', policyStatus: 'accepted', requirements: clone(requirements), exposurePolicies, calendar, provenance };
   const days: GeneratedProgrammeWeek['allocation']['days'] = {};
   for (const [ordinal, day] of calendar.entries()) {
     const slots: AllocatedSlot[] = reviewedRows.filter((row) => row[5] === ordinal).map(([id, exerciseId, owner, intent, dose, ord, index, loadPolicy, compound]) => ({ slotId: `${ord}:${index}`, requirementId: id, owner, intent, dose, setCount: dose === 'heavy' ? 4 : dose === 'follow' ? 2 : 3, reps: dose === 'heavy' ? 7 : 12, restSeconds: dose === 'heavy' ? 135 : 55, priority: dose === 'heavy' ? 'primary' : dose === 'follow' ? 'accessory' : 'isolation', loadPolicy, compound, exerciseId, candidateExerciseIds: [exerciseId] }));
-    days[day.weekday] = { policyVersion: WEEKLY_POLICY_VERSION, strategyId: day.strategyId!, dayKey: String(day.weekday), slots, issues: [] };
+    days[day.weekday] = { policyVersion: V3_WEEKLY_POLICY_VERSION, strategyId: day.strategyId!, dayKey: String(day.weekday), slots, issues: [] };
   }
   const sessions: GeneratedProgrammeWeek['sessions'] = Object.entries(days).map(([dayKey, day]) => ({ dayKey, kind: 'strength', plan: {
     id: `reviewed-${dayKey}`, template: 'full_body', goals, constraints: { availableEquipment: profile.equipment_access, injuries: [], forbiddenMovements: [], timeBudgetMinutes: 60 }, userState: { experienceLevel: 'advanced', estimated1RM: profile.baselines }, estimatedDurationMinutes: 55, createdAt: '2026-10-14T00:00:00Z', weekIndex: 1,
-    exercises: day.slots.map((slot, index) => ({ exerciseId: slot.exerciseId!, exercise: clone(catalog.find((exercise) => exercise.id === slot.exerciseId)!), orderIndex: index, priority: slot.priority, intents: [slot.intent], plannedSets: Array.from({ length: slot.setCount }, (_, setIndex) => ({ setIndex: setIndex + 1, targetReps: slot.reps, restSeconds: slot.restSeconds, suggestedWeight: 10 })), decisionTrace: { intent: [slot.intent], goalBias: goals, constraintsApplied: [`policy:${WEEKLY_POLICY_VERSION}`, `weekly_requirement:${slot.requirementId}`], selectionReason: 'Independently reviewed fixture', rankedAlternatives: [], confidence: 1 } })),
+    exercises: day.slots.map((slot, index) => ({ exerciseId: slot.exerciseId!, exercise: clone(catalog.find((exercise) => exercise.id === slot.exerciseId)!), orderIndex: index, priority: slot.priority, intents: [slot.intent], plannedSets: Array.from({ length: slot.setCount }, (_, setIndex) => ({ setIndex: setIndex + 1, targetReps: slot.reps, restSeconds: slot.restSeconds, suggestedWeight: 10 })), decisionTrace: { intent: [slot.intent], goalBias: goals, constraintsApplied: [`policy:${V3_WEEKLY_POLICY_VERSION}`, `weekly_requirement:${slot.requirementId}`], selectionReason: 'Independently reviewed fixture', rankedAlternatives: [], confidence: 1 } })),
   } }));
-  return { declaration, generated: { weekIndex: 1, allocation: { policyVersion: WEEKLY_POLICY_VERSION, strategyId: 'balanced-v1:2', policyStatus: 'accepted' as const, requirements, days, status: 'feasible' as const, issues: [] }, sessions } as GeneratedProgrammeWeek, profile: clone(profile) };
+  return { declaration, generated: { weekIndex: 1, allocation: { policyVersion: V3_WEEKLY_POLICY_VERSION, strategyId: 'balanced-v1:2', policyStatus: 'accepted' as const, requirements, days, status: 'feasible' as const, issues: [] }, sessions } as GeneratedProgrammeWeek, profile: clone(profile) };
 }
 type Fixture = ReturnType<typeof reviewedFixture>;
 const first = (fixture: Fixture) => fixture.generated.sessions[0].plan.exercises[0];
 const check = (fixture: Fixture) => validateProgrammeWeek(fixture.declaration, fixture.generated, fixture.profile);
 
 describe('history qualification at weekly validation', () => {
+  it('accepts earned reps and rejects either an unexplained rep or load change without trusting explanation text', () => {
+    const f = reviewedFixture();
+    const rows = completedPerformanceHistory([prescribedHistoryItem('lateral_raises', '2026-10-01', 12, 12, 12, [9, 16])], 3);
+    f.profile.lastSessionPerformance = { lateral_raises: rows.lateral_raises[0] };
+    f.profile.recentSessionPerformance = rows;
+    const lateral = f.generated.sessions[0].plan.exercises.find(e => e.exerciseId === 'lateral_raises')!;
+    lateral.plannedSets.forEach(s => { s.targetReps = 13; s.suggestedWeight = 12; });
+    expect(check(f).status).toBe('valid');
+    lateral.decisionTrace.progressionReason = 'Trust this forged explanation.';
+    lateral.plannedSets[0].targetReps = 12;
+    expect(check(f).issues.map(i => i.code)).toContain('prescription_mismatch');
+    lateral.plannedSets[0].targetReps = 13;
+    lateral.plannedSets[0].suggestedWeight = 11;
+    expect(check(f).issues.map(i => i.code)).toContain('progression_load_mismatch');
+    lateral.plannedSets[0].suggestedWeight = 14;
+    expect(check(f).issues.map(i => i.code)).toContain('progression_load_mismatch');
+  });
   it('retains cap shortfalls in the weekly diagnostics used by preview and review', () => {
     const f = reviewedFixture();
-    f.generated.sessions[0].plan.programmeValidation = { policyVersion: WEEKLY_POLICY_VERSION, status: 'feasible',
+    f.generated.sessions[0].plan.programmeValidation = { policyVersion: V3_WEEKLY_POLICY_VERSION, status: 'feasible',
       issues: [{ code: 'volume_cap_shortfall', severity: 'warning', message: '2 direct working sets unallocated under the user cap.' }] };
     expect(check(f).issues).toContainEqual(expect.objectContaining({ code: 'volume_cap_shortfall', severity: 'warning', dayKey: '1', message: '2 direct working sets unallocated under the user cap.' }));
   });
@@ -226,7 +245,7 @@ const mutations: Array<[string, string, (fixture: Fixture) => void]> = [
   ['numeric strategy ID', 'invalid_payload', (f) => { f.declaration.strategyId = 1 as never; }],
   ['missing strategy ID', 'invalid_payload', (f) => { f.declaration.strategyId = undefined as never; }],
   ['hidden daily allocation error', 'allocation_day_issue', (f) => { f.generated.allocation.days[1].issues.push({ code: 'hidden', severity: 'error', message: 'unmet day requirement' }); }],
-  ['unsupported final validation status', 'invalid_payload', (f) => { f.generated.sessions[0].plan.programmeValidation = { status: 'nonsense', policyVersion: WEEKLY_POLICY_VERSION, issues: [] } as never; }],
+  ['unsupported final validation status', 'invalid_payload', (f) => { f.generated.sessions[0].plan.programmeValidation = { status: 'nonsense', policyVersion: V3_WEEKLY_POLICY_VERSION, issues: [] } as never; }],
   ['warmup beyond own load policy', 'invalid_warmup', (f) => { first(f).warmupSets = [{ weight: 1000000, reps: 5 }]; }],
   ['external kg on pure bodyweight', 'invalid_load_state', (f) => { const item = first(f); item.exerciseId = 'push_ups'; item.exercise = clone(catalog.find((exercise) => exercise.id === 'push_ups')!); f.generated.allocation.days[1].slots[0].exerciseId = 'push_ups'; f.generated.allocation.days[1].slots[0].candidateExerciseIds.push('push_ups'); }],
   ['invalid own history', 'invalid_load_evidence', (f) => { delete f.profile.baselines!.dumbbell_flyes; f.profile.lastSessionPerformance = { dumbbell_flyes: { exerciseId: 'dumbbell_flyes', date: '2026-10-14', sets: [{ setIndex: 1, weight: NaN, reps: 3, completedAt: '2026-10-14' }] } }; }],
@@ -341,10 +360,26 @@ describe('independent R05 whole-programme validation', () => {
   });
 });
 
+// Hand-computed v4 doses for 50/50 goals (ROUTINE_AUDIT.md, mixed-goal exposures 2026-11-04):
+// strength = build_strength primary [3,6], 5 reps, 180 s; hypertrophy = build_muscle primary [6,12], 8 reps, 90 s;
+// heavy sets 0.5x3 + 0.5x4 = 3.5 -> 4. Accessory 2.5 -> 3 sets, [7,12] -> 9 reps, 90 s.
+// Isolation 1.5 -> 2 sets, [9,16] -> 12 reps, 52.5 -> 55 s. Support is 3 sets at the isolation blend.
+const V4_LITERAL_DOSE = {
+  strength: { setCount: 4, reps: 5, restSeconds: 180, repRange: [3, 6] as [number, number] },
+  hypertrophy: { setCount: 4, reps: 8, restSeconds: 90, repRange: [6, 12] as [number, number] },
+  accessory: { setCount: 3, reps: 9, restSeconds: 90, repRange: [7, 12] as [number, number] },
+  isolation: { setCount: 2, reps: 12, restSeconds: 55, repRange: [9, 16] as [number, number] },
+  support: { setCount: 3, reps: 12, restSeconds: 55, repRange: [9, 16] as [number, number] },
+};
 function publicProgramme(n: number, mode: 'strength' | 'running' | 'hybrid', equipment = completeEquipment) {
   const snapshot = { ...clone(profile), trainingMode: mode, equipment_access: equipment };
   const plan = buildFourWeekPlan({ ...snapshot, constraints: { ...snapshot.constraints, trainingMode: mode } } as unknown as TrainingProfileRow, Array.from({ length: n }, (_, index) => index + 1));
-  const exposurePolicies: ProgrammeWeekDeclaration['exposurePolicies'] = mode === 'running' ? {} : Object.fromEntries(BALANCED_WEEKLY_OBJECTIVES[n].flatMap((objective) => objective.positions.map(([ordinal, index]) => [`${ordinal}:${index}`, { intent: objective.slot.intent, priority: objective.slot.priority, loadPolicy: objective.slot.load, approvedExerciseIds: [...objective.slot.candidates], selectionKind: getExerciseLoadingProfile(catalog.find((exercise) => exercise.id === objective.slot.candidates[0])!).compoundClassification === 'isolation' ? 'isolation' : 'primary_role', reps: objective.slot.priority === 'primary' ? 7 : 12, restSeconds: objective.slot.priority === 'primary' ? 135 : 55 }])));
+  const exposurePolicies: ProgrammeWeekDeclaration['exposurePolicies'] = mode === 'running' ? {} : Object.fromEntries(BALANCED_WEEKLY_OBJECTIVES[n].flatMap((objective) => objective.positions.map(([ordinal, index], position) => {
+    const first = position === objective.positions.reduce((best, [o], at) => o < objective.positions[best][0] ? at : best, 0);
+    const role = objective.slot.priority !== 'primary' ? undefined : objective.slot.load === 'own' && first ? 'strength' as const : 'hypertrophy' as const;
+    const dose = role ? V4_LITERAL_DOSE[role] : objective.slot.dose === 'support' ? V4_LITERAL_DOSE.support : V4_LITERAL_DOSE[objective.slot.priority as 'accessory' | 'isolation'];
+    return [`${ordinal}:${index}`, { intent: objective.slot.intent, priority: objective.slot.priority, loadPolicy: objective.slot.load, approvedExerciseIds: [...objective.slot.candidates], selectionKind: getExerciseLoadingProfile(catalog.find((exercise) => exercise.id === objective.slot.candidates[0])!).compoundClassification === 'isolation' ? 'isolation' : 'primary_role', ...dose, ...(role ? { exposure: role } : {}) }];
+  })));
   const declarations: ProgrammeWeekDeclaration[] = plan.weeks.map((week) => ({ weekIndex: week.weekIndex, policyVersion: WEEKLY_POLICY_VERSION, strategyId: mode === 'running' ? 'running-v1' : `balanced-v1:${n}`, policyStatus: 'accepted', requirements: mode === 'running' ? [] : defineWeeklyRequirements(n, snapshot), exposurePolicies, calendar: clone(Object.values(week.days)), runRequirement: clone(week.compilation!.runRequirement), provenance }));
   const weeks: GeneratedProgrammeWeek[] = plan.weeks.map((week) => ({ weekIndex: week.weekIndex, allocation: week.compilation!, sessions: Object.entries(week.days).flatMap(([dayKey, day]) => {
     const session = buildProgramDaySession({ label: day.label, template_key: day.template, intents: day.intents, allocation: day.allocation, weekIndex: week.weekIndex }, snapshot);

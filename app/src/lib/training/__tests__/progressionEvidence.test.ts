@@ -1,25 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { countHoldStreak, decideDoubleProgression } from '../progression';
+import { countHoldStreak, decideDoubleProgression, prescriptionContext } from '../progression';
 import { getExerciseById } from '../engine';
 
 const bench = getExerciseById('barbell_bench_press')!;
-const work = (reps: number, weight = 80) => ({ sets: [{ weight, reps, rpe: 7 }] });
+const work = (reps: number, weight = 80, targetReps = 9) => ({ sets: [{ weight, reps, rpe: 7 }], sessionComplete: true, plannedSetCount: 1, prescription: { sets: [{ setIndex: 1, targetReps, suggestedWeight: weight }], context: prescriptionContext([5, 9]), adjusted: false } });
 
 describe('progression evidence qualification', () => {
   it('does not label increasing repetitions as stagnant sessions', () => {
-    expect(countHoldStreak([work(8), work(7)], [5, 9])).toBe(0);
+    expect(countHoldStreak([work(8), work(7)], [5, 9])).toBe(1);
     expect(countHoldStreak([work(8), work(8)], [5, 9])).toBe(2);
   });
 
   it('does not combine different amounts of work or missing work into a hold streak', () => {
     expect(countHoldStreak([{ sets: [] }, work(7)], [5, 9])).toBe(0);
-    expect(countHoldStreak([{ sets: [...work(7).sets, ...work(7).sets] }, work(7)], [5, 9])).toBe(1);
+    expect(countHoldStreak([{ sets: [...work(7).sets, ...work(7).sets] }, work(7)], [5, 9])).toBe(0);
   });
 
   it('requires the known planned work and completed session before progression', () => {
-    const args = { exercise: bench, lastSets: work(9).sets, repRange: [5, 9] as [number, number] };
+    const args = { qualified: true, prescription: work(9).prescription, exercise: bench, lastSets: work(9).sets, repRange: [5, 9] as [number, number] };
     expect(decideDoubleProgression({ ...args, plannedSetCount: 3, sessionComplete: true })).toBeNull();
-    expect(decideDoubleProgression({ ...args, plannedSetCount: 1, sessionComplete: false })).toBeNull();
+    expect(decideDoubleProgression({ ...args, plannedSetCount: 1, sessionComplete: false })?.action).toBe('hold');
     expect(decideDoubleProgression({ ...args, plannedSetCount: 1, sessionComplete: true })?.action).toBe('increase');
   });
 

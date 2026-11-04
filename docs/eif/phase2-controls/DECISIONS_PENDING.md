@@ -1,3 +1,9 @@
+## Approved amendment ? 2026-11-03: prescription progression
+
+The operator approved the combined reps/load correction and explicitly prohibited dual workflows. D-P2-01 retains newer explicit baseline precedence and immutable entered baselines. For comparable frozen prescriptions, the existing double-progression decision now governs the next reps/load pair without the history-derived Epley cap cancelling that decision. Estimates continue to apply to initial calibration/re-anchoring. Reset reps to the range minimum after an earned load increase or deload; retain optional RPE; count only two comparable unsuccessful attempts without improvement toward the existing deload. Incomplete/mixed/adjusted work is a barrier, not earned progression or stagnation.
+
+The complete accepted contract is at the top of [ROUTINE_AUDIT.md](../../training/ROUTINE_AUDIT.md). This is a product policy correction, not scientific validation of an RPE-adjusted estimate. No split, exercise, set-volume, running, schema, completion-authority or native-service change is authorized by it. The older decisions below remain the historical record.
+
 # Material policy decisions: resolved and pending
 
 ## Implementation checkpoint - 2026-10-30

@@ -2,6 +2,7 @@ import { resolveExperienceLevel } from './experienceLevel';
 import { estimate1RM } from './progression';
 import { mapBaselineKeyToExerciseId, mapUiConstraintIdsToEngineInjuries, normalizeEquipmentIds } from './setupMappings';
 import { resolveRunningDistanceKm, resolveRunningGoal, resolveTrainingMode } from './trainingMode';
+import { resolveSplitPreference, type SplitPreference } from './splitPreference';
 import type { ExperienceLevel, TrainingGoal, TrainingProfileSnapshot } from './types';
 import type { TrainingProfileRow } from '../api';
 
@@ -15,6 +16,8 @@ export interface TrainingSetupDraft {
   baselineReps?: Record<string, number>;
   baselineUpdatedAt?: Record<string, string>;
   muscleFrequency?: 'once' | 'twice' | 'auto';
+  /** Auto unless a Full body / Upper-Lower policy exists for this day count (strength only). */
+  splitPreference?: SplitPreference;
   experienceLevel?: ExperienceLevel;
   includeSkillWork?: boolean;
   trainingMode?: 'strength' | 'running' | 'hybrid';
@@ -43,13 +46,15 @@ export function normalizeTrainingSetupDraft(draft: TrainingSetupDraft): Training
   const trainingMode = resolveTrainingMode(draft.trainingMode);
   const runningGoal = trainingMode === 'strength' ? undefined : resolveRunningGoal(draft.runningGoal);
   const runningDistanceKm = runningGoal === 'custom' ? resolveRunningDistanceKm(draft.runningDistanceKm) : undefined;
+  // Stored with the existing preferences JSON only when not Auto, so Auto setups are unchanged.
+  const splitPreference = resolveSplitPreference(draft.splitPreference, draft.selectedWeekdays.length, trainingMode);
   return {
     goals,
     equipment_access: normalizeEquipmentIds(draft.equipment),
     constraints: {
       injuries: mapUiConstraintIdsToEngineInjuries(draft.constraints),
       forbiddenMovements: draft.constraints.includes('no_overhead') ? ['vertical_press'] : [],
-      preferences: { muscle_frequency_preference: frequency, includeSkillWork: draft.includeSkillWork === true },
+      preferences: { muscle_frequency_preference: frequency, includeSkillWork: draft.includeSkillWork === true, ...(splitPreference !== 'auto' ? { splitPreference } : {}) },
     },
     baselines,
     baselineInputs,

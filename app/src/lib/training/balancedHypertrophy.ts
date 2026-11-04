@@ -83,10 +83,38 @@ export function blendedReps(goals: GoalWeights, priority: ExercisePriority): num
   return Math.max(1, Math.floor((Math.round(low) + Math.max(Math.round(low), Math.round(high))) / 2));
 }
 
+/** Weekly policy v3 and earlier: a follow dose used isolation sets. Retained for replay only. */
 export function setsForDose(goals: GoalWeights, dose: Dose): number {
   if (dose === 'support') return SUPPORTING_SETS;
   const priority = dose === 'heavy' ? 'primary' : 'isolation';
   return blendedCount(goals, priority, 'sets') ?? (dose === 'heavy' ? 4 : 2);
+}
+
+/** Goal-share grid used before blending (ROUTINE_AUDIT.md, mixed-goal exposures 2026-11-04). */
+export const GOAL_SHARE_STEP = 0.05;
+
+/**
+ * Express goal weights as shares rounded to the nearest 0.05, so a ~1% slider
+ * move (0.5037/0.4963) cannot flip a rounded set count. Shares that round to
+ * zero drop out; if every share would vanish the unrounded shares are kept.
+ */
+export function normaliseGoalWeights(goals: GoalWeights): GoalWeights {
+  const rows = (Object.entries(goals) as [TrainingGoal, number | undefined][])
+    .filter(([, weight]) => Number.isFinite(weight) && (weight ?? 0) > 0);
+  const sum = rows.reduce((total, [, weight]) => total + (weight ?? 0), 0);
+  if (sum <= 0) return { ...goals };
+  const shares = rows.map(([goal, weight]) => [goal, (weight ?? 0) / sum] as const);
+  const rounded = shares.map(([goal, share]) => [goal, Math.round(share / GOAL_SHARE_STEP) * GOAL_SHARE_STEP] as const);
+  const kept = rounded.some(([, share]) => share > 0) ? rounded : shares;
+  const result: GoalWeights = {};
+  for (const [goal, share] of kept) result[goal] = Number(share.toFixed(4));
+  return result;
+}
+
+/** Sets come from the slot's own priority: a follow-up accessory is not an isolation. */
+export function setsForSlot(goals: GoalWeights, slot: Pick<BalancedSlot, 'dose' | 'priority'>): number {
+  if (slot.dose === 'support') return SUPPORTING_SETS;
+  return blendedCount(goals, slot.priority, 'sets') ?? (slot.dose === 'heavy' ? 4 : 2);
 }
 
 function slot(candidates: string[], dose: Dose, intent: MovementIntent, compound: boolean, load: LoadPolicy, priority?: ExercisePriority): Slot {
@@ -237,8 +265,7 @@ export function buildBalancedProgramSession(input: {
   weekIndex?: 1 | 2 | 3 | 4;
   profile: TrainingProfileSnapshot;
   avoidExerciseIds?: string[];
-  explainLoading?: (exercise: Exercise, reps: number, priority: ExercisePriority, weight: number) => string | undefined;
-  suggestLoading: (exercise: Exercise, plannedReps: number, priority: ExercisePriority) => number;
+  loading: (exercise: Exercise, plannedReps: number, priority: ExercisePriority, setCount: number) => import('./types').ExercisePrescription;
 }): SessionPlan | null {
   const key = balancedDayKey(input.label, input.intents);
   if (!key) return null;
@@ -250,8 +277,10 @@ export function buildBalancedProgramSession(input: {
   const chosen: Array<{ slot: Slot; exercise: Exercise; waivedRack: boolean }> = [];
   const issues: import('./weeklyProgrammeTypes').ProgrammeIssue[] = [];
 
+  // Same dose rule as the weekly compiler: 0.05 goal shares and the slot's own priority.
+  const doseGoals = normaliseGoalWeights(goals);
   let pending = BALANCED_DAY_POLICIES[key].map((item) => item);
-  while (pending.length > 0 && (pending.reduce((total, item) => total + setsForDose(goals, item.dose), 0) > SESSION_SET_CAP || estimateMinutes(pending) > SESSION_MINUTE_CAP)) {
+  while (pending.length > 0 && (pending.reduce((total, item) => total + setsForSlot(doseGoals, item), 0) > SESSION_SET_CAP || estimateMinutes(pending) > SESSION_MINUTE_CAP)) {
     issues.push({ code: 'legacy_budget_trim', severity: 'warning', message: 'Historical prescription retains its accepted cap trimming; weekly-policy review requires a new build.' });
     pending = pending.slice(0, -1);
   }
@@ -264,18 +293,17 @@ export function buildBalancedProgramSession(input: {
 
   const exercises: PlannedExercise[] = chosen.map((item, index) => {
     const priority = item.slot.priority;
-    const reps = blendedReps(goals, priority === 'primary' ? 'primary' : 'isolation');
-    const rest = blendedCount(goals, priority === 'primary' ? 'primary' : 'isolation', 'rest') ?? 90;
-    const setCount = setsForDose(goals, item.slot.dose);
+    const reps = blendedReps(doseGoals, priority);
+    const rest = blendedCount(doseGoals, priority, 'rest') ?? 90;
+    const setCount = setsForSlot(doseGoals, item.slot);
     const ownBaseline = (baselines[item.exercise.id] ?? 0) > 0;
     const ownHistory = isQualifiedPerformance(item.exercise, input.profile.lastSessionPerformance?.[item.exercise.id]) &&
       (!input.profile.performanceHistory || (input.profile.performanceHistory.status === 'available' && input.profile.performanceHistory.requestedExerciseIds.includes(item.exercise.id)));
-    const weight = item.slot.load === 'none' && !ownBaseline && !ownHistory
-      ? 0
-      : input.suggestLoading(item.exercise, reps, priority);
+    const loading = input.loading(item.exercise, reps, priority, setCount);
+    const weight = item.slot.load === 'none' && !ownBaseline && !ownHistory && !loading.progression ? 0 : loading.weight;
     const plannedSets: PlannedSet[] = Array.from({ length: setCount }, (_, setIndex) => ({
       setIndex: setIndex + 1,
-      targetReps: reps,
+      targetReps: loading.reps,
       suggestedWeight: weight,
       restSeconds: rest,
     }));
@@ -303,7 +331,8 @@ export function buildBalancedProgramSession(input: {
         selectionReason: notes.join('. '),
         rankedAlternatives: item.slot.candidates.filter((id) => id !== item.exercise.id && (() => { const alternative = catalog(id); return alternative && evaluateExerciseEligibility(alternative, input.profile, { allowEnteredRackException: true, selectionIntent: item.slot.intent }).eligible; })()),
         rankedAlternativeIds: item.slot.candidates.filter((id) => id !== item.exercise.id && (() => { const alternative = catalog(id); return alternative && evaluateExerciseEligibility(alternative, input.profile, { allowEnteredRackException: true, selectionIntent: item.slot.intent }).eligible; })()),
-        progressionReason: input.explainLoading?.(item.exercise, reps, priority, weight),
+        progressionReason: loading.reason,
+        ...(loading.prescriptionContext ? { prescriptionContext: loading.prescriptionContext } : {}),
         confidence: 0.8,
         selectionPhase: 'required',
       },

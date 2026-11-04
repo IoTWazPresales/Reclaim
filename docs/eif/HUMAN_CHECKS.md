@@ -1,5 +1,10 @@
 # Human checks — PRG-20260917T222550
 
+
+## N-0070 prescription progression correction ? 2026-11-03
+
+**UNABLE_TO_VERIFY:** no new Android/web runtime build was installed/launched and no account test session was created. Pure planning/materialization, mocked API transport and automated completion/offline regression checks are source evidence only. The public `human-check` wrapper recorded this scoped steps file but retained the existing N-0070 queue section; this supplement provides its direct link: [runtime steps](../training/recovery/evidence/prescribed-progression-human-checks-20261103.md). No rendered acceptance or permission to write live data is implied. [Source evidence](../training/recovery/evidence/prescribed-progression-20261103.md).
+
 ## RA-016 ? deferred device verification (2026-11-01)
 
 **UNABLE_TO_VERIFY:** Android was explicitly excluded; no device method was attempted. This is a manual future-check record, not an EIF acceptance or permission to write live data now.

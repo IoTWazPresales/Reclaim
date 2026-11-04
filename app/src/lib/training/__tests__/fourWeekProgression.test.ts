@@ -11,7 +11,7 @@ import {
 } from '../buildProgramDaySession';
 import { acceptedProgramWeekIndex, suggestLoading } from '../engine';
 import { getExerciseIncrementKg } from '../exerciseLoadingProfile';
-import { decideDoubleProgression } from '../progression';
+import { decideDoubleProgression, prescriptionContext } from '../progression';
 import type { Exercise, MovementIntent, PlannedSet, TrainingProfileSnapshot } from '../types';
 
 const rules = JSON.parse(
@@ -119,19 +119,24 @@ describe('four-week progression', () => {
       lastSets: stuckSets,
       repRange: [3, 6],
       holdStreak: 2,
+      qualified: true, sessionComplete: true, plannedSetCount: 3,
+      prescription: { sets: [1, 2, 3].map(setIndex => ({ setIndex, targetReps: 6, suggestedWeight: 100 })),
+        context: prescriptionContext([3, 6]), adjusted: false },
     });
     expect(decision?.action).toBe('deload');
     expect(decision?.incrementKg).toBe(0);
     expect(decision?.nextWeight).toBe(90);
 
     const history = canonicalPerformance(squat.id, stuckSets, '2026-09-01');
+    const older = canonicalPerformance(squat.id, stuckSets.map(set => ({ ...set, completedAt: '2026-08-25T00:00:00Z' })), '2026-08-25');
+    for (const entry of [history, older]) entry.prescription = { sets: [1, 2, 3].map(setIndex => ({ setIndex, targetReps: 6, suggestedWeight: 100 })), context: prescriptionContext([3, 6]), adjusted: false };
     const suggested = suggestLoading({
       exercise: squat,
       userState: {
         experienceLevel: 'intermediate',
         lastSessionPerformance: { [squat.id]: history },
         recentSessionPerformance: {
-          [squat.id]: [history, canonicalPerformance(squat.id, stuckSets.map(set => ({ ...set, completedAt: '2026-08-25T00:00:00Z' })), '2026-08-25')],
+          [squat.id]: [history, older],
         },
       },
       goalWeights: { build_strength: 1 },

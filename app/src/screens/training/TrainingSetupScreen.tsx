@@ -49,6 +49,7 @@ import {
 } from '@/lib/training/setupMappings';
 import { mapBaselineKeyToExerciseId } from '@/lib/training/setupMappings';
 import { prepareTrainingSetup, type TrainingSetupDraft } from '@/lib/training/setupDraft';
+import { availableSplitPreferences, resolveSplitPreference, SPLIT_PREFERENCE_LABELS, UPPER_LOWER_TWO_DAY_NOTE, type SplitPreference } from '@/lib/training/splitPreference';
 import { estimate1RM } from '@/lib/training/progression';
 import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
 import { createWorkoutEventsForDates } from '@/lib/calendar';
@@ -172,6 +173,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
   const [selectedWeekdays, setSelectedWeekdays] = useState<number[]>([1, 3, 5]); // Mon, Wed, Fri
 
   const [muscleFrequency, setMuscleFrequency] = useState<'once' | 'twice' | 'auto'>('auto');
+  const [splitPreference, setSplitPreference] = useState<SplitPreference>('auto');
 
   const [timePreference, setTimePreference] = useState<'morning' | 'evening' | 'flexible'>('flexible');
   const [timeStart, setTimeStart] = useState(6);
@@ -190,8 +192,11 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
   const [baselineReps, setBaselineReps] = useState<Record<string, number>>({});
   const setupDraft: TrainingSetupDraft = {
     goals, selectedWeekdays, equipment, constraints, baselines, baselineReps, baselineUpdatedAt,
-    muscleFrequency, experienceLevel, includeSkillWork, trainingMode, runningGoal, runningDistanceKm,
+    muscleFrequency, splitPreference, experienceLevel, includeSkillWork, trainingMode, runningGoal, runningDistanceKm,
   };
+  // Only options with an approved weekly policy for these days (strength mode) are shown.
+  const splitOptions = availableSplitPreferences(selectedWeekdays.length, trainingMode);
+  const effectiveSplit = resolveSplitPreference(splitPreference, selectedWeekdays.length, trainingMode);
   
   // UI-only state for advanced options accordion (collapsed by default)
   const [advancedOptionsExpanded, setAdvancedOptionsExpanded] = useState(false);
@@ -255,6 +260,10 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       if (freq === 'once' || freq === 'twice' || freq === 'auto') {
         setMuscleFrequency(freq);
       }
+    }
+    const savedSplit = profile.constraints?.preferences?.splitPreference;
+    if (savedSplit === 'full_body' || savedSplit === 'upper_lower') {
+      setSplitPreference(savedSplit);
     }
     if (profile.constraints?.preferences?.includeSkillWork === true) {
       setIncludeSkillWork(true);
@@ -946,6 +955,31 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
 
               {advancedOptionsExpanded && (
                 <Card.Content style={{ paddingTop: 0 }}>
+                  {splitOptions.length > 1 && (
+                    <>
+                      <Text style={{ marginBottom: appTheme.spacing.sm, marginTop: appTheme.spacing.md, color: theme.colors.onSurfaceVariant }}>
+                        Weekly split
+                      </Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.sm, marginBottom: appTheme.spacing.sm }}>
+                        {splitOptions.map((option) => (
+                          <Chip
+                            key={option}
+                            selected={effectiveSplit === option}
+                            onPress={() => setSplitPreference(option)}
+                            style={{ minWidth: 100 }}
+                            accessibilityLabel={`Weekly split ${SPLIT_PREFERENCE_LABELS[option]}`}
+                          >
+                            {option === 'auto' ? 'Auto (recommended)' : SPLIT_PREFERENCE_LABELS[option]}
+                          </Chip>
+                        ))}
+                      </View>
+                      {effectiveSplit === 'upper_lower' && selectedWeekdays.length === 2 && (
+                        <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>
+                          {UPPER_LOWER_TWO_DAY_NOTE}
+                        </Text>
+                      )}
+                    </>
+                  )}
                   <Text style={{ marginBottom: appTheme.spacing.sm, marginTop: appTheme.spacing.md, color: theme.colors.onSurfaceVariant }}>
                     How often per week do you want to hit each muscle group?
                   </Text>

@@ -120,7 +120,9 @@ describe('default loads stay in their declared source unit (RA-016)', () => {
     const direct = buildProgramDaySession(programDayInput(row, saved.programme), saved.profile);
     expect(preview.exercises).toEqual(proposal.exercises);
     expect(direct.exercises).toEqual(proposal.exercises);
-    const db = proposal.exercises.find(item => item.exerciseId === 'dumbbell_bench_press')!;
+    // Policy v4 keeps barbell bench for both bench exposures; Wednesday's
+    // per-dumbbell exercise with no own evidence is the lateral raise.
+    const db = proposal.exercises.find(item => item.exerciseId === 'lateral_raises')!;
     expect(db.plannedSets[0]).toMatchObject({ suggestedWeight: 0, loadRequiresConfirmation: true });
     const started = clone(materializePlannedSessionItems('synthetic-start', proposal));
     expect(started.find(item => item.exerciseId === db.exerciseId)?.planned.sets).toEqual(db.plannedSets);

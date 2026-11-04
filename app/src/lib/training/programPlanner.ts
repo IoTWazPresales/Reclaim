@@ -4,7 +4,9 @@ import type { MovementIntent, SessionTemplate, TrainingGoal, TrainingProfileSnap
 import { WEEKLY_POLICY_VERSION } from './weeklyProgrammeTypes';
 import { formatLocalDateYYYYMMDD } from './dateUtils';
 import { isNonLegTrainingTemplate, resolveTrainingMode } from './trainingMode';
-import { balancedStrategyId, compileProgrammeWeek } from './weeklyProgramme';
+import { balancedStrategyId, compileProgrammeWeek, defaultWeeklyStrategyId } from './weeklyProgramme';
+import { UPPER_LOWER_STRATEGY_ID } from './weeklyProgrammePolicy';
+import { resolveSplitPreference, splitWeeklyStrategyId, type SplitPreference } from './splitPreference';
 import type { AllocatedProgrammeDay, CompiledProgrammeWeek } from './weeklyProgrammeTypes';
 
 export type ProgramDayPlan = {
@@ -134,8 +136,13 @@ export function buildFourWeekPlan(
     (profile as { trainingMode?: unknown }).trainingMode ?? profile.constraints?.trainingMode,
   );
 
+  // Split preference (2026-11-04): Auto keeps today's choice; Full body or
+  // Upper/Lower selects an approved weekly policy of that shape (strength only).
+  const splitPreference = resolveSplitPreference(profile.constraints?.preferences?.splitPreference, daysPerWeek, mode);
+  const forcedStrategyId = splitWeeklyStrategyId(splitPreference, daysPerWeek);
+
   // Determine split based on days per week, goals, and muscle frequency preference
-  const split = determineSplit(daysPerWeek, primaryGoal, secondaryGoal, validFrequency);
+  const split = forcedStrategyId ? splitForWeeklyStrategy(forcedStrategyId, daysPerWeek) : determineSplit(daysPerWeek, primaryGoal, secondaryGoal, validFrequency);
 
   // Build weekly structure (same structure for all 4 weeks)
   const weeklyDayPlans: Record<number, ProgramDayPlan> = {};
@@ -168,7 +175,7 @@ export function buildFourWeekPlan(
     runningGoal: profile.constraints?.runningGoal,
     runningDistanceKm: profile.constraints?.runningDistanceKm,
   };
-  const compilation = compileProgrammeWeek(Object.values(weeklyDayPlans), input, { daysPerWeek, strategyId: mode === 'running' ? 'running-v1' : split[0]?.strategyId?.startsWith('balanced-v1:') ? `balanced-v1:${daysPerWeek}` : 'legacy-intents-v1' });
+  const compilation = compileProgrammeWeek(Object.values(weeklyDayPlans), input, { daysPerWeek, strategyId: mode === 'running' ? 'running-v1' : split[0]?.strategyId?.startsWith('balanced-v1:') ? forcedStrategyId ?? defaultWeeklyStrategyId(daysPerWeek) : 'legacy-intents-v1' });
   for (const weekday of uiWeekdays) weeklyDayPlans[weekday].allocation = compilation.days[weekday];
 
   // Replicate for 4 weeks
@@ -188,6 +195,19 @@ export function buildFourWeekPlan(
     goals,
   };
 }
+
+/** Calendar days for a weekly strategy selected by the split preference. */
+function splitForWeeklyStrategy(strategyId: string, daysPerWeek: number): ProgramDayPlan[] {
+  const days = strategyId === UPPER_LOWER_STRATEGY_ID
+    ? [
+      day('Upper Body', ['horizontal_press', 'horizontal_pull', 'vertical_press', 'vertical_pull', 'shoulder_isolation', 'elbow_flexion', 'elbow_extension'], 'upper'),
+      day('Lower Body', ['knee_dominant', 'hip_hinge'], 'lower'),
+    ]
+    : twicePerMuscleSplit(daysPerWeek) ?? [];
+  return days.map((entry, index) => ({ ...entry, strategyId: balancedStrategyId(daysPerWeek, index, strategyId) }));
+}
+
+export type { SplitPreference };
 
 /**
  * Determine split/session structure based on training frequency and goals

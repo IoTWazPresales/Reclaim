@@ -8,9 +8,10 @@ import {
   getWeightStep,
   getMinimumWeight,
   detectFatigue,
-  decideDoubleProgression,
-  countHoldStreak,
-  type DoubleProgressionDecision,
+  deriveProgressionDecision,
+  governingLoadEvidence,
+  prescriptionContext,
+  getRepRange,
 } from '../progression';
 import { isQualifiedPerformance } from '../performanceHistory';
 import { getExerciseLoadingProfile } from '../exerciseLoadingProfile';
@@ -24,7 +25,7 @@ import { warmupSetsForWorkingWeight } from '../warmupSets';
 import { buildBalancedProgramSession } from '../balancedHypertrophy';
 import { buildAllocatedProgramSession } from '../allocatedProgramSession';
 import { capNewSession } from '../sessionCapPolicy';
-import { WEEKLY_POLICY_VERSION } from '../weeklyProgrammeTypes';
+import { WEEKLY_POLICY_VERSION, usesCappedWeeklyPolicy } from '../weeklyProgrammeTypes';
 import { evaluateExerciseEligibility } from '../exerciseEligibility';
 import type {
   Exercise,
@@ -591,16 +592,6 @@ function getNormalizedGoalEntries(goalWeights: GoalWeights): Array<{ goal: Train
   return withRules.map((e) => ({ ...e, weight: e.weight / sum }));
 }
 
-function getBlendedRepRange(priority: ExercisePriority, goalWeights: GoalWeights): [number, number] | null {
-  const entries = getNormalizedGoalEntries(goalWeights);
-  if (entries.length === 0) return null;
-  const lower = entries.reduce((acc, e) => acc + e.weight * e.rules.repRanges[priority][0], 0);
-  const upper = entries.reduce((acc, e) => acc + e.weight * e.rules.repRanges[priority][1], 0);
-  const lowRounded = Math.max(1, Math.round(lower));
-  const highRounded = Math.max(lowRounded, Math.round(upper));
-  return [lowRounded, highRounded];
-}
-
 function getBlendedSets(priority: ExercisePriority, goalWeights: GoalWeights): number | null {
   const entries = getNormalizedGoalEntries(goalWeights);
   if (entries.length === 0) return null;
@@ -615,33 +606,7 @@ function getBlendedRest(priority: ExercisePriority, goalWeights: GoalWeights): n
   return Math.max(1, Math.round(blended / 5) * 5);
 }
 
-export function getRepRange(priority: ExercisePriority, goalWeights: GoalWeights): [number, number] {
-  const blended = getBlendedRepRange(priority, goalWeights);
-  if (blended) return blended;
-
-  // Find dominant goal
-  const goalEntries = Object.entries(goalWeights).filter(([, w]) => w && w > 0) as [TrainingGoal, number][];
-  if (goalEntries.length === 0) {
-    return [8, 12]; // default
-  }
-
-  goalEntries.sort(([, a], [, b]) => b - a);
-  const dominantGoal = goalEntries[0][0];
-
-  const goalRules = rules.goals[dominantGoal];
-  if (!goalRules) {
-    return [8, 12];
-  }
-
-  const repRanges = goalRules.repRanges;
-  if (priority === 'primary') {
-    return repRanges.primary as [number, number];
-  } else if (priority === 'accessory') {
-    return repRanges.accessory as [number, number];
-  } else {
-    return repRanges.isolation as [number, number];
-  }
-}
+export { getRepRange } from '../progression';
 
 /**
  * Get sets per exercise based on priority and goal
@@ -855,65 +820,7 @@ export function getRestSeconds(priority: ExercisePriority, goalWeights: GoalWeig
 // LOADING SUGGESTIONS (Task 4)
 // ============================================================================
 
-/**
- * Double progression + RPE decision for one exercise from user history.
- * Single source of truth for next-session load AND the user-facing reason.
- */
-export function deriveProgressionDecision(
-  exercise: Exercise,
-  userState: UserState,
-  repRange: [number, number],
-): DoubleProgressionDecision | null {
-  if (userState.performanceHistory &&
-      (userState.performanceHistory.status !== 'available' || !userState.performanceHistory.requestedExerciseIds.includes(exercise.id))) return null;
-  const lastPerf = userState.lastSessionPerformance?.[exercise.id];
-  if (!isQualifiedPerformance(exercise, lastPerf)) return null;
-  const history = userState.recentSessionPerformance?.[exercise.id];
-  if (history && (history.length === 0 || !isQualifiedPerformance(exercise, history[0]) ||
-      history[0].evidence!.itemId !== lastPerf.evidence!.itemId ||
-      history[0].date !== lastPerf.date || JSON.stringify(history[0].sets) !== JSON.stringify(lastPerf.sets))) return null;
-  // Never count gaps, duplicate sessions, different work or unqualified entries as holds.
-  const consecutive: typeof history = [];
-  const seen = new Set<string>();
-  let newer = Infinity;
-  for (const entry of history ?? [lastPerf]) {
-    if (!isQualifiedPerformance(exercise, entry) || seen.has(entry.evidence!.sessionId) ||
-        Date.parse(entry.date) >= newer ||
-        (consecutive.length === 0 && entry.evidence!.itemId !== lastPerf.evidence!.itemId)) break;
-    seen.add(entry.evidence!.sessionId);
-    newer = Date.parse(entry.date);
-    consecutive.push(entry);
-  }
-  const holdStreak = countHoldStreak(consecutive, repRange);
-  return decideDoubleProgression({ exercise, lastSets: lastPerf.sets, repRange, holdStreak,
-    plannedSetCount: lastPerf.plannedSetCount, sessionComplete: lastPerf.sessionComplete });
-}
-
-/**
- * Suggest loading (weight) for an exercise with progression logic
- * Task 4: Fix vertical pull, use priority for rep ranges, fix bodyweight vs machine defaults
- */
-export function governingLoadEvidence(exercise: Exercise, userState: UserState, plannedReps: number): { oneRM?: number; source: 'baseline' | 'history' | 'default' } {
-  const baseline = userState.estimated1RM?.[exercise.id];
-  const fallback = { oneRM: baseline, source: baseline ? 'baseline' as const : 'default' as const };
-  if (userState.prescriptionPolicy === 'v1' || !deriveProgressionDecision(exercise, userState, [plannedReps, plannedReps])) return fallback;
-  const last = userState.lastSessionPerformance![exercise.id];
-  const baselineAt = baseline && baseline > 0 ? userState.baselineUpdatedAt?.[exercise.id] : undefined;
-  // Undated legacy baselines predate timestamped qualified evidence. Invalid
-  // supplied timestamps fail conservatively to the baseline; ties favor it too.
-  if (baseline && baselineAt && (!Number.isFinite(Date.parse(baselineAt)) || Date.parse(baselineAt) >= Date.parse(last.date))) return fallback;
-  let oneRM = 0;
-  let newer = Infinity;
-  const seen = new Set<string>();
-  for (const entry of userState.recentSessionPerformance?.[exercise.id] ?? [last]) {
-    if (!isQualifiedPerformance(exercise, entry) || Date.parse(entry.date) >= newer || seen.has(entry.evidence!.sessionId)) break;
-    newer = Date.parse(entry.date);
-    seen.add(entry.evidence!.sessionId);
-    if (baselineAt && newer <= Date.parse(baselineAt)) break;
-    for (const set of entry.sets) oneRM = Math.max(oneRM, set.weight * (1 + set.reps / 30));
-  }
-  return oneRM > 0 ? { oneRM, source: 'history' } : fallback;
-}
+export { deriveProgressionDecision, governingLoadEvidence } from '../progression';
 
 function capAtExerciseEpleyCeiling(
   weight: number,
@@ -933,7 +840,11 @@ function capAtExerciseEpleyCeiling(
   return Math.min(weight, ceiling);
 }
 
-export function explainAppliedProgression(exercise: Exercise, userState: UserState, repRange: [number, number], appliedWeight: number, appliedReps: number): string | undefined {
+export function explainAppliedProgression(exercise: Exercise, userState: UserState, repRange: [number, number], appliedWeight: number, appliedReps: number, plannedSetCount?: number): string | undefined {
+  const resolved = deriveProgressionDecision(exercise, userState, repRange, plannedSetCount);
+  if (userState.prescriptionPolicy !== 'v1' && resolved) {
+    return `Prescribed ${appliedWeight}kg for ${appliedReps} reps per set. ${resolved.reason}${appliedWeight !== resolved.nextWeight ? ` Current load adjustment applies ${appliedWeight}kg instead of ${resolved.nextWeight}kg.` : ''}`;
+  }
   const ownEvidence = governingLoadEvidence(exercise, userState, appliedReps);
   const anchorRM = ownEvidence.oneRM ? undefined : anchorLoadEvidence(exercise, userState);
   const evidence = anchorRM ? { oneRM: anchorRM, source: 'anchor' } : ownEvidence;
@@ -943,7 +854,7 @@ export function explainAppliedProgression(exercise: Exercise, userState: UserSta
     const working = epleyRpe8WorkingWeight(evidence.oneRM, appliedReps, step);
     const decision = deriveProgressionDecision(exercise, userState, repRange);
     const governed = evidence.source === 'history' ? 'Most recent qualified history governs the load ceiling.' : evidence.source === 'anchor' ? 'Your saved same-unit anchor baseline governs the load ceiling.' : 'Your saved exercise baseline governs the load ceiling.';
-    let progression = 'No qualified history is available.';
+    let progression = evidence.source === 'history' ? 'No comparable frozen prescription is available; using an initial load estimate.' : 'No qualified history is available.';
     if (decision) {
       const limitReason = decision.nextWeight > working
         ? evidence.source === 'history' ? 'qualified history limits it at RPE 8.' : 'your saved exercise baseline limits it at RPE 8.'
@@ -970,24 +881,35 @@ export function explainAppliedProgression(exercise: Exercise, userState: UserSta
   return `${planned} ${decision.reason}`;
 }
 
+/** Numeric compatibility API; all prescriptions resolve through the same decision. */
 export function suggestLoading(input: SuggestLoadingInput): number {
-  const { exercise, userState, goalWeights, plannedReps, priority = 'primary' } = input;
+  return suggestPrescription(input).weight;
+}
+
+/** One reps/load resolution for new builds, replacements, preview and start. */
+export function suggestPrescription(input: SuggestLoadingInput): import('../types').ExercisePrescription {
+  const { exercise, userState, goalWeights, priority = 'primary' } = input;
+  // A declared weekly exposure range (policy v4) governs; otherwise priority × goal blend.
+  const range = input.repRange ?? getRepRange(priority, goalWeights);
+  const decision = deriveProgressionDecision(exercise, userState, range, input.plannedSetCount);
+  const historical = userState.prescriptionPolicy === 'v1';
+  const reps = historical ? input.plannedReps : decision?.nextReps ?? input.plannedReps;
+  const weight = decision
+    ? historical ? capAtExerciseEpleyCeiling(decision.nextWeight, exercise, userState, reps) : decision.nextWeight
+    : initialLoading({ ...input, plannedReps: reps });
+  return { reps, weight, ...(decision ? { progression: decision } : {}),
+    reason: explainAppliedProgression(exercise, userState, range, weight, reps, input.plannedSetCount),
+    ...(!historical && getExerciseLoadingProfile(exercise).prescriptionType === 'reps' ? { prescriptionContext: prescriptionContext(range) } : {}),
+  };
+}
+
+/** Calibration only. Earned progression never passes through this estimate. */
+function initialLoading(input: SuggestLoadingInput): number {
+  const { exercise, userState, plannedReps } = input;
   const finish = (weight: number) => capAtExerciseEpleyCeiling(weight, exercise, userState, plannedReps);
-
-  // Double progression + RPE from actual history (primary path): the last
-  // session's result decides increase / hold / deload — never a formula
-  // re-derivation that can bounce the load around. That next weight still
-  // cannot exceed this exercise's own Epley working-weight ceiling.
-  const repRange = getRepRange(priority, goalWeights);
-  const decision = deriveProgressionDecision(exercise, userState, repRange);
-  if (decision) {
-    return finish(decision.nextWeight);
-  }
-
-  // Use explicit 1RM baseline if provided (no history yet)
-  if (userState.estimated1RM?.[exercise.id]) {
-    const oneRM = userState.estimated1RM[exercise.id];
-    return finish(epleyWorkingWeightCeiling(oneRM, plannedReps, getWeightStep(exercise)));
+  const evidence = governingLoadEvidence(exercise, userState, plannedReps);
+  if (evidence.oneRM && evidence.oneRM > 0) {
+    return finish(epleyWorkingWeightCeiling(evidence.oneRM, plannedReps, getWeightStep(exercise)));
   }
 
   const earlyProfile = getExerciseLoadingProfile(exercise);
@@ -1331,30 +1253,31 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     }
     noteMuscleSets(selected, intent, sets, smallMuscleSets);
     const restSeconds = getRestSeconds(priority, goals);
-    const targetReps = getExerciseTargetReps(selected, repRange);
+    const initialReps = getExerciseTargetReps(selected, repRange);
 
-    const baseWeight = suggestLoading({
+    const prescription = suggestPrescription({
       exercise: selected,
       userState,
       goalWeights: goals,
-      plannedReps: targetReps,
+      plannedReps: initialReps,
+      plannedSetCount: sets,
       priority, // Pass priority for correct rep range evaluation
     });
     const { weight: suggestedWeight, reason: adaptiveReason } = applyOptionalAdaptiveLoadBias(
-      baseWeight,
+      prescription.weight,
       selected,
       userState,
       adaptiveOn,
     );
     const plannedSets: PlannedSet[] = Array.from({ length: sets }, (_, i) => ({
       setIndex: i + 1,
-      targetReps,
+      targetReps: prescription.reps,
       suggestedWeight,
       restSeconds,
     }));
 
     // Progression reason (double progression + RPE) — same decision as suggestLoading.
-    const progressionReason = [explainAppliedProgression(selected, userState, repRange, suggestedWeight, targetReps), adaptiveReason].filter(Boolean).join(' ') || undefined;
+    const progressionReason = [explainAppliedProgression(selected, userState, repRange, suggestedWeight, prescription.reps, sets), adaptiveReason].filter(Boolean).join(' ') || undefined;
 
     const selQ = selectionQualityDelta(selected, intent, hintsPrePick);
     const enriched = enrichRankedAlternatives(selected, intent, candidates, {
@@ -1510,24 +1433,25 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     }
     noteMuscleSets(selected, intent, sets, smallMuscleSets);
     const restSeconds = getRestSeconds(priority, goals);
-    const targetReps = getExerciseTargetReps(selected, repRange);
+    const initialReps = getExerciseTargetReps(selected, repRange);
 
-    const baseWeightOpt = suggestLoading({
+    const prescription = suggestPrescription({
       exercise: selected,
       userState,
       goalWeights: goals,
-      plannedReps: targetReps,
+      plannedReps: initialReps,
+      plannedSetCount: sets,
       priority,
     });
     const { weight: suggestedWeightOpt } = applyOptionalAdaptiveLoadBias(
-      baseWeightOpt,
+      prescription.weight,
       selected,
       userState,
       adaptiveOn,
     );
     const plannedSets: PlannedSet[] = Array.from({ length: sets }, (_, i) => ({
       setIndex: i + 1,
-      targetReps,
+      targetReps: prescription.reps,
       suggestedWeight: suggestedWeightOpt,
       restSeconds,
     }));
@@ -1635,18 +1559,19 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       const sets = takeSets(priority, remain, true);
       if (sets < 1) continue;
       noteMuscleSets(selected, assistant.intent, sets, smallMuscleSets);
-      const targetReps = getExerciseTargetReps(selected, repRange);
-      const baseWeight = suggestLoading({
+      const initialReps = getExerciseTargetReps(selected, repRange);
+      const prescription = suggestPrescription({
         exercise: selected,
         userState,
         goalWeights: goals,
-        plannedReps: targetReps,
+        plannedReps: initialReps,
+        plannedSetCount: sets,
         priority,
       });
       const plannedSets: PlannedSet[] = Array.from({ length: sets }, (_, i) => ({
         setIndex: i + 1,
-        targetReps,
-        suggestedWeight: baseWeight,
+        targetReps: prescription.reps,
+        suggestedWeight: prescription.weight,
         restSeconds: getRestSeconds(priority, goals),
       }));
       exercises.push({
@@ -1713,8 +1638,9 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
   const cooldownMinutes = rules.timeBudget.cooldownMinutes;
   for (const planned of exercises) {
     const firstSet = planned.plannedSets[0];
+    if (userState.prescriptionPolicy !== 'v1' && getExerciseLoadingProfile(planned.exercise).prescriptionType === 'reps') planned.decisionTrace.prescriptionContext = prescriptionContext(getRepRange(planned.priority, goals));
     if (firstSet && !planned.decisionTrace.progressionReason) planned.decisionTrace.progressionReason = explainAppliedProgression(
-      planned.exercise, userState, getRepRange(planned.priority, goals), firstSet.suggestedWeight, firstSet.targetReps,
+      planned.exercise, userState, getRepRange(planned.priority, goals), firstSet.suggestedWeight, firstSet.targetReps, planned.plannedSets.length,
     );
   }
   const capResult = v2 ? capNewSession(exercises, input.volumeCaps, constraints.timeBudgetMinutes) : { exercises, issues: [] };
@@ -1881,7 +1807,7 @@ export function buildSessionFromProgramDay(
     avoidExerciseIds?: string[];
   },
 ): SessionPlan {
-  const policy = programDay.allocation?.policyVersion === WEEKLY_POLICY_VERSION ? 'v2' : 'v1';
+  const policy = usesCappedWeeklyPolicy(programDay.allocation?.policyVersion) ? 'v2' : 'v1';
   if (programDay.template_key === 'run') {
     const weekIndex = acceptedProgramWeekIndex(programDay.weekIndex);
     // RUNNING_DESIGN.md RD-006: 20 minutes, then 30 minutes from week 3.
@@ -1919,10 +1845,9 @@ export function buildSessionFromProgramDay(
     template: programDay.template_key,
     weekIndex,
     profile: profileSnapshot,
-    loading: (exercise, plannedReps, priority) => {
+    loading: (exercise, plannedReps, priority, plannedSetCount, repRange) => {
       const userState: UserState = { experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel), baselineUpdatedAt: profileSnapshot.baselineUpdatedAt, prescriptionPolicy: policy, estimated1RM: profileSnapshot.baselines || {}, performanceHistory: profileSnapshot.performanceHistory, lastSessionPerformance: profileSnapshot.lastSessionPerformance, recentSessionPerformance: profileSnapshot.recentSessionPerformance };
-      const weight = suggestLoading({ exercise, plannedReps, priority, goalWeights: profileSnapshot.goals, userState });
-      return { weight, reason: explainAppliedProgression(exercise, userState, getRepRange(priority, profileSnapshot.goals), weight, plannedReps) };
+      return suggestPrescription({ exercise, plannedReps, priority, plannedSetCount, goalWeights: profileSnapshot.goals, userState, ...(repRange ? { repRange } : {}) });
     },
   });
 
@@ -1932,12 +1857,8 @@ export function buildSessionFromProgramDay(
     const legacy = buildBalancedProgramSession({
       label: programDay.label, intents: programDay.intents, template: programDay.template_key,
       weekIndex, profile: profileSnapshot, avoidExerciseIds: options?.avoidExerciseIds,
-      explainLoading: (exercise, reps, priority, weight) => explainAppliedProgression(exercise, {
-        experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel), baselineUpdatedAt: profileSnapshot.baselineUpdatedAt, prescriptionPolicy: policy, estimated1RM: profileSnapshot.baselines,
-        performanceHistory: profileSnapshot.performanceHistory, lastSessionPerformance: profileSnapshot.lastSessionPerformance, recentSessionPerformance: profileSnapshot.recentSessionPerformance,
-      }, getRepRange(priority, profileSnapshot.goals), weight, reps),
-      suggestLoading: (exercise, plannedReps, priority) => suggestLoading({
-        exercise, plannedReps, priority, goalWeights: profileSnapshot.goals,
+      loading: (exercise, plannedReps, priority, plannedSetCount) => suggestPrescription({
+        exercise, plannedReps, priority, plannedSetCount, goalWeights: profileSnapshot.goals,
         userState: { experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel), baselineUpdatedAt: profileSnapshot.baselineUpdatedAt, prescriptionPolicy: policy, estimated1RM: profileSnapshot.baselines || {}, performanceHistory: profileSnapshot.performanceHistory, lastSessionPerformance: profileSnapshot.lastSessionPerformance, recentSessionPerformance: profileSnapshot.recentSessionPerformance },
       }),
     });

@@ -624,7 +624,7 @@ export default function TrainingScreen() {
           planningProfile: {
             goals: plan.goals, equipment_access: plan.constraints.availableEquipment,
             constraints: { injuries: plan.constraints.injuries, forbiddenMovements: plan.constraints.forbiddenMovements, preferences: plan.constraints.preferences },
-            experienceLevel: plan.userState.experienceLevel, baselines: plan.userState.estimated1RM,
+            experienceLevel: plan.userState.experienceLevel, baselines: plan.userState.estimated1RM, baselineUpdatedAt: plan.userState.baselineUpdatedAt,
           },
           ...(plan.template === 'run'
             ? { run: true, runTargetMinutes: plan.estimatedDurationMinutes }

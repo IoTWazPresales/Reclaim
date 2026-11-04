@@ -1,5 +1,14 @@
 import { completedPerformanceHistory, type PerformanceHistoryItem } from '../../performanceHistory';
 import type { SetLog } from '../../types';
+import { prescriptionContext } from '../../progression';
+
+/** Explicit frozen targets for current-policy tests; historyItem stays a legacy fixture. */
+export function prescribedHistoryItem(exerciseId = 'barbell_bench_press', date = '2026-10-01', reps = 8, weight = 60, targetReps = reps, range: [number, number] = [6, 8]): PerformanceHistoryItem {
+  const item = historyItem(exerciseId, date, reps, weight);
+  item.planned = { sets: [1, 2, 3].map(setIndex => ({ setIndex, targetReps, suggestedWeight: weight, restSeconds: 90 })),
+    decisionTrace: { prescriptionContext: prescriptionContext(range) } };
+  return item;
+}
 
 export function historyItem(exerciseId = 'barbell_bench_press', date = '2026-10-01', reps = 8, weight = 60): PerformanceHistoryItem {
   return {

@@ -91,6 +91,8 @@ export interface TrainingConstraints {
     /** When true, Skill-tier movements (e.g. handstand) may be auto-selected. Default false. */
     includeSkillWork?: boolean;
     muscle_frequency_preference?: 'once' | 'twice' | 'auto';
+    /** Weekly split shape (2026-11-04); absent means Auto. */
+    splitPreference?: 'auto' | 'full_body' | 'upper_lower';
   };
 }
 
@@ -113,6 +115,12 @@ export interface ExercisePerformance {
   date: string;
   plannedSetCount?: number;
   sessionComplete?: boolean;
+  /** Original frozen prescription, never reconstructed from performed reps. */
+  prescription?: {
+    sets: Array<Pick<PlannedSet, 'setIndex' | 'targetReps' | 'suggestedWeight' | 'loadRequiresConfirmation'>>;
+    context?: PrescriptionContext;
+    adjusted: boolean;
+  };
   evidence?: {
     source: 'training_session_items.performed.sets';
     status: 'qualified' | 'incomplete' | 'unsupported';
@@ -161,6 +169,11 @@ export interface PlannedExercise {
   decisionTrace: DecisionTrace;
 }
 
+export interface PrescriptionContext {
+  policyVersion: 'double-20261103';
+  repRange: [number, number];
+}
+
 export interface DecisionTrace {
   intent: MovementIntent[];
   goalBias: GoalWeights;
@@ -175,6 +188,7 @@ export interface DecisionTrace {
   alternativesSummary?: Array<{ name: string; reason: string }>;
   confidence: number;
   progressionReason?: string; // Why weight changed from last time
+  prescriptionContext?: PrescriptionContext;
   whyNotTopAlt?: string; // One line: why the best alternative wasn't chosen
   /** Whether this exercise came from a required or optional program slot */
   selectionPhase?: SelectionPhase;
@@ -307,6 +321,17 @@ export interface SuggestLoadingInput {
   goalWeights: GoalWeights;
   plannedReps: number;
   priority?: ExercisePriority; // Added: priority affects rep range used for progression
+  plannedSetCount?: number;
+  /** Declared weekly exposure range (policy v4); otherwise priority × goal blend. */
+  repRange?: [number, number];
+}
+
+export interface ExercisePrescription {
+  reps: number;
+  weight: number;
+  reason?: string;
+  prescriptionContext?: PrescriptionContext;
+  progression?: import('./progression').DoubleProgressionDecision;
 }
 
 export interface AdaptSessionInput {
