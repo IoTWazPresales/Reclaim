@@ -3,7 +3,8 @@
 Beta URL: **https://eliasonw-reclaim-app--beta.expo.app**
 
 This is the stable, non-production EAS Hosting alias `beta`. Deployed application
-source: `70de865b94aa16b51386bbc371da1d920c9a7e8b` (deployment `tuefyoucce`).
+source: merge `c4e13cf` of `fix/training-confident-ux` 407bb27 (weekly policy v4, split preference)
+into this branch, deployment `kiuocudv7k` (2026-11-04). Previous: `70de865`, deployment `tuefyoucce`.
 
 ## Sign up and sign in
 
