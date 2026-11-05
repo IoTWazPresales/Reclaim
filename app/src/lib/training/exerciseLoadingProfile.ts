@@ -159,7 +159,7 @@ const BY_ID: Partial<Record<string, Partial<ExerciseLoadingProfile>>> = {
   pull_ups: {
     loadingIntentKey: 'vertical_pull',
     prescriptionType: 'reps',
-    loadDisplayMode: 'bodyweight',
+    loadDisplayMode: 'added_bodyweight',
     fixedIncrementKg: 2.5,
     defaultSelectionTier: 'normal',
     compoundClassification: 'compound',
@@ -167,10 +167,23 @@ const BY_ID: Partial<Record<string, Partial<ExerciseLoadingProfile>>> = {
   chin_ups: {
     loadingIntentKey: 'vertical_pull',
     prescriptionType: 'reps',
-    loadDisplayMode: 'bodyweight',
+    loadDisplayMode: 'added_bodyweight',
     fixedIncrementKg: 2.5,
     defaultSelectionTier: 'normal',
     compoundClassification: 'compound',
+  },
+  /** N-0074 (A3): 0 kg is bodyweight; any logged kilograms are added on top of it. */
+  tricep_dips: {
+    loadDisplayMode: 'added_bodyweight',
+    fixedIncrementKg: 2.5,
+  },
+  weighted_pull_ups: {
+    loadDisplayMode: 'added_bodyweight',
+    fixedIncrementKg: 2.5,
+  },
+  weighted_dips: {
+    loadDisplayMode: 'added_bodyweight',
+    fixedIncrementKg: 2.5,
   },
   push_ups: {
     loadingIntentKey: 'horizontal_press',

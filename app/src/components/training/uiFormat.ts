@@ -2,13 +2,18 @@
  * UI Display Formatting Helpers for Training Components
  * Pure formatting functions - no business logic, only string display
  */
+import { formatAddedBodyweightLoad } from '@/lib/training/loadDisplayFormat';
+import type { Exercise } from '@/lib/training/types';
 
 /**
  * Format weight for display: "60kg" (removes unnecessary .0)
  * Still allows decimals if truly needed (e.g., 2.5kg increments).
  * Zero load means bodyweight — display "Bodyweight", never "0kg".
  */
-export function formatWeight(weight: number): string {
+export function formatWeight(weight: number, exercise?: Exercise): string {
+  // N-0074 (A3): added-bodyweight lifts read "Bodyweight" / "BW + N kg" from the load profile.
+  const added = exercise ? formatAddedBodyweightLoad(exercise, weight) : null;
+  if (added) return added;
   if (weight === 0) {
     return 'Bodyweight';
   }
@@ -49,9 +54,9 @@ export function formatEstimatedDuration(minutes: number): string {
  * Format weight × reps for display: "60kg × 8", "Bodyweight × 12".
  * A 0×0 entry is a skipped set, not a lift.
  */
-export function formatWeightReps(weight: number, reps: number): string {
+export function formatWeightReps(weight: number, reps: number, exercise?: Exercise): string {
   if (weight === 0 && reps === 0) {
     return 'Skipped';
   }
-  return `${formatWeight(weight)} ${formatReps(reps)}`;
+  return `${formatWeight(weight, exercise)} ${formatReps(reps)}`;
 }

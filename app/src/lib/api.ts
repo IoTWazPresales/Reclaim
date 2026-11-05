@@ -1,4 +1,5 @@
 import { completedPerformanceHistory } from './training/performanceHistory';
+import { HISTORY_SESSIONS_PER_EXERCISE } from './training/progression';
 import { withSessionItemMutationLock } from './training/sessionItemMutationLock';
 // C:\Reclaim\app\src\lib\api.ts
 // ✅ Updated: make ALL writes RLS-safe by explicitly setting user_id on inserts/upserts where needed,
@@ -2572,7 +2573,8 @@ export async function getLastExercisePerformances(exerciseIds: string[]): Promis
 /** Canonical history, including incomplete entries that interrupt progression streaks. */
 export async function getRecentExercisePerformances(
   exerciseIds: string[],
-  sessionsPerExercise = 3,
+  // N-0074: same rows are fetched at any depth; the limit is applied in the projection.
+  sessionsPerExercise = HISTORY_SESSIONS_PER_EXERCISE,
 ): Promise<Record<string, import('./training/types').ExercisePerformance[]>> {
   const user = await requireUser();
   if (exerciseIds.length === 0) return {};

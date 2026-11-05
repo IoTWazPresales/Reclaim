@@ -273,7 +273,8 @@ describe('R10 programme evolution and effective work', () => {
     expect(recommendation?.nextWeight).toBe(82.5);
     const weight = suggestLoading({ exercise: bench, userState: user, goalWeights: { build_muscle: 0.5, build_strength: 0.5, lose_fat: 0, get_fitter: 0 }, plannedReps: 9 });
     expect(weight).toBe(82.5);
-    expect(recommendation?.nextReps).toBe(5);
+    // N-0074 (A4): 80 x 9 -> 82.5 kg restarts at the Epley-equivalent 7 reps, not the range minimum.
+    expect(recommendation?.nextReps).toBe(7);
     expect(explainAppliedProgression(bench, user, [5, 9], weight, 5)).not.toContain('history limits');
     expect(explainAppliedProgression(bench, user, [5, 9], weight, 9)).toContain('82.5kg');
   });

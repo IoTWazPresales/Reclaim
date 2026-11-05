@@ -31,7 +31,7 @@ describe('default loads stay in their declared source unit (RA-016)', () => {
     ['cable_row', 'cable_stack', 45],
     ['seated_calf_raise', 'machine_total', 0],
     ['farmer_walk', 'per_hand', 15],
-    ['pull_ups', 'bodyweight', 0],
+    ['pull_ups', 'added_bodyweight', 0], // N-0074 (A3): 0 kg is bodyweight; added kg on top.
     ['lateral_raises', 'per_dumbbell', 0],
     ['dumbbell_curl', 'per_dumbbell', 0],
   ] as const)('%s keeps only an own-unit default', (id, unit, expected) => {
@@ -64,14 +64,21 @@ describe('default loads stay in their declared source unit (RA-016)', () => {
     expect(suggestLoading({ exercise: { ...thruster, equipment: ['machine'], equipmentAny: ['machine'], equipmentAll: [] }, userState: state, goalWeights: goals, plannedReps: 7 })).toBe(0);
   });
 
-  it.each(['added_bodyweight', 'assisted_bodyweight'] as const)('does not treat an unspecified %s default as confirmed zero', mode => {
+  it('does not treat an unspecified assisted_bodyweight default as confirmed zero', () => {
     const exercise = ex('pull_ups');
     const original = getExerciseLoadingProfile(exercise);
-    const spy = vi.spyOn(loadingProfiles, 'getExerciseLoadingProfile').mockReturnValue({ ...original, loadDisplayMode: mode });
+    const spy = vi.spyOn(loadingProfiles, 'getExerciseLoadingProfile').mockReturnValue({ ...original, loadDisplayMode: 'assisted_bodyweight' });
     try {
       expect(suggestLoading({ exercise, plannedReps: 7, userState: state, goalWeights: goals })).toBe(0);
       expect(requiresLoadConfirmation(exercise, 0, state)).toBe(true);
     } finally { spy.mockRestore(); }
+  });
+
+  it('N-0074 (A3): zero added load is bodyweight work, not an unknown load', () => {
+    const exercise = ex('pull_ups');
+    expect(getExerciseLoadingProfile(exercise).loadDisplayMode).toBe('added_bodyweight');
+    expect(suggestLoading({ exercise, plannedReps: 7, userState: state, goalWeights: goals })).toBe(0);
+    expect(requiresLoadConfirmation(exercise, 0, state)).toBe(false);
   });
 
   it('generic required and small-muscle builds emit confirmation instead of a default number', () => {

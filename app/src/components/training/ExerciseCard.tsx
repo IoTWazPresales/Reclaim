@@ -231,7 +231,7 @@ export default function ExerciseCard({
                     style={{ color: theme.colors.onPrimaryContainer, fontWeight: '600' }}
                     numberOfLines={2}
                   >
-                    Last time: {formatWeightReps(lastPerformance.weight, lastPerformance.reps)}
+                    Last time: {formatWeightReps(lastPerformance.weight, lastPerformance.reps, exercise)}
                     {lastPerformance.date
                       ? ` · ${new Date(lastPerformance.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
                       : ''}
@@ -329,7 +329,7 @@ export default function ExerciseCard({
                         }}
                       >
                         <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-                          {formatWeight(weight)} × 5
+                          {formatWeight(weight, exercise)} × 5
                         </Text>
                         <Button
                           mode={completedWarmups.has(idx) ? 'outlined' : 'contained-tonal'}
@@ -388,7 +388,7 @@ export default function ExerciseCard({
                     <>
                       <View style={{ flex: 1 }}>
                         <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }} numberOfLines={2}>
-                          {formatWeightReps(performed.weight, performed.reps)}
+                          {formatWeightReps(performed.weight, performed.reps, exercise)}
                           {performed.rpe ? ` @ RPE ${performed.rpe}` : ''}
                         </Text>
                         <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }} numberOfLines={1}>
@@ -427,7 +427,7 @@ export default function ExerciseCard({
                         {/* FIX: Always show previous set performance (even if "none") - aligned with exact setIndex */}
                         <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }} numberOfLines={2}>
                           {previousSet
-                            ? `Last session: ${formatWeightReps(previousSet.weight, previousSet.reps)}`
+                            ? `Last session: ${formatWeightReps(previousSet.weight, previousSet.reps, exercise)}`
                             : 'No matching set from your last session yet'}
                         </Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: appTheme.spacing.sm, flexWrap: 'wrap', marginTop: appTheme.spacing.xs }}>

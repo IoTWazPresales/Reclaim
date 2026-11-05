@@ -12,6 +12,8 @@ import {
   governingLoadEvidence,
   prescriptionContext,
   getRepRange,
+  followerLoadCopy,
+  type ExposureContext,
 } from '../progression';
 import { isQualifiedPerformance } from '../performanceHistory';
 import { getExerciseLoadingProfile } from '../exerciseLoadingProfile';
@@ -827,8 +829,10 @@ function capAtExerciseEpleyCeiling(
   exercise: Exercise,
   userState: UserState,
   plannedReps: number,
+  exposure?: ExposureContext,
+  repRange?: [number, number],
 ): number {
-  const oneRM = governingLoadEvidence(exercise, userState, plannedReps).oneRM;
+  const oneRM = governingLoadEvidence(exercise, userState, plannedReps, exposure, repRange).oneRM;
   if (!oneRM || oneRM <= 0 || isBodyweightExercise(exercise)) return weight;
   const step = getWeightStep(exercise);
   const rpe8 = userState.prescriptionPolicy !== 'v1' && getExerciseLoadingProfile(exercise).prescriptionType === 'reps';
@@ -840,19 +844,19 @@ function capAtExerciseEpleyCeiling(
   return Math.min(weight, ceiling);
 }
 
-export function explainAppliedProgression(exercise: Exercise, userState: UserState, repRange: [number, number], appliedWeight: number, appliedReps: number, plannedSetCount?: number): string | undefined {
-  const resolved = deriveProgressionDecision(exercise, userState, repRange, plannedSetCount);
+export function explainAppliedProgression(exercise: Exercise, userState: UserState, repRange: [number, number], appliedWeight: number, appliedReps: number, plannedSetCount?: number, exposure?: ExposureContext): string | undefined {
+  const resolved = deriveProgressionDecision(exercise, userState, repRange, plannedSetCount, exposure);
   if (userState.prescriptionPolicy !== 'v1' && resolved) {
     return `Prescribed ${appliedWeight}kg for ${appliedReps} reps per set. ${resolved.reason}${appliedWeight !== resolved.nextWeight ? ` Current load adjustment applies ${appliedWeight}kg instead of ${resolved.nextWeight}kg.` : ''}`;
   }
-  const ownEvidence = governingLoadEvidence(exercise, userState, appliedReps);
+  const ownEvidence = governingLoadEvidence(exercise, userState, appliedReps, exposure, repRange);
   const anchorRM = ownEvidence.oneRM ? undefined : anchorLoadEvidence(exercise, userState);
   const evidence = anchorRM ? { oneRM: anchorRM, source: 'anchor' } : ownEvidence;
   if (userState.prescriptionPolicy !== 'v1' && evidence.oneRM && evidence.oneRM > 0 && !isBodyweightExercise(exercise) && getExerciseLoadingProfile(exercise).prescriptionType === 'reps') {
     const step = getWeightStep(exercise);
     const ceiling = Math.floor(evidence.oneRM / (1 + appliedReps / 30) / step) * step;
     const working = epleyRpe8WorkingWeight(evidence.oneRM, appliedReps, step);
-    const decision = deriveProgressionDecision(exercise, userState, repRange);
+    const decision = deriveProgressionDecision(exercise, userState, repRange, undefined, exposure);
     const governed = evidence.source === 'history' ? 'Most recent qualified history governs the load ceiling.' : evidence.source === 'anchor' ? 'Your saved same-unit anchor baseline governs the load ceiling.' : 'Your saved exercise baseline governs the load ceiling.';
     let progression = evidence.source === 'history' ? 'No comparable frozen prescription is available; using an initial load estimate.' : 'No qualified history is available.';
     if (decision) {
@@ -863,17 +867,17 @@ export function explainAppliedProgression(exercise: Exercise, userState: UserSta
     }
     return `Prescribed ${appliedWeight}kg for ${appliedReps} reps per set. ${governed} Epley ceiling: ${ceiling}kg at ${appliedReps} reps. RPE 8 working limit (2 reps in reserve): ${working}kg. Applied working weight: ${appliedWeight}kg. ${progression}`;
   }
-  const decision = deriveProgressionDecision(exercise, userState, repRange);
+  const decision = deriveProgressionDecision(exercise, userState, repRange, undefined, exposure);
   if (!decision) {
     const status = userState.performanceHistory?.status;
     return status === 'unavailable' ? 'Performance history unavailable; this prescription uses baseline/default loading, not earned progression.' :
       userState.lastSessionPerformance?.[exercise.id] ? 'Recent work is not qualified for progression; this prescription uses baseline/default loading.' : userState.estimated1RM?.[exercise.id] && userState.prescriptionPolicy !== 'v1' ? 'Your saved exercise baseline governs the load ceiling; no qualified history is available.' : undefined;
   }
-  const source = governingLoadEvidence(exercise, userState, appliedReps).source;
+  const source = governingLoadEvidence(exercise, userState, appliedReps, exposure, repRange).source;
   const governed = userState.prescriptionPolicy === 'v1' ? '' : source === 'history' ? ' Most recent qualified history governs the load ceiling.' : source === 'baseline' ? ' Your saved exercise baseline governs the load ceiling.' : '';
   const planned = `Prescribed ${appliedWeight}kg for ${appliedReps} reps per set.${governed}`;
   if (appliedWeight !== decision.nextWeight) {
-    const ceiling = capAtExerciseEpleyCeiling(decision.nextWeight, exercise, userState, appliedReps);
+    const ceiling = capAtExerciseEpleyCeiling(decision.nextWeight, exercise, userState, appliedReps, exposure, repRange);
     return `${planned} Qualified history proposed ${decision.nextWeight}kg; ${ceiling < decision.nextWeight ? source === 'history' ? 'qualified history limits it' : 'your saved exercise baseline limits it' : 'the current load adjustment limits it'}.`;
   }
   // Existing bodyweight policy suggests future work; it does not change the saved rep target or add kg.
@@ -891,23 +895,27 @@ export function suggestPrescription(input: SuggestLoadingInput): import('../type
   const { exercise, userState, goalWeights, priority = 'primary' } = input;
   // A declared weekly exposure range (policy v4) governs; otherwise priority × goal blend.
   const range = input.repRange ?? getRepRange(priority, goalWeights);
-  const decision = deriveProgressionDecision(exercise, userState, range, input.plannedSetCount);
   const historical = userState.prescriptionPolicy === 'v1';
+  // N-0074: a declared exposure never reaches historical replay.
+  const exposure = historical ? undefined : input.exposure;
+  const decision = deriveProgressionDecision(exercise, userState, range, input.plannedSetCount, exposure);
   const reps = historical ? input.plannedReps : decision?.nextReps ?? input.plannedReps;
   const weight = decision
     ? historical ? capAtExerciseEpleyCeiling(decision.nextWeight, exercise, userState, reps) : decision.nextWeight
-    : initialLoading({ ...input, plannedReps: reps });
+    : initialLoading({ ...input, plannedReps: reps, exposure }, range);
+  const repsPrescription = getExerciseLoadingProfile(exercise).prescriptionType === 'reps';
   return { reps, weight, ...(decision ? { progression: decision } : {}),
-    reason: explainAppliedProgression(exercise, userState, range, weight, reps, input.plannedSetCount),
-    ...(!historical && getExerciseLoadingProfile(exercise).prescriptionType === 'reps' ? { prescriptionContext: prescriptionContext(range) } : {}),
+    reason: explainAppliedProgression(exercise, userState, range, weight, reps, input.plannedSetCount, exposure),
+    ...(!historical && repsPrescription ? { prescriptionContext: prescriptionContext(range, exposure?.role) } : {}),
+    ...(exposure?.role === 'hypertrophy' && exposure.benchmark ? { loadFollows: followerLoadCopy(exercise, exposure.benchmark) } : {}),
   };
 }
 
 /** Calibration only. Earned progression never passes through this estimate. */
-function initialLoading(input: SuggestLoadingInput): number {
-  const { exercise, userState, plannedReps } = input;
-  const finish = (weight: number) => capAtExerciseEpleyCeiling(weight, exercise, userState, plannedReps);
-  const evidence = governingLoadEvidence(exercise, userState, plannedReps);
+function initialLoading(input: SuggestLoadingInput, range?: [number, number]): number {
+  const { exercise, userState, plannedReps, exposure } = input;
+  const finish = (weight: number) => capAtExerciseEpleyCeiling(weight, exercise, userState, plannedReps, exposure, range);
+  const evidence = governingLoadEvidence(exercise, userState, plannedReps, exposure, range);
   if (evidence.oneRM && evidence.oneRM > 0) {
     return finish(epleyWorkingWeightCeiling(evidence.oneRM, plannedReps, getWeightStep(exercise)));
   }
@@ -1799,6 +1807,8 @@ export function buildSessionFromProgramDay(
     template_key: SessionTemplate;
     weekIndex?: number;
     allocation?: import('../weeklyProgrammeTypes').AllocatedProgrammeDay;
+    /** N-0074: same-week strength exposures by exercise (benchmark day names). */
+    exposureBenchmarks?: import('../exposureBenchmark').ExposureBenchmarks;
   },
   profileSnapshot: TrainingProfileSnapshot,
   options?: {
@@ -1845,9 +1855,10 @@ export function buildSessionFromProgramDay(
     template: programDay.template_key,
     weekIndex,
     profile: profileSnapshot,
-    loading: (exercise, plannedReps, priority, plannedSetCount, repRange) => {
+    exposureBenchmarks: programDay.exposureBenchmarks,
+    loading: (exercise, plannedReps, priority, plannedSetCount, repRange, exposure) => {
       const userState: UserState = { experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel), baselineUpdatedAt: profileSnapshot.baselineUpdatedAt, prescriptionPolicy: policy, estimated1RM: profileSnapshot.baselines || {}, performanceHistory: profileSnapshot.performanceHistory, lastSessionPerformance: profileSnapshot.lastSessionPerformance, recentSessionPerformance: profileSnapshot.recentSessionPerformance };
-      return suggestPrescription({ exercise, plannedReps, priority, plannedSetCount, goalWeights: profileSnapshot.goals, userState, ...(repRange ? { repRange } : {}) });
+      return suggestPrescription({ exercise, plannedReps, priority, plannedSetCount, goalWeights: profileSnapshot.goals, userState, ...(repRange ? { repRange } : {}), ...(exposure ? { exposure } : {}) });
     },
   });
 

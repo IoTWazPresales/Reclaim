@@ -24,6 +24,8 @@ export type ProgramDayForSession = {
   /** Planner week. Only 1–4 is recorded. Other values are ignored. */
   weekIndex?: number;
   allocation?: import('./weeklyProgrammeTypes').AllocatedProgrammeDay;
+  /** N-0074: same-week strength exposures by exercise (benchmark day names). */
+  exposureBenchmarks?: import('./exposureBenchmark').ExposureBenchmarks;
 };
 
 export type ProgramDaySessionOptions = {

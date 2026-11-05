@@ -3,15 +3,12 @@ import { isQualifiedPerformance } from './performanceHistory';
 import type { Exercise, SessionPlan, UserState } from './types';
 
 /** Zero is the existing storage sentinel, never an inferred external kilogram. */
-export function requiresLoadConfirmation(exercise: Exercise, weight: number, state?: UserState): boolean {
+export function requiresLoadConfirmation(exercise: Exercise, weight: number, _state?: UserState): boolean {
   if (weight !== 0) return false;
   const loading = getExerciseLoadingProfile(exercise);
   const mode = loading.loadDisplayMode;
-  if (mode === 'bodyweight' && loading.prescriptionType !== 'carry_distance') return false;
-  // A qualified own added-load history can explicitly prescribe zero added kg.
-  if (mode === 'added_bodyweight' && state &&
-      (!state.performanceHistory || state.performanceHistory.status === 'available' && state.performanceHistory.requestedExerciseIds.includes(exercise.id)) &&
-      isQualifiedPerformance(exercise, state.lastSessionPerformance?.[exercise.id])) return false;
+  // N-0074 (A3): zero on a bodyweight or added-bodyweight lift is bodyweight work, not an unknown load.
+  if ((mode === 'bodyweight' || mode === 'added_bodyweight') && loading.prescriptionType !== 'carry_distance') return false;
   return true;
 }
 

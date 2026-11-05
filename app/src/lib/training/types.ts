@@ -174,6 +174,8 @@ export interface PlannedExercise {
 export interface PrescriptionContext {
   policyVersion: 'double-20261103';
   repRange: [number, number];
+  /** Declared weekly exposure role (N-0074). Absent on single-role slots and older history. */
+  exposure?: import('./weeklyProgrammeTypes').ExposureRole;
 }
 
 export interface DecisionTrace {
@@ -191,6 +193,8 @@ export interface DecisionTrace {
   confidence: number;
   progressionReason?: string; // Why weight changed from last time
   prescriptionContext?: PrescriptionContext;
+  /** N-0074 follower exposure: "Weight follows your <day> <exercise> sets." */
+  loadFollows?: string;
   whyNotTopAlt?: string; // One line: why the best alternative wasn't chosen
   /** Whether this exercise came from a required or optional program slot */
   selectionPhase?: SelectionPhase;
@@ -326,6 +330,8 @@ export interface SuggestLoadingInput {
   plannedSetCount?: number;
   /** Declared weekly exposure range (policy v4); otherwise priority × goal blend. */
   repRange?: [number, number];
+  /** Declared weekly exposure role and, for a follower, its same-week benchmark (N-0074). */
+  exposure?: import('./progression').ExposureContext;
 }
 
 export interface ExercisePrescription {
@@ -334,6 +340,8 @@ export interface ExercisePrescription {
   reason?: string;
   prescriptionContext?: PrescriptionContext;
   progression?: import('./progression').DoubleProgressionDecision;
+  /** N-0074 follower copy for setup/preview. */
+  loadFollows?: string;
 }
 
 export interface AdaptSessionInput {

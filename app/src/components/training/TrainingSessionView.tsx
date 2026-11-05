@@ -114,6 +114,7 @@ import { getUserSettings } from '@/lib/userSettings';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { getWeightStep } from '@/lib/training/progression';
 import { FALLBACK_WEIGHT_INCREMENT_KG } from '@/lib/training/exerciseLoadingProfile';
+import { formatAddedBodyweightLoad } from '@/lib/training/loadDisplayFormat';
 import { formatWeight, formatReps } from './uiFormat';
 
 function EditSetDialog({
@@ -2075,7 +2076,7 @@ function TrainingSessionView({
                     Set {s.setIndex}
                   </Text>
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurface, fontWeight: '600' }}>
-                    {s.weight}kg × {s.reps}{s.rpe ? ` @ RPE ${s.rpe}` : ''}
+                    {formatAddedBodyweightLoad(exercise, s.weight) ?? `${s.weight}kg`} × {s.reps}{s.rpe ? ` @ RPE ${s.rpe}` : ''}
                   </Text>
                 </Pressable>
               ))}

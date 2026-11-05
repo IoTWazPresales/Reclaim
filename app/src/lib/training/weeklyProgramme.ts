@@ -112,7 +112,8 @@ export type ExposureDose = {
 function hasPrescribedLoadPath(objective: ResolvedWeeklyObjective): boolean {
   if (objective.addedLoadPath) return true;
   const reference = catalogExercise(objective.slot.candidates[0]);
-  return !!reference && !['bodyweight', 'assisted_bodyweight', 'unspecified'].includes(getExerciseLoadingProfile(reference).loadDisplayMode);
+  // N-0074: added_bodyweight starts at 0 kg (bodyweight); only an entered added-load variant gives a strength load.
+  return !!reference && !['bodyweight', 'added_bodyweight', 'assisted_bodyweight', 'unspecified'].includes(getExerciseLoadingProfile(reference).loadDisplayMode);
 }
 
 /**

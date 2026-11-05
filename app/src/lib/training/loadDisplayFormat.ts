@@ -38,6 +38,15 @@ export function formatLoadSemanticsSuffix(exercise: Exercise, weightKg: number):
 }
 
 /**
+ * N-0074 (A3): added-bodyweight load text. "Bodyweight" at 0 kg and
+ * "BW + N kg" above it; null for every other load mode.
+ */
+export function formatAddedBodyweightLoad(exercise: Exercise, weightKg: number): string | null {
+  if (getExerciseLoadingProfile(exercise).loadDisplayMode !== 'added_bodyweight') return null;
+  return weightKg > 0 ? `BW + ${fmtKg(weightKg)} kg` : 'Bodyweight';
+}
+
+/**
  * Rep target text: "8 per side" when the catalogue counts reps per side
  * (repsPerSide), otherwise "8 reps". Display only; logged data is unchanged.
  */
@@ -73,6 +82,8 @@ export function formatPlannedSetSummary(
   if (p.loadDisplayMode === 'bodyweight' && w === 0) {
     return `Bodyweight · ${formatRepTarget(exercise, r)}`;
   }
+  const added = formatAddedBodyweightLoad(exercise, w);
+  if (added) return `${added} · ${formatRepTarget(exercise, r)}`;
   if (w === 0) {
     return `${formatRepTarget(exercise, r)} · enter a weight`;
   }

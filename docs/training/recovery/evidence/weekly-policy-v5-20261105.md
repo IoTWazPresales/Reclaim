@@ -88,3 +88,15 @@ Owner sets: chest 6, lats 7, quads 7, hamstrings 7, core 6; no conventional dead
 ## Friend's beta account
 
 Read-only: the two non-operator `training_profiles` rows (only first 8 id characters read) both have `trainingMode = strength`. Whichever is the friend's, the mode is strength, so the Upper/Lower option is offered on 2 and 4 days.
+
+## Web beta redeploy
+
+`spike/web-lite` merged `fix/training-confident-ux` 9398b26 as `dd56ad4` (no conflicts; pushed). Merged worktree: typecheck 0; training/components/web tests 994 passed + 1 skipped / 93 files; `npx expo export -p web` OK, bundle contains `weekly-20261105-v5`. `eas deploy --alias beta` → deployment **`uycv8bkf9j`**; https://eliasonw-reclaim-app--beta.expo.app serves `AppEntry-3e66c8d00ba6e8ebb98f7b423f337862.js` (HTTP 200), SHA-256 `6ea4ba7b…79138` identical to the local export. No production alias, Supabase setting or OTA change.
+
+## Android release build and renders — INCIDENT, stopped
+
+Release APK from 9398b26 (same recipe: `gradlew.bat :app:assembleRelease -PreactNativeArchitectures=x86_64 --max-workers=2`, NODE_ENV=production, SENTRY_DISABLE_AUTO_UPLOAD=true): BUILD SUCCESSFUL 6m 49s, 121284064 bytes, SHA-256 `c2063bd374faeca15e24f95a027a4e1e887f54d0713683a5a68d225836c56c6b`, bundle contains `weekly-20261105-v5`; `adb install -r` over the existing release on Medium_Phone_API_36.1.
+
+Captured (`.eif/audit/N-0073/renders/`): `01-training.png` next-session card "about 35 min"; `02-preview-fri-top.png` Session Preview "Duration about 48 min" (saved v3 Friday); `03-preview-fri-saved-v3-exercises.png` saved v3 prescriptions unchanged; `04-setup-dryrun-v5-5day.png` unsaved setup dry run on v5 (Monday 22 sets: 8 primary, 3 accessory, 11 isolation). The saved v3 week has no per-side exercise, so "N per side" could not be shown from saved data.
+
+**Incident (2026-11-05 09:24 UTC): an unintended setup Save on account 7ae5c7ce, which the task prohibited.** While stepping through setup to show the two-day split note on an unsaved Mon/Thu draft, an automated "tap Next" loop tapped the same position on the Strength Baselines step, where that button is **Save**. Effect, read-only verified afterwards: profile goals, equipment, baselines, baseline inputs/timestamps, experience and mode unchanged (only `updated_at`); the Mon–Fri v3 programme `bb367427` (2026-11-02) is now `abandoned`; a new active programme `9b13a095` (`weekly-20261105-v5`, weekdays Mon + Thu, 8 day rows) was created; the earlier 20 day rows remain; sessions (5 historical) and set logs untouched; no session started, nothing logged. No repair attempted: any repair is another write and needs the operator's decision. Device interaction stopped; renders not queued for approval yet.

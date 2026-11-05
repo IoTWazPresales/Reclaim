@@ -1,0 +1,10 @@
+N-0074 Package A gates (2026-11-05, run R20261105PROG)
+typecheck: tsc --noEmit, 0 errors
+focused: progressionExposures.acceptance.test.ts 18/18
+full suite (npx vitest run --shard k/4 --reporter=verbose, sequential):
+  shard 1: 365 passed / 54 files
+  shard 2: 440 passed / 54 files
+  shard 3: 569 passed / 54 files
+  shard 4: 338 passed + 1 skipped / 53 files
+  total: 1712 passed, 1 skipped, 0 failed, 215 files; no hang, no re-run
+dual-path audit (Git bash, Cursor bundled rg prepended to PATH): 31 passed, 0 failed
