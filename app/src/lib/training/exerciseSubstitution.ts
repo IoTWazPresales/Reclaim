@@ -80,7 +80,8 @@ export function prescribeReplacement(item: TrainingSessionItemRow, replacement: 
     goalWeights: profile.goals, userState, plannedSetCount: item.planned.sets.length });
   const hasHistory = !!resolved.progression || isQualifiedPerformance(replacement, profile.lastSessionPerformance?.[replacement.id]) &&
     profile.performanceHistory?.status === 'available' && profile.performanceHistory.requestedExerciseIds.includes(replacement.id);
-  const bodyweight = loading.loadDisplayMode === 'bodyweight';
+  // N-0074 (A3): zero on an added-bodyweight lift is bodyweight; its own evidence may prescribe added kg.
+  const bodyweight = loading.loadDisplayMode === 'bodyweight' || loading.loadDisplayMode === 'added_bodyweight' && !hasBaseline && !hasHistory;
   const calibrated = bodyweight || hasBaseline || hasHistory;
   const targetReps = resolved.reps;
   const suggestedWeight = bodyweight || !calibrated ? 0 : resolved.weight;

@@ -174,7 +174,7 @@ export default function SetFocusCard({
                 style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}
               >
                 <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-                  {formatWeight(row.weight)} × {row.reps}
+                  {formatWeight(row.weight, exercise)} × {row.reps}
                 </Text>
                 <Button
                   compact
@@ -250,13 +250,13 @@ export default function SetFocusCard({
         {previousSet ? (
           <View style={[wellStyle as any, { marginBottom: appTheme.spacing.md }]}>
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-              Last session set {setIndex}: {formatWeightReps(previousSet.weight, previousSet.reps)}
+              Last session set {setIndex}: {formatWeightReps(previousSet.weight, previousSet.reps, exercise)}
             </Text>
           </View>
         ) : lastPerformance ? (
           <View style={[wellStyle as any, { marginBottom: appTheme.spacing.md }]}>
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-              Last time: {formatWeightReps(lastPerformance.weight, lastPerformance.reps)}
+              Last time: {formatWeightReps(lastPerformance.weight, lastPerformance.reps, exercise)}
               {lastPerformance.date
                 ? ` · ${new Date(lastPerformance.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
                 : ''}
@@ -307,7 +307,7 @@ export default function SetFocusCard({
           />
           <View style={{ minWidth: 90, alignItems: 'center' }}>
             <Text variant="headlineMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
-              {needsLoad ? 'Choose a weight' : formatWeight(weight)}
+              {needsLoad ? 'Choose a weight' : formatWeight(weight, exercise)}
             </Text>
           </View>
           <IconButton

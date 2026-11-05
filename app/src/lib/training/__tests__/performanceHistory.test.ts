@@ -118,7 +118,8 @@ describe('canonical history to decision', () => {
     const reason = explainAppliedProgression(bench, user, [6, 12], applied, 6);
     expect(reason).toContain('Prescribed 87.5kg for 6 reps per set');
     expect(reason).toContain('87.5kg');
-    expect(reason).toContain('Restart at 6 reps');
+    // N-0074 (A4): Epley-equivalent restart, 85 x 12 -> 87.5 kg is 10 reps (clamped to [6, 11]).
+    expect(reason).toContain('Restart at 10 reps');
     expect(reason).not.toContain('working limit');
   });
 
@@ -130,7 +131,8 @@ describe('canonical history to decision', () => {
     expect(load()).toBe(55);
     expect(explainAppliedProgression(bench, user, [8, 12], load(), 10)).toContain('baseline governs');
     user.baselineUpdatedAt[bench.id] = '2026-10-01T00:00:00Z';
-    expect(load()).toBe(85);
+    // N-0074 (A2): logged RPE 7 is 3 reps in reserve, so 85 x 12 estimates 127.5 kg (was 119).
+    expect(load()).toBe(90);
     user.prescriptionPolicy = 'v1';
     expect(load()).toBe(60);
     delete user.prescriptionPolicy;
@@ -154,7 +156,8 @@ describe('canonical history to decision', () => {
     const user = state([historyItem(bench.id, '2026-10-03', 8, 100)]);
     user.baselineUpdatedAt = { [bench.id]: '2026-10-04T00:00:00Z' };
     const load = suggestLoading({ exercise: bench, userState: user, goalWeights: goals, plannedReps: 12 });
-    expect(load).toBe(85);
+    // N-0074 (A2): logged RPE 7 is 3 reps in reserve (100 x 8 -> 136.7 kg e1RM, was 126.7).
+    expect(load).toBe(92.5);
     expect(explainAppliedProgression(bench, user, [8, 12], load, 12)).toContain('Most recent qualified history governs');
   });
 

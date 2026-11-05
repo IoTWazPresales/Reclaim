@@ -242,6 +242,11 @@ export default function SessionPreviewModal({
                             ? `${ex.plannedSets.length} sets · ${ex.plannedSets[0] ? formatRepTarget(exercise, ex.plannedSets[0].targetReps) : '— reps'} · weight confirmation required`
                             : formatExercisePreviewLine(ex, exercise)}
                         </Text>
+                        {ex.decisionTrace?.loadFollows ? (
+                          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
+                            {ex.decisionTrace.loadFollows}
+                          </Text>
+                        ) : null}
                         <Text variant="bodySmall" style={{ color: theme.colors.primary, marginTop: appTheme.spacing.xs }}>
                           {ex.priority}
                           {ex.intents?.length

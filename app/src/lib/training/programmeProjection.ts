@@ -5,6 +5,7 @@ import type { SessionPlan } from './types';
 import type { AllocatedProgrammeDay } from './weeklyProgrammeTypes';
 import { WEEKLY_POLICY_VERSION } from './weeklyProgrammeTypes';
 import { formatWeeklyMuscleSetLine } from './weeklyVolumeSummary';
+import { weekExposureBenchmarks } from './exposureBenchmark';
 
 type StoredPlan = { programme?: { policyVersion: string }; weeks?: Array<{ weekIndex: number; days: Record<string, { allocation?: AllocatedProgrammeDay }> }> };
 
@@ -31,7 +32,13 @@ export function programDayInput(day: { label: string; intents: ProgramDayForSess
     allocation = { policyVersion: WEEKLY_POLICY_VERSION, strategyId: 'balanced-v1:invalid', dayKey: String(day.day_index), slots: [],
       issues: [{ code: 'allocation_resolution_failed', severity: 'error', message: error instanceof Error ? error.message : 'Saved weekly allocation is invalid.' }] };
   }
-  return { label: day.label, intents: day.intents, template_key: day.template_key, weekIndex: day.week_index, allocation };
+  // N-0074: a hypertrophy exposure follows its lift's strength exposure in the same saved week.
+  const week = plan?.weeks?.find(entry => entry.weekIndex === day.week_index);
+  const benchmarks = allocation?.slots.some(slot => slot.exposure === 'hypertrophy') && week
+    ? weekExposureBenchmarks(Object.entries(week.days).flatMap(([key, value]) => value.allocation && key !== String(day.day_index) ? [{ dayKey: key, slots: value.allocation.slots }] : []))
+    : undefined;
+  return { label: day.label, intents: day.intents, template_key: day.template_key, weekIndex: day.week_index, allocation,
+    ...(benchmarks && Object.keys(benchmarks).length ? { exposureBenchmarks: benchmarks } : {}) };
 }
 
 /** Actual sets use canonical recorded work; frozen plans and future proposals stay separate. */

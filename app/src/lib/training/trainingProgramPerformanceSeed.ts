@@ -3,6 +3,7 @@ import type { UserState, TrainingProfileSnapshot, PerformanceHistoryStatus } fro
 import catalog from './catalog/exercises.v1.json';
 import { logger } from '@/lib/logger';
 import { PERFORMANCE_HISTORY_SOURCE } from './performanceHistory';
+import { HISTORY_SESSIONS_PER_EXERCISE } from './progression';
 
 export { TRAINING_PERF_SEED_EXERCISE_IDS } from './trainingProgramPerformanceSeedIds';
 export type LastSessionPerformanceMap = NonNullable<UserState['lastSessionPerformance']>;
@@ -24,7 +25,8 @@ export async function loadTrainingPerformanceSeed(exerciseIds: string[] = catalo
   if (!requestedExerciseIds.length) return finish('missing');
   try {
     const { getRecentExercisePerformances } = await import('../api');
-    const recent = await getRecentExercisePerformances(requestedExerciseIds, 3);
+    // N-0074: deep enough for the benchmark window and the follower miss streak.
+    const recent = await getRecentExercisePerformances(requestedExerciseIds, HISTORY_SESSIONS_PER_EXERCISE);
     return finish(Object.values(recent).some(sessions => sessions.length) ? 'available' : 'missing', recent);
   } catch (error) {
     if (__DEV__) logger.debug('[performance seed] history unavailable', error);

@@ -192,7 +192,7 @@ export default function SessionDetailModal({
                                 variant="bodySmall"
                                 style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}
                               >
-                                Set {set.setIndex}: {formatWeightReps(set.weight, set.reps)}
+                                Set {set.setIndex}: {formatWeightReps(set.weight, set.reps, exercise)}
                                 {set.rpe ? ` @ RPE ${set.rpe}` : ''}
                               </Text>
                             ))}

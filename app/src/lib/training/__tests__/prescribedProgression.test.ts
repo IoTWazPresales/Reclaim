@@ -4,6 +4,7 @@ import { programmeWeekProposal } from '../programmeWeekProposal';
 import { materializePlannedSessionItems, plannedItemsForSession } from '../buildProgramDaySession';
 import { completedPerformanceHistory, PERFORMANCE_HISTORY_SOURCE, type PerformanceHistoryItem } from '../performanceHistory';
 import { getExerciseById, getRepRange, suggestPrescription } from '../engine';
+import { epleyRestartReps } from '../progression';
 import { prescribeReplacement } from '../exerciseSubstitution';
 import type { TrainingProfileRow, TrainingSessionItemRow } from '../../api';
 import type { TrainingProfileSnapshot, SessionPlan, UserState } from '../types';
@@ -56,8 +57,9 @@ describe('the existing planner progresses the frozen prescription as one reps/lo
     const first = records[0].planned!.sets![0].targetReps!;
     let expectedReps = first, expectedWeight = 12;
     for (let n = 1; n <= 14; n++) {
-      expectedReps++;
-      if (expectedReps > range[1]) { expectedReps = range[0]; expectedWeight++; }
+      // N-0074 (A4): a completed maximum adds the step and restarts at the Epley-equivalent reps.
+      if (expectedReps >= range[1]) { expectedReps = epleyRestartReps(expectedWeight, expectedReps, expectedWeight + 1, range); expectedWeight++; }
+      else expectedReps++;
       const proposals = programmeWeekProposal(plan, 1, { ...snapshot, ...history(records) });
       const next = [...proposals.values()].find(s => s.exercises.some(e => e.exerciseId === id))!;
       expect(next.weeklyValidation!.status).not.toBe('invalid');

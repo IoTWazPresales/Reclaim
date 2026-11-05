@@ -5,7 +5,8 @@ import { evaluateExerciseEligibility } from './exerciseEligibility';
 import { getExerciseLoadingProfile } from './exerciseLoadingProfile';
 import { isQualifiedPerformance, performanceHistorySignature, PERFORMANCE_HISTORY_SOURCE } from './performanceHistory';
 import { getPrimarySlotRoleTier, PrimarySlotRoleTier } from './exerciseSessionRole';
-import { epleyWorkingWeightCeiling, getWeightStep, deriveProgressionDecision, getRepRange, prescriptionContext } from './progression';
+import { epleyWorkingWeightCeiling, getWeightStep, deriveProgressionDecision, getRepRange, prescriptionContext, rirAwareE1RM, type ExposureContext } from './progression';
+import { weekdayName } from './exposureBenchmark';
 import { isNonLegTrainingTemplate } from './trainingMode';
 import { supportsWeeklyPolicy, usesCappedWeeklyPolicy, usesExposureDosePolicy, usesV5WeeklyPolicy } from './weeklyProgrammeTypes';
 import type { Exercise, ExercisePerformance, PlannedExercise, PlannedSet, SessionPlan, TrainingProfileSnapshot } from './types';
@@ -330,11 +331,20 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
       // v4 progression uses the declared exposure range, never the allocation's own copy.
       const declaredRange = slot && exposureDoses ? declaration.exposurePolicies[slot.slotId]?.repRange : undefined;
       const governingRange: [number, number] | undefined = slot ? (validRange(declaredRange) ? [declaredRange[0], declaredRange[1]] : getRepRange(slot.priority, profile.goals)) : undefined;
+      // N-0074: the declared exposure role; a hypertrophy exposure follows a declared strength exposure of the same lift.
+      const declaredExposure = slot && exposureDoses ? declaration.exposurePolicies[slot.slotId]?.exposure : undefined;
+      const benchmarkSlot = declaredExposure === 'hypertrophy' ? slots
+        .filter((entry) => entry.dayKey !== dayKey && entry.slot.exerciseId === item.exerciseId && declaration.exposurePolicies[entry.slot.slotId]?.exposure === 'strength')
+        .sort((a, b) => Number(a.dayKey) - Number(b.dayKey))[0] : undefined;
+      const benchmarkRange = benchmarkSlot ? declaration.exposurePolicies[benchmarkSlot.slot.slotId]?.repRange : undefined;
+      const benchmarkDay = benchmarkSlot ? weekdayName(Number(benchmarkSlot.dayKey)) : undefined;
+      const exposure: ExposureContext | undefined = slot && declaredExposure ? { role: declaredExposure, targetReps: slot.reps,
+        ...(benchmarkDay && validRange(benchmarkRange) ? { benchmark: { dayName: benchmarkDay, repRange: [benchmarkRange[0], benchmarkRange[1]] as [number, number] } } : {}) } : undefined;
       const nextPrescription = cappedPolicy && slot && governingRange ? deriveProgressionDecision(exercise, {
         experienceLevel: profile.experienceLevel ?? 'beginner', estimated1RM: profile.baselines, baselineUpdatedAt: profile.baselineUpdatedAt,
         performanceHistory: profile.performanceHistory, lastSessionPerformance: profile.lastSessionPerformance, recentSessionPerformance: profile.recentSessionPerformance,
-      }, governingRange, slot.setCount) : null;
-      if (item.decisionTrace.prescriptionContext && slot && governingRange && !same(item.decisionTrace.prescriptionContext, prescriptionContext(governingRange))) {
+      }, governingRange, slot.setCount, exposure) : null;
+      if (item.decisionTrace.prescriptionContext && slot && governingRange && !same(item.decisionTrace.prescriptionContext, prescriptionContext(governingRange, declaredExposure))) {
         add('prescription_context_mismatch', 'Frozen comparison context differs from the governing goal range and policy.', { dayKey, exerciseId: item.exerciseId });
       }
       item.plannedSets.forEach((set, index) => {
@@ -361,9 +371,8 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
           }
           if (loading.loadDisplayMode === 'bodyweight' && set.suggestedWeight !== 0) add('invalid_load_state', 'Pure bodyweight prescription carries external load.', { dayKey, exerciseId: item.exerciseId });
           if (slot && declaration.exposurePolicies[slot.slotId]?.loadPolicy === 'none' && !ownEvidence && loading.loadDisplayMode !== 'bodyweight' && set.suggestedWeight > 0) add('unanchored_external_load', 'No-inference exercise receives kilograms without its own evidence.', { dayKey, slotId: slot.slotId, exerciseId: item.exerciseId });
-          if ((set.loadRequiresConfirmation || loading.loadDisplayMode !== 'bodyweight') && set.suggestedWeight === 0 &&
-              !(loading.loadDisplayMode === 'added_bodyweight' && qualifiedHistory &&
-                (!profile.performanceHistory || profile.performanceHistory.status === 'available' && profile.performanceHistory.requestedExerciseIds.includes(exercise.id)))) {
+          // N-0074 (A3): zero on an added-bodyweight lift is bodyweight work, as on a bodyweight lift.
+          if ((set.loadRequiresConfirmation || !['bodyweight', 'added_bodyweight'].includes(loading.loadDisplayMode)) && set.suggestedWeight === 0) {
             warning('load_requires_confirmation', 'External-load zero is unspecified load, not validated bodyweight work.', { dayKey, exerciseId: item.exerciseId });
           }
           // Independently check D-P2-01 using the qualified, consecutive recent
@@ -382,7 +391,8 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
               newer = Date.parse(entry.date);
               seen.add(entry.evidence!.sessionId);
               if (baselineAt && newer <= Date.parse(baselineAt)) break;
-              for (const performed of entry.sets) best = Math.max(best, performed.weight * (1 + performed.reps / 30));
+              // N-0074 (A2): performed sets count their repetitions in reserve.
+              best = Math.max(best, rirAwareE1RM(entry));
             }
             if (best > 0) { ceiling1RM = best; historyGoverns = true; }
           }

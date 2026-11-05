@@ -41,7 +41,12 @@ const weekOne = (plan: FourWeekProgramPlan): FourWeekProgramPlan => JSON.parse(J
 const normalise = (proposals: Map<number, SessionPlan>) => JSON.parse(JSON.stringify([...proposals].map(([key, plan]) => {
   const { id: _id, createdAt: _createdAt, ...rest } = plan;
   return [key, rest];
-}), (key, value) => key === 'repsPerSide' ? undefined : value));
+}), function (this: Record<string, unknown>, key, value) {
+  if (key === 'repsPerSide') return undefined;
+  // N-0074 (2026-11-05): additive progression fields recorded on new builds only.
+  if (key === 'loadFollows' || key === 'exposure' && this.policyVersion === 'double-20261103') return undefined;
+  return value;
+}));
 
 /** A saved programme of an earlier version: v4 allocation relabelled with that version's declared doses. */
 function relabel(plan: FourWeekProgramPlan, version: string, days: number): FourWeekProgramPlan {

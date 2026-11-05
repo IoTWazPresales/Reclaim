@@ -3,10 +3,115 @@ import type { Exercise, SetLog, ExercisePerformance, MovementIntent, UserState, 
 import rules from './rules/rules.v1.json';
 import { getExerciseIncrementKg, getExerciseLoadingProfile } from './exerciseLoadingProfile';
 import { isQualifiedPerformance, performanceHistorySignature, PERFORMANCE_HISTORY_SOURCE } from './performanceHistory';
+import type { ExposureRole } from './weeklyProgrammeTypes';
 
 export const DOUBLE_PROGRESSION_POLICY_VERSION = 'double-20261103' as const;
-export function prescriptionContext(repRange: [number, number]): PrescriptionContext {
-  return { policyVersion: DOUBLE_PROGRESSION_POLICY_VERSION, repRange: [...repRange] };
+
+// ============================================================================
+// PROGRESSION POLICY (N-0074). Every number below is cited in
+// docs/training/ROUTINE_AUDIT.md, "Progression policy N-0074 (2026-11-05)".
+// Engineering rules derived from the Epley relation already in use; no RCT claimed.
+// ============================================================================
+
+/** ROUTINE_AUDIT.md N-0074 (A1): qualified benchmark sessions that set a follower's load. */
+export const BENCHMARK_WINDOW_SESSIONS = 3;
+/** ROUTINE_AUDIT.md N-0074 (A1): consecutive comparable follower misses before a step down. */
+export const FOLLOWER_MISS_STREAK = 2;
+/** ROUTINE_AUDIT.md N-0074 (A1): equipment steps a missed follower is held below its derived load. */
+export const FOLLOWER_STEP_DOWN = 1;
+/** ROUTINE_AUDIT.md N-0074 (A1): canonical history sessions loaded per exercise (was 3). */
+export const HISTORY_SESSIONS_PER_EXERCISE = 6;
+/**
+ * ROUTINE_AUDIT.md N-0074 (A2): repetitions in reserve assumed when RPE was not
+ * logged. A met RPE 8 prescription leaves two in reserve; a missed target is
+ * treated as all-out.
+ */
+export const UNLOGGED_RPE_RIR = { targetsMet: 2, targetMissed: 0 } as const;
+/** RPE scale maximum: RIR = RPE_SCALE_MAX - RPE (ROUTINE_AUDIT.md RPE 8 rule). */
+export const RPE_SCALE_MAX = 10;
+/** ROUTINE_AUDIT.md N-0074 (A4): added-bodyweight restart, reps below the range maximum. */
+export const ADDED_BW_RESTART_OFFSET = 2;
+/** Floating-point tolerance for flooring exact Epley-equivalent integers. Not a policy value. */
+const EPLEY_FLOOR_TOLERANCE = 1e-9;
+
+/**
+ * Declared weekly exposure of one prescription. A hypertrophy exposure whose
+ * lift also has a strength exposure in the same week is a follower of that
+ * benchmark; its day name comes from the saved programme.
+ */
+export type ExposureContext = {
+  role: ExposureRole;
+  /** Declared target reps of this exposure. */
+  targetReps?: number;
+  benchmark?: { dayName: string; repRange: [number, number] };
+};
+
+export function prescriptionContext(repRange: [number, number], exposure?: ExposureRole): PrescriptionContext {
+  return { policyVersion: DOUBLE_PROGRESSION_POLICY_VERSION, repRange: [...repRange], ...(exposure ? { exposure } : {}) };
+}
+
+/** Follower copy shown in setup and Session Preview. */
+export function followerLoadCopy(exercise: Pick<Exercise, 'name'>, benchmark: { dayName: string }): string {
+  return `Weight follows your ${benchmark.dayName} ${exercise.name} sets.`;
+}
+
+/** Repetitions in reserve for one performed set (A2). */
+export function setRepsInReserve(set: PerformedSetLike, performance: Pick<ExercisePerformance, 'sets' | 'prescription'>): number {
+  if (set.rpe != null && Number.isFinite(set.rpe)) return Math.max(0, RPE_SCALE_MAX - set.rpe);
+  const planned = performance.prescription?.sets;
+  // Only a prescription recorded under the RPE 8 double-progression policy carries an RPE 8 target.
+  const met = performance.prescription?.context?.policyVersion === DOUBLE_PROGRESSION_POLICY_VERSION &&
+    !!planned?.length && planned.length === performance.sets.length &&
+    performance.sets.every((performed, index) => performed.reps >= planned[index].targetReps);
+  return met ? UNLOGGED_RPE_RIR.targetsMet : UNLOGGED_RPE_RIR.targetMissed;
+}
+
+/** RIR-aware Epley estimate for one performance: best of weight x (1 + (reps + RIR) / 30). */
+export function rirAwareE1RM(performance: Pick<ExercisePerformance, 'sets' | 'prescription'>): number {
+  let best = 0;
+  for (const set of performance.sets) {
+    if (!(set.weight > 0) || !(set.reps > 0)) continue;
+    best = Math.max(best, set.weight * (1 + (set.reps + setRepsInReserve(set, performance)) / 30));
+  }
+  return best;
+}
+
+/** A4: reps with the same Epley effort at the new load, leaving one rep step before the next increase. */
+export function epleyRestartReps(lastWeight: number, lastReps: number, newWeight: number, repRange: [number, number]): number {
+  const [min, max] = repRange;
+  const top = Math.max(min, max - 1);
+  const equivalent = Math.floor(lastWeight * (30 + lastReps) / newWeight - 30 + EPLEY_FLOOR_TOLERANCE);
+  return Math.min(top, Math.max(min, equivalent));
+}
+
+/** A4: bodyweight is unknown to the engine, so added-bodyweight lifts restart a fixed offset below the maximum. */
+export function addedBodyweightRestartReps(repRange: [number, number]): number {
+  const [min, max] = repRange;
+  return Math.min(max, Math.max(min, max - ADDED_BW_RESTART_OFFSET));
+}
+
+const sameRange = (a: unknown, b: [number, number]) => Array.isArray(a) && a.length === 2 && a[0] === b[0] && a[1] === b[1];
+
+/**
+ * Exposure of one history entry. The recorded exposure field governs; older
+ * history without one is matched on its recorded rep range. Entries with no
+ * context cannot be classified and stay in the timeline as barriers.
+ */
+export function historyExposure(entry: ExercisePerformance, exposure: ExposureContext, repRange: [number, number]): ExposureRole | 'other' | undefined {
+  const context = entry.prescription?.context;
+  if (context?.exposure === 'strength' || context?.exposure === 'hypertrophy') return context.exposure;
+  if (!context?.repRange) return undefined;
+  if (sameRange(context.repRange, repRange)) return exposure.role;
+  if (exposure.benchmark && sameRange(context.repRange, exposure.benchmark.repRange)) return 'strength';
+  return 'other';
+}
+
+/** One exposure's own timeline: other-exposure entries are skipped, never streak breaks. */
+function ownExposureTimeline(timeline: ExercisePerformance[], exposure: ExposureContext, repRange: [number, number]): ExercisePerformance[] {
+  return timeline.filter((entry) => {
+    const role = historyExposure(entry, exposure, repRange);
+    return role === undefined || role === exposure.role;
+  });
 }
 
 /** Existing normalized goal blend, shared by prescription and independent validation. */
@@ -262,20 +367,38 @@ export function baselineGoverns(exercise: Exercise, userState: UserState): boole
   return !!date && (!Number.isFinite(Date.parse(date)) || Date.parse(date) >= Date.parse(qualified?.date ?? last.date));
 }
 
-/** Shared pure decision consumed by every builder and by validation of its inputs/output. */
-export function deriveProgressionDecision(exercise: Exercise, userState: UserState, repRange: [number, number], nextSetCount?: number): DoubleProgressionDecision | null {
-  if (userState.performanceHistory && (userState.performanceHistory.status !== 'available' ||
-      !userState.performanceHistory.requestedExerciseIds.includes(exercise.id))) return null;
-  const last = userState.lastSessionPerformance?.[exercise.id];
-  if (!last?.evidence || last.exerciseId !== exercise.id || last.evidence.source !== PERFORMANCE_HISTORY_SOURCE ||
+type EvidencedPerformance = ExercisePerformance & { evidence: NonNullable<ExercisePerformance['evidence']> };
+
+function structurallyValidHistory(exercise: Exercise, last: ExercisePerformance | undefined): last is EvidencedPerformance {
+  return !(!last?.evidence || last.exerciseId !== exercise.id || last.evidence.source !== PERFORMANCE_HISTORY_SOURCE ||
       !last.evidence.itemId || !last.evidence.sessionId || !Number.isFinite(Date.parse(last.date)) ||
       !Array.isArray(last.evidence.reasons) || !Array.isArray(last.evidence.plannedSetIndices) ||
       !Array.isArray(last.sets) || last.sets.some(set => !set) ||
-      last.prescription && (!Array.isArray(last.prescription.sets) || last.prescription.sets.some(set => !set))) return null;
-  const recent = userState.recentSessionPerformance?.[exercise.id];
-  if (recent && (!recent.length || JSON.stringify(performanceHistorySignature(recent[0])) !== JSON.stringify(performanceHistorySignature(last)))) return null;
+      last.prescription && (!Array.isArray(last.prescription.sets) || last.prescription.sets.some(set => !set)));
+}
+
+/** Shared pure decision consumed by every builder and by validation of its inputs/output. */
+export function deriveProgressionDecision(exercise: Exercise, userState: UserState, repRange: [number, number], nextSetCount?: number, exposure?: ExposureContext): DoubleProgressionDecision | null {
+  if (userState.performanceHistory && (userState.performanceHistory.status !== 'available' ||
+      !userState.performanceHistory.requestedExerciseIds.includes(exercise.id))) return null;
+  const latest = userState.lastSessionPerformance?.[exercise.id];
+  if (!structurallyValidHistory(exercise, latest)) return null;
+  const timeline = userState.recentSessionPerformance?.[exercise.id];
+  if (timeline && (!timeline.length || JSON.stringify(performanceHistorySignature(timeline[0])) !== JSON.stringify(performanceHistorySignature(latest)))) return null;
   const historicalReplay = userState.prescriptionPolicy === 'v1';
   if (!historicalReplay && baselineGoverns(exercise, userState)) return null;
+  if (historicalReplay || !exposure) return decideFromTimeline(exercise, userState, repRange, nextSetCount, latest, timeline, historicalReplay);
+  if (exposure.role === 'hypertrophy' && exposure.benchmark) {
+    return deriveFollowerDecision(exercise, userState, repRange, { ...exposure, benchmark: exposure.benchmark }, timeline ?? [latest]);
+  }
+  // A declared exposure progresses on its own history only (A1).
+  const own = ownExposureTimeline(timeline ?? [latest], exposure, repRange);
+  if (!own.length || !structurallyValidHistory(exercise, own[0])) return null;
+  return decideFromTimeline(exercise, userState, repRange, nextSetCount, own[0], own, false);
+}
+
+function decideFromTimeline(exercise: Exercise, userState: UserState, repRange: [number, number], nextSetCount: number | undefined,
+  last: EvidencedPerformance, recent: ExercisePerformance[] | undefined, historicalReplay: boolean): DoubleProgressionDecision | null {
   const qualified: boolean = Boolean(isQualifiedPerformance(exercise, last));
   if (last.prescription && (last.prescription.sets.length !== last.evidence.plannedSetIndices.length ||
       last.prescription.sets.some(set => !last.evidence!.plannedSetIndices.includes(set.setIndex)))) return null;
@@ -301,29 +424,84 @@ export function deriveProgressionDecision(exercise: Exercise, userState: UserSta
     holdStreak: countHoldStreak(consecutive, repRange, 8, historicalReplay) });
 }
 
-/** Estimate only for calibration/re-anchoring; never a cap on a qualified prescription decision. */
-export function governingLoadEvidence(exercise: Exercise, userState: UserState, _plannedReps: number): { oneRM?: number; source: 'baseline' | 'history' | 'default' } {
+/** External-load units in which a kilogram e1RM transfers between exposures of the same lift. */
+const FOLLOWER_LOAD_MODES = ['total_bar', 'per_dumbbell', 'cable_stack', 'machine_total', 'per_leg', 'per_hand'];
+
+/**
+ * A1 follower: load from the best RIR-aware e1RM of the last
+ * BENCHMARK_WINDOW_SESSIONS benchmark sessions, at the follower's declared
+ * target reps; no independent rep or load progression. With no qualified
+ * benchmark session in that window, the follower's own history governs (A2).
+ */
+function deriveFollowerDecision(exercise: Exercise, userState: UserState, repRange: [number, number],
+  exposure: ExposureContext & { benchmark: NonNullable<ExposureContext['benchmark']> }, timeline: ExercisePerformance[]): DoubleProgressionDecision | null {
+  const profile = getExerciseLoadingProfile(exercise);
+  const targetReps = exposure.targetReps;
+  if (profile.prescriptionType !== 'reps' || !FOLLOWER_LOAD_MODES.includes(profile.loadDisplayMode) ||
+      targetReps === undefined || !Number.isInteger(targetReps) || targetReps <= 0) return null;
+  const baseline = userState.estimated1RM?.[exercise.id];
+  const baselineAt = baseline && baseline > 0 ? userState.baselineUpdatedAt?.[exercise.id] : undefined;
+  const afterBaseline = (entry: ExercisePerformance) => !baselineAt || Date.parse(entry.date) > Date.parse(baselineAt);
+  const sessions = new Set<string>();
+  const window = timeline.filter((entry) => {
+    if (historyExposure(entry, exposure, repRange) !== 'strength' || !afterBaseline(entry) || !entry.evidence?.sessionId || sessions.has(entry.evidence.sessionId)) return false;
+    sessions.add(entry.evidence.sessionId);
+    return true;
+  }).slice(0, BENCHMARK_WINDOW_SESSIONS).filter((entry) => isQualifiedPerformance(exercise, entry));
+  const best = Math.max(0, ...window.map(rirAwareE1RM));
+  const step = getWeightStep(exercise);
+  const derived = epleyRpe8WorkingWeight(best, targetReps, step);
+  if (!(derived > 0)) return null;
+  // Follower safety: consecutive comparable follower sessions that missed their target reps.
+  let misses = 0;
+  for (const entry of timeline) {
+    if (historyExposure(entry, exposure, repRange) !== 'hypertrophy') continue;
+    if (!afterBaseline(entry) || !isQualifiedPerformance(exercise, entry)) break;
+    const assessment = assessPrescription(entry, repRange, 8);
+    if (!assessment.comparable || assessment.hit) break;
+    misses += 1;
+  }
+  const floor = Math.ceil(getMinimumWeight(exercise) / step) * step;
+  const nextWeight = misses >= FOLLOWER_MISS_STREAK
+    ? Math.min(derived, Math.max(floor, Number((derived - FOLLOWER_STEP_DOWN * step).toFixed(6))))
+    : derived;
+  const copy = followerLoadCopy(exercise, exposure.benchmark);
+  return { action: 'follow_benchmark', nextWeight, nextReps: targetReps, incrementKg: 0,
+    reason: nextWeight < derived
+      ? `${copy} Held ${fmtKgShort(derived - nextWeight)}kg lighter after ${misses} sessions with missed reps, until a session is completed.`
+      : copy };
+}
+
+/**
+ * Estimate only for calibration/re-anchoring; never a cap on a qualified prescription decision.
+ * A2: performed sets count their repetitions in reserve. A declared exposure reads only its own
+ * history; added-bodyweight kilograms exclude the (unknown) bodyweight and estimate nothing.
+ */
+export function governingLoadEvidence(exercise: Exercise, userState: UserState, _plannedReps: number, exposure?: ExposureContext, repRange?: [number, number]): { oneRM?: number; source: 'baseline' | 'history' | 'default' } {
   const baseline = userState.estimated1RM?.[exercise.id];
   const fallback = { oneRM: baseline, source: baseline ? 'baseline' as const : 'default' as const };
   const last = userState.lastSessionPerformance?.[exercise.id];
   if (userState.prescriptionPolicy === 'v1' || baselineGoverns(exercise, userState) || !isQualifiedPerformance(exercise, last) ||
+      getExerciseLoadingProfile(exercise).loadDisplayMode === 'added_bodyweight' ||
       userState.performanceHistory && (userState.performanceHistory.status !== 'available' || !userState.performanceHistory.requestedExerciseIds.includes(exercise.id))) return fallback;
   const recent = userState.recentSessionPerformance?.[exercise.id];
   if (recent && (!recent.length || JSON.stringify(performanceHistorySignature(recent[0])) !== JSON.stringify(performanceHistorySignature(last)))) return fallback;
+  const timeline = exposure && repRange ? ownExposureTimeline(recent ?? [last], exposure, repRange) : recent ?? [last];
   const baselineAt = baseline && baseline > 0 ? userState.baselineUpdatedAt?.[exercise.id] : undefined;
   let oneRM = 0, newer = Infinity;
   const seen = new Set<string>();
-  for (const entry of recent ?? [last]) {
+  for (const entry of timeline) {
     if (!isQualifiedPerformance(exercise, entry) || Date.parse(entry.date) >= newer || seen.has(entry.evidence!.sessionId)) break;
     newer = Date.parse(entry.date);
     seen.add(entry.evidence!.sessionId);
     if (baselineAt && newer <= Date.parse(baselineAt)) break;
-    for (const set of entry.sets) oneRM = Math.max(oneRM, set.weight * (1 + set.reps / 30));
+    oneRM = Math.max(oneRM, rirAwareE1RM(entry));
   }
   return oneRM > 0 ? { oneRM, source: 'history' } : fallback;
 }
 
-export type DoubleProgressionAction = 'increase' | 'hold' | 'deload' | 'progress_reps' | 'add_weight';
+/** follow_benchmark: a follower exposure's load is derived from its same-week benchmark (A1). */
+export type DoubleProgressionAction = 'increase' | 'hold' | 'deload' | 'progress_reps' | 'add_weight' | 'follow_benchmark';
 
 export type DoubleProgressionDecision = {
   action: DoubleProgressionAction;
@@ -465,6 +643,11 @@ export function decideDoubleProgression(args: {
     if (targetReps < repRange[0] || targetReps > repRange[1]) return null;
     // Never silently round a held load down, or turn an off-step observation into an increase.
     if (!bodyweight && Math.abs(suggestedWeight / step - Math.round(suggestedWeight / step)) > 1e-6) return repeat('Repeat the recorded prescription; confirm an equipment-compatible load before automatic progression.');
+    // A3: a logged added load that differs from the prescription is the evidence for the next one.
+    if (profile.loadDisplayMode === 'added_bodyweight' && args.qualified && lastSets.length === planned.length &&
+        lastSets.every(set => set.weight === lastSets[0].weight) && lastSets[0].weight !== suggestedWeight) {
+      return repeat(`Repeat ${planned.length}×${targetReps} at your logged added load; it differs from the prescription, so no progression is earned yet.`, lastSets[0].weight);
+    }
     if (!args.qualified || !assessment.comparable || args.nextSetCount !== undefined && args.nextSetCount !== planned.length) {
       return repeat('Repeat the frozen targets. Incomplete, adjusted, changed or incomparable work earns neither progression nor a stagnation penalty.');
     }
@@ -472,11 +655,20 @@ export function decideDoubleProgression(args: {
       const nextReps = calculateNextReps(targetReps, repRange, 'increase');
       if (targetReps < repRange[1]) return { action: 'progress_reps', nextWeight: suggestedWeight, nextReps, incrementKg: 0,
         reason: `+1 rep per set — all ${planned.length}×${targetReps} prescribed reps were completed with no reported RPE above ${rpeCap}.` };
+      const addedBodyweight = profile.loadDisplayMode === 'added_bodyweight';
+      if (bodyweight && addedBodyweight) {
+        // A3: the range maximum at bodyweight earns the first added-load step (A4 restart).
+        const restart = addedBodyweightRestartReps(repRange);
+        return { action: 'add_weight', nextWeight: step, nextReps: restart, incrementKg: step,
+          reason: `+${fmtKgShort(step)}kg added load — all ${planned.length}×${targetReps} maximum targets were completed at bodyweight with no reported RPE above ${rpeCap}. Restart at ${restart} reps per set.` };
+      }
       if (bodyweight) return { action: 'add_weight', nextWeight: 0, nextReps: targetReps, incrementKg: step,
         reason: 'The prescribed range maximum was completed. Confirm any added load explicitly; keep the current bodyweight target until then.' };
       const nextWeight = Number((suggestedWeight + step).toFixed(6));
-      return { action: 'increase', nextWeight, nextReps, incrementKg: step,
-        reason: `+${fmtKgShort(step)}kg — all ${planned.length}×${targetReps} maximum targets were completed with no reported RPE above ${rpeCap}. Restart at ${nextReps} reps per set.` };
+      // A4: restart at the Epley-equivalent reps, not the range minimum.
+      const restart = addedBodyweight ? addedBodyweightRestartReps(repRange) : epleyRestartReps(suggestedWeight, targetReps, nextWeight, repRange);
+      return { action: 'increase', nextWeight, nextReps: restart, incrementKg: step,
+        reason: `+${fmtKgShort(step)}kg — all ${planned.length}×${targetReps} maximum targets were completed with no reported RPE above ${rpeCap}. Restart at ${restart} reps per set.` };
     }
     if ((args.holdStreak ?? 0) >= 2 && !bodyweight) {
       const floor = Math.ceil(getMinimumWeight(exercise) / step) * step;

@@ -11,6 +11,8 @@ import { V5_SESSION_CAPS } from './weeklyProgrammePolicy';
 import { estimateSessionMinutes } from './sessionDurationEstimate';
 import { capNewSession } from './sessionCapPolicy';
 import { isBalancedDayStrategyId } from './weeklyProgramme';
+import { slotExposureContext, type ExposureBenchmarks } from './exposureBenchmark';
+import type { ExposureContext } from './progression';
 import type { Exercise, ExercisePriority, PlannedExercise, SessionPlan, SessionTemplate, TrainingProfileSnapshot } from './types';
 
 /** Materialize an allocation; v2 withholds over-cap sets with explicit diagnostics.
@@ -21,8 +23,10 @@ export function buildAllocatedProgramSession(input: {
   template: SessionTemplate;
   weekIndex?: number;
   profile: TrainingProfileSnapshot;
-  /** repRange is the declared v4 exposure range; absent for earlier policy versions. */
-  loading: (exercise: Exercise, reps: number, priority: ExercisePriority, setCount: number, repRange?: [number, number]) => import('./types').ExercisePrescription;
+  /** N-0074: same-week strength exposures by exercise, from the saved programme. */
+  exposureBenchmarks?: ExposureBenchmarks;
+  /** repRange is the declared v4 exposure range; absent for earlier policy versions. exposure is the declared role (N-0074). */
+  loading: (exercise: Exercise, reps: number, priority: ExercisePriority, setCount: number, repRange?: [number, number], exposure?: ExposureContext) => import('./types').ExercisePrescription;
 }): SessionPlan {
   const catalog = catalogData as Exercise[];
   const { profile, allocation } = input;
@@ -49,7 +53,7 @@ export function buildAllocatedProgramSession(input: {
     const ownHistory = isQualifiedPerformance(exercise, profile.lastSessionPerformance?.[exercise.id]) &&
       (!profile.performanceHistory || (profile.performanceHistory.status === 'available' && profile.performanceHistory.requestedExerciseIds.includes(exercise.id)));
     const unknownLoad = slot.loadPolicy === 'none' && !ownBaseline && !ownHistory;
-    const resolved = input.loading(exercise, slot.reps, slot.priority, slot.setCount, slot.repRange);
+    const resolved = input.loading(exercise, slot.reps, slot.priority, slot.setCount, slot.repRange, slotExposureContext(slot, input.exposureBenchmarks));
     const loading = unknownLoad && !resolved.progression ? { ...resolved, weight: 0, reason: 'Choose a load for this exercise; no load is inferred from another implement.' } : resolved;
     const warmup = exercises.length === 0 && slot.compound ? warmupSetsForWorkingWeight(loading.weight, getWeightStep(exercise)) : [];
     const alternatives = slot.candidateExerciseIds.filter((id) => id !== exercise.id && (() => {
@@ -67,6 +71,7 @@ export function buildAllocatedProgramSession(input: {
         rankedAlternatives: alternatives, rankedAlternativeIds: alternatives,
         progressionReason: loading.reason, confidence: 0.8, selectionPhase: 'required',
         ...(loading.prescriptionContext ? { prescriptionContext: loading.prescriptionContext } : {}),
+        ...(loading.loadFollows ? { loadFollows: loading.loadFollows } : {}),
       },
     });
   }
