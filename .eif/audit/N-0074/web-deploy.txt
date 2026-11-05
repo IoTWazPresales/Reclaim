@@ -1,0 +1,20 @@
+★ eas-cli@27.4.1 is now available.
+To upgrade, run:
+npm install -g eas-cli
+Proceeding with outdated version.
+
+> Project export: static
+- Preparing project
+- Creating deployment
+✔ Created deployment
+- Assigning alias beta to deployment
+✔ Assigned alias beta to deployment
+
+🎉 Your deployment is ready
+
+Dashboard       https://expo.dev/projects/d053ca52-e860-4241-822b-8f821974f884/hosting/deployments
+Deployment URL  https://eliasonw-reclaim-app--7urtsz43d8.expo.app
+Alias URL       https://eliasonw-reclaim-app--beta.expo.app
+
+🚀 When you are ready to deploy to production:
+  $ eas deploy --prod

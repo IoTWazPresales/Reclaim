@@ -1,0 +1,74 @@
+env: load .env
+env: export EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_APP_SCHEME
+Starting Metro Bundler
+Web node_modules\expo\AppEntry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+| [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+Web node_modules\expo\AppEntry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+| [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+| [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+| [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+| [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+| [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+| [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+| [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+| [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+| [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+Web node_modules\expo\AppEntry.js ▓▓▓░░░░░░░░░░░░░ 20.8% ( 36/103)
+Web node_modules\expo\AppEntry.js ▓▓▓▓▓░░░░░░░░░░░ 31.8% (206/405)
+Web node_modules\expo\AppEntry.js ▓▓▓▓▓▓▓▓░░░░░░░░ 54.9% (406/549)
+Web node_modules\expo\AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 81.5% (648/722)
+Web node_modules\expo\AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 96.2% (884/902)
+Web node_modules\expo\AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.8% (991/992)
+Web Bundled 26837ms node_modules\expo\AppEntry.js (992 modules)
+
+› Assets (31):
+node_modules\@expo-google-fonts\hanken-grotesk\100Thin_Italic\HankenGrotesk_100Thin_Italic.5ad53da9f1ff702f55cf870763a159ff.ttf (71.1 kB)
+node_modules\@expo-google-fonts\hanken-grotesk\100Thin\HankenGrotesk_100Thin.2d9c9415d97b66fb3bbca06b538f11d8.ttf (66.5 kB)
+node_modules\@expo-google-fonts\hanken-grotesk\200ExtraLight_Italic\HankenGrotesk_200ExtraLight_Italic.5d4eff887cdb33164b4fba2066c687e3.ttf (71.3 kB)
+node_modules\@expo-google-fonts\hanken-grotesk\200ExtraLight\HankenGrotesk_200ExtraLight.2cae1a1078b5af081aff084011b07522.ttf (66.7 kB)
+node_modules\@expo-google-fonts\hanken-grotesk\300Light_Italic\HankenGrotesk_300Light_Italic.4ae6910889ffdf69093da607b369b0a8.ttf (71.3 kB)
+node_modules\@expo-google-fonts\hanken-grotesk\300Light\HankenGrotesk_300Light.2be9fd730ff95b91631e3f99bc449709.ttf (66.5 kB)
+node_modules\@expo-google-fonts\hanken-grotesk\400Regular_Italic\HankenGrotesk_400Regular_Italic.ed9d322cffe9e614205ce9512f144834.ttf (71 kB)
+node_modules\@expo-google-fonts\hanken-grotesk\400Regular\HankenGrotesk_400Regular.2e544d6119b4e635f6cc5a47800523bb.ttf (66.6 kB)
+node_modules\@expo-google-fonts\hanken-grotesk\500Medium_Italic\HankenGrotesk_500Medium_Italic.bc71c45237e12974e52335b615fab7da.ttf (71.3 kB)
+node_modules\@expo-google-fonts\hanken-grotesk\500Medium\HankenGrotesk_500Medium.a822d33614b51eb05478e0e29cf757f3.ttf (66.6 kB)
+node_modules\@expo-google-fonts\hanken-grotesk\600SemiBold_Italic\HankenGrotesk_600SemiBold_Italic.94428d43b74e372dc47910fd4fc6b552.ttf (71.2 kB)
+node_modules\@expo-google-fonts\hanken-grotesk\600SemiBold\HankenGrotesk_600SemiBold.b016ff502f15ce9b59c453304c74fb48.ttf (66.5 kB)
+node_modules\@expo-google-fonts\hanken-grotesk\700Bold_Italic\HankenGrotesk_700Bold_Italic.d075966aaf26126d8aaac0802735e310.ttf (71.2 kB)
+node_modules\@expo-google-fonts\hanken-grotesk\700Bold\HankenGrotesk_700Bold.14d2af6df606492d846389d2108dae50.ttf (66.5 kB)
+node_modules\@expo-google-fonts\hanken-grotesk\800ExtraBold_Italic\HankenGrotesk_800ExtraBold_Italic.ea7ac4778026e067a5d637f4a494b2d2.ttf (71.2 kB)
+node_modules\@expo-google-fonts\hanken-grotesk\800ExtraBold\HankenGrotesk_800ExtraBold.b419489745bc870b4e4288e969945f31.ttf (66.5 kB)
+node_modules\@expo-google-fonts\hanken-grotesk\900Black_Italic\HankenGrotesk_900Black_Italic.dcad6f722a66aae93f70a72604112754.ttf (71.1 kB)
+node_modules\@expo-google-fonts\hanken-grotesk\900Black\HankenGrotesk_900Black.55e860e6549b53fa530d9eda7c7518a2.ttf (66.5 kB)
+node_modules\@expo-google-fonts\schibsted-grotesk\400Regular_Italic\SchibstedGrotesk_400Regular_Italic.009a9916f2f2111fcaf217ae109b3072.ttf (103 kB)
+node_modules\@expo-google-fonts\schibsted-grotesk\400Regular\SchibstedGrotesk_400Regular.6ae39f16c486bc82183dbfd6faf3c64c.ttf (101 kB)
+node_modules\@expo-google-fonts\schibsted-grotesk\500Medium_Italic\SchibstedGrotesk_500Medium_Italic.5049b931b8bd49679e1322c91e86c82a.ttf (103 kB)
+node_modules\@expo-google-fonts\schibsted-grotesk\500Medium\SchibstedGrotesk_500Medium.4a6c5ee9829d8f0982bb47515d8f23d4.ttf (101 kB)
+node_modules\@expo-google-fonts\schibsted-grotesk\600SemiBold_Italic\SchibstedGrotesk_600SemiBold_Italic.2bd4168226f71d04a39f0a8f10f58eb1.ttf (104 kB)
+node_modules\@expo-google-fonts\schibsted-grotesk\600SemiBold\SchibstedGrotesk_600SemiBold.d3bb6b313c4cc76cb68f85a8156c161f.ttf (101 kB)
+node_modules\@expo-google-fonts\schibsted-grotesk\700Bold_Italic\SchibstedGrotesk_700Bold_Italic.526520aef01abd6ec9d27204b0b915e4.ttf (103 kB)
+node_modules\@expo-google-fonts\schibsted-grotesk\700Bold\SchibstedGrotesk_700Bold.977f3e7cc34cda2313d27fa1d2db96ab.ttf (101 kB)
+node_modules\@expo-google-fonts\schibsted-grotesk\800ExtraBold_Italic\SchibstedGrotesk_800ExtraBold_Italic.b259365f7c1514d9700a6aa1820d930c.ttf (104 kB)
+node_modules\@expo-google-fonts\schibsted-grotesk\800ExtraBold\SchibstedGrotesk_800ExtraBold.11c23c128f162551f05169013942b820.ttf (101 kB)
+node_modules\@expo-google-fonts\schibsted-grotesk\900Black_Italic\SchibstedGrotesk_900Black_Italic.dbced51b074d4ccffbabe40f8912d666.ttf (104 kB)
+node_modules\@expo-google-fonts\schibsted-grotesk\900Black\SchibstedGrotesk_900Black.932bb3478c487b830d11db73723d2429.ttf (101 kB)
+node_modules\@expo\vector-icons\build\vendor\react-native-vector-icons\Fonts\MaterialCommunityIcons.6e435534bd35da5fef04168860a9b8fa.ttf (1.31 MB)
+
+› web bundles (11):
+_expo/static/js/web/__common-db5bbed10853243e24be0a8cd8718aa6.js (270 kB)
+_expo/static/js/web/__expo-metro-runtime-37844bfe9405ed99797bdb43820a0459.js (10.4 kB)
+_expo/static/js/web/AppEntry-91f8690602be3334d0423e1be0f239c3.js (2.11 MB)
+_expo/static/js/web/Calendar-6c5998bbff6da75dce146729ed9a2edf.js (15.7 kB)
+_expo/static/js/web/closeTrainingSession-ec03c931004cf5de6d7f6e444a2459c1.js (12.3 kB)
+_expo/static/js/web/getLatestWakeTime-8b35156d425087dd3972125e679e3f1d.js (15.2 kB)
+_expo/static/js/web/guidedRestEndTimer-8fe810026e5fa6be2fe6b5187f20518b.js (3.28 kB)
+_expo/static/js/web/meditationAfterWakeDaily-325a246c18bfb0db6984f7c51cacb402.js (911 B)
+_expo/static/js/web/moodService-05777fe38946c8c07b65e0fc0dc99365.js (8.66 kB)
+_expo/static/js/web/promptIdentity-b06d8a929f4d57a0a63295ddc86e2179.js (1.02 kB)
+_expo/static/js/web/runSession-04551f5ea37b6b1d6e1c10e2200c02eb.js (6.24 kB)
+
+› Files (2):
+index.html (1.38 kB)
+metadata.json (49 B)
+
+Exported: dist
