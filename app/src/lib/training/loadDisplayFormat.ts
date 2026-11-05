@@ -38,6 +38,14 @@ export function formatLoadSemanticsSuffix(exercise: Exercise, weightKg: number):
 }
 
 /**
+ * Rep target text: "8 per side" when the catalogue counts reps per side
+ * (repsPerSide), otherwise "8 reps". Display only; logged data is unchanged.
+ */
+export function formatRepTarget(exercise: Pick<Exercise, 'repsPerSide'>, reps: number): string {
+  return exercise.repsPerSide ? `${reps} per side` : `${reps} reps`;
+}
+
+/**
  * One-line summary for a planned set (session preview, exercise rows).
  */
 export function formatPlannedSetSummary(
@@ -51,7 +59,7 @@ export function formatPlannedSetSummary(
 
   if (set.loadRequiresConfirmation && w === 0) {
     const target = p.prescriptionType === 'carry_distance' ? `~${r} m / set` :
-      p.prescriptionType === 'time_hold' ? `~${r}s hold` : `${r} reps`;
+      p.prescriptionType === 'time_hold' ? `~${r}s hold` : formatRepTarget(exercise, r);
     return `${target} · weight confirmation required`;
   }
 
@@ -63,18 +71,18 @@ export function formatPlannedSetSummary(
     return `~${r}s hold (bodyweight)`;
   }
   if (p.loadDisplayMode === 'bodyweight' && w === 0) {
-    return `Bodyweight · ${r} reps`;
+    return `Bodyweight · ${formatRepTarget(exercise, r)}`;
   }
   if (w === 0) {
-    return `${r} reps · enter a weight`;
+    return `${formatRepTarget(exercise, r)} · enter a weight`;
   }
   if (p.loadDisplayMode === 'assisted_bodyweight') {
-    return `${fmtKg(w)}kg assist · ${r} reps`;
+    return `${fmtKg(w)}kg assist · ${formatRepTarget(exercise, r)}`;
   }
   if (note) {
-    return `${fmtKg(w)}kg · ${r} reps · ${note}`;
+    return `${fmtKg(w)}kg · ${formatRepTarget(exercise, r)} · ${note}`;
   }
-  return `${fmtKg(w)}kg · ${r} reps`;
+  return `${fmtKg(w)}kg · ${formatRepTarget(exercise, r)}`;
 }
 
 /** Session list / modal: first working set + set count. */

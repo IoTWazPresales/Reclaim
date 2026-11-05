@@ -7,7 +7,7 @@ import { isQualifiedPerformance, performanceHistorySignature, PERFORMANCE_HISTOR
 import { getPrimarySlotRoleTier, PrimarySlotRoleTier } from './exerciseSessionRole';
 import { epleyWorkingWeightCeiling, getWeightStep, deriveProgressionDecision, getRepRange, prescriptionContext } from './progression';
 import { isNonLegTrainingTemplate } from './trainingMode';
-import { supportsWeeklyPolicy, usesCappedWeeklyPolicy, usesExposureDosePolicy } from './weeklyProgrammeTypes';
+import { supportsWeeklyPolicy, usesCappedWeeklyPolicy, usesExposureDosePolicy, usesV5WeeklyPolicy } from './weeklyProgrammeTypes';
 import type { Exercise, ExercisePerformance, PlannedExercise, PlannedSet, SessionPlan, TrainingProfileSnapshot } from './types';
 import type { AllocatedSlot, CompiledProgrammeWeek, ProgrammeIssue, WeeklyProgrammeInputDay, WeeklyRequirement } from './weeklyProgrammeTypes';
 
@@ -75,6 +75,8 @@ export type ProgrammeWeekDeclaration = {
     approvedExerciseIds: readonly string[]; selectionKind: 'primary_role' | 'isolation';
     /** Policy v4: every exposure declares its own sets and progression range. */
     setCount?: number; repRange?: readonly [number, number];
+    /** Policy v5: exercises this exposure may never hold (deadlift variants outside the deadlift requirement). */
+    excludedExerciseIds?: readonly string[];
   }>>;
   runRequirement?: CompiledProgrammeWeek['runRequirement'];
   calendar: readonly WeeklyProgrammeInputDay[];
@@ -135,6 +137,8 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
   const warning = (code: string, message: string, location: Partial<ProgrammeValidationIssue> = {}) => add(code, message, { severity: 'warning', ...location });
   const exposureDoses = usesExposureDosePolicy(declaration?.policyVersion);
   const cappedPolicy = usesCappedWeeklyPolicy(declaration?.policyVersion);
+  // v5 (D-P2-01 amendment 2026-11-05): no session total-set or time budget; per-exercise/owner caps remain.
+  const sessionBudgets = !usesV5WeeklyPolicy(declaration?.policyVersion);
   const validRange = (range: unknown): range is [number, number] => Array.isArray(range) && range.length === 2 && positiveInteger(range[0]) && positiveInteger(range[1]) && range[0] <= range[1];
   if (!completeShape(declaration, generated, profile)) {
     issues.push({ code: 'invalid_payload', severity: 'error', message: 'Declaration/allocation/final sessions lack required records or arrays.', provenance: routine });
@@ -213,6 +217,10 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
   const slots: Array<{ dayKey: string; slot: AllocatedSlot }> = [];
   const usedSlotIds = new Set<string>();
   const eligibilityOptions = (slot: AllocatedSlot) => ({ allowEnteredRackException: declaration.strategyId.startsWith('balanced-v1:'), selectionIntent: slot.intent });
+  const excludedFromSlot = (exerciseId: string, slot: AllocatedSlot) => {
+    const excluded = declaration.exposurePolicies[slot.slotId]?.excludedExerciseIds;
+    return strings(excluded) && excluded.includes(exerciseId);
+  };
   const approvedForSlot = (exercise: Exercise, slot: AllocatedSlot) => {
     const approved = declaration.exposurePolicies[slot.slotId]?.approvedExerciseIds;
     return strings(approved) && approved.includes(exercise.id);
@@ -225,6 +233,7 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
   };
   function checkEligibility(exercise: Exercise, slot: AllocatedSlot, dayKey: string) {
     const eligibility = evaluateExerciseEligibility(exercise, profile, eligibilityOptions(slot));
+    if (excludedFromSlot(exercise.id, slot)) add('deadlift_variant_misplaced', 'A deadlift variant fills a slot other than the deadlift requirement.', { dayKey, slotId: slot.slotId, exerciseId: exercise.id });
     if (!eligibility.eligible || !exercise.intents.includes(slot.intent) || !ownsSlot(exercise, slot) || !fitsPrescription(exercise, slot)) add('ineligible_exercise', `Exercise violates slot/user constraints: ${eligibility.reasons.join(', ') || 'intent/owner/prescription mismatch'}.`, { dayKey, slotId: slot.slotId, exerciseId: exercise.id });
     for (const exception of eligibility.policyExceptions) warning('policy_exception', 'Accepted entered-lift rack exception remains pending D-P2-06 review.', { dayKey, slotId: slot.slotId, exerciseId: exercise.id, provenance: exception.provenance });
   }
@@ -248,7 +257,7 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
       else checkEligibility(exercise, slot, dayKey);
       for (const id of slot.candidateExerciseIds) {
         const alternative = catalogue.get(id);
-        if (!alternative || !evaluateExerciseEligibility(alternative, profile, eligibilityOptions(slot)).eligible || !alternative.intents.includes(slot.intent) || !ownsSlot(alternative, slot) || !fitsPrescription(alternative, slot)) add('ineligible_alternative', 'Offered alternative violates slot/user/prescription constraints.', { dayKey, slotId: slot.slotId, exerciseId: id });
+        if (!alternative || excludedFromSlot(id, slot) || !evaluateExerciseEligibility(alternative, profile, eligibilityOptions(slot)).eligible || !alternative.intents.includes(slot.intent) || !ownsSlot(alternative, slot) || !fitsPrescription(alternative, slot)) add('ineligible_alternative', 'Offered alternative violates slot/user/prescription constraints.', { dayKey, slotId: slot.slotId, exerciseId: id });
       }
       if (slot.exerciseId && !slot.candidateExerciseIds.includes(slot.exerciseId)) add('incomplete_allocation', 'Selected exercise is absent from candidate allocation.', { dayKey, slotId: slot.slotId });
     }
@@ -391,12 +400,12 @@ export function validateProgrammeWeek(declaration: ProgrammeWeekDeclaration, gen
         seenWarmups.add(warmup.weight);
       }
     }
-    if (workingSets > SESSION_SET_CAP) add('session_set_budget', 'Actual working sets exceed accepted session cap.', { dayKey, provenance: routine });
+    if (sessionBudgets && workingSets > SESSION_SET_CAP) add('session_set_budget', 'Actual working sets exceed accepted session cap.', { dayKey, provenance: routine });
     const budget = plan.constraints.timeBudgetMinutes;
     if (!Number.isFinite(budget) || budget <= 0 || !Number.isFinite(plan.estimatedDurationMinutes) || plan.estimatedDurationMinutes <= 0) add('invalid_time_budget', 'Session duration/budget must be finite and positive.', { dayKey });
     const cap = Math.min(SESSION_MINUTE_CAP, budget);
     if (coverageUnresolved && !plan.exercises.length) add('missing_training_exposure', 'Selected legacy strength day contains no work; its scientific quota remains unresolved.', { dayKey });
-    if (estimateMinutes > cap || plan.estimatedDurationMinutes > cap || restSeconds / 60 > cap) add('session_time_budget', 'Actual work, reported duration or between-set rest exceed accepted budget.', { dayKey, provenance: routine });
+    if (sessionBudgets && (estimateMinutes > cap || plan.estimatedDurationMinutes > cap || restSeconds / 60 > cap)) add('session_time_budget', 'Actual work, reported duration or between-set rest exceed accepted budget.', { dayKey, provenance: routine });
     if (restSeconds / 60 > plan.estimatedDurationMinutes) add('understated_duration', 'Between-set rest alone exceeds reported duration.', { dayKey });
   }
 

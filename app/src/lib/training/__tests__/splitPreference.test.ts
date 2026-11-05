@@ -6,6 +6,7 @@ import { buildFourWeekPlan } from '../programPlanner';
 import { programmeWeekProposal } from '../programmeWeekProposal';
 import { compileProgrammeWeek, defineWeeklyRequirements, isApprovedWeeklyStrategy, isBalancedDayStrategyId } from '../weeklyProgramme';
 import { UPPER_LOWER_STRATEGY_ID } from '../weeklyProgrammePolicy';
+import { V4_WEEKLY_POLICY_VERSION } from '../weeklyProgrammeTypes';
 import { validateTrainingProgramme, type ProgrammeWeekDeclaration } from '../weeklyProgrammeValidator';
 import type { Exercise } from '../types';
 
@@ -46,16 +47,28 @@ describe('split preference options', () => {
     expect(prepareTrainingSetup(draft({ splitPreference: 'upper_lower', selectedWeekdays: [1, 2, 3, 4, 5] })).profileWrite.constraints?.preferences).not.toHaveProperty('splitPreference');
   });
 
-  it('plain-language note says once a week with about the same weekly sets', () => {
-    expect(UPPER_LOWER_TWO_DAY_NOTE).toMatch(/once a week/);
-    expect(UPPER_LOWER_TWO_DAY_NOTE).toMatch(/about the same weekly sets/);
+  it('plain-language note says once a week and that full body trains each muscle twice (v5, 2026-11-05)', () => {
+    expect(UPPER_LOWER_TWO_DAY_NOTE).toBe('Upper body one day, lower body the other. Each muscle is trained once a week; full body trains each muscle twice and is usually better for strength.');
+    expect(UPPER_LOWER_TWO_DAY_NOTE).not.toMatch(/about the same weekly sets/);
   });
 });
 
 describe('two-day Upper/Lower policy', () => {
-  it('declares the literal Upper and Lower objectives', () => {
+  it('declares the literal Upper and Lower objectives (v5)', () => {
     const { setup } = programme({ splitPreference: 'upper_lower' });
     const rows = defineWeeklyRequirements(2, setup.snapshot, undefined, UPPER_LOWER_STRATEGY_ID).map((row) => [row.id, row.owner, row.positions]);
+    expect(rows).toEqual([
+      ['bench', 'pectorals', [[0, 0]]], ['row-heavy', 'lats', [[0, 1]]], ['ohp', 'anterior_deltoids', [[0, 2]]], ['pulldown', 'lats', [[0, 3]]],
+      ['fly', 'pectorals', [[0, 4]]], ['lateral', 'lateral_deltoids', [[0, 5]]], ['curl', 'biceps', [[0, 6]]], ['core-flexion', 'core', [[0, 7]]],
+      ['squat', 'quadriceps', [[1, 0]]], ['hingeHeavy', 'hamstrings', [[1, 1]]], ['quadFollow', 'quadriceps', [[1, 2]]], ['hingeFollow', 'hamstrings', [[1, 3]]], ['calf', 'calves', [[1, 4]]],
+      ['core-antirotation', 'core', [[1, 5]]],
+    ]);
+    expect(rows.some(([id]) => id === 'pushdown')).toBe(false);
+  });
+
+  it('declares the literal frozen v4 Upper and Lower objectives', () => {
+    const { setup } = programme({ splitPreference: 'upper_lower' });
+    const rows = defineWeeklyRequirements(2, setup.snapshot, V4_WEEKLY_POLICY_VERSION, UPPER_LOWER_STRATEGY_ID).map((row) => [row.id, row.owner, row.positions]);
     expect(rows).toEqual([
       ['bench', 'pectorals', [[0, 0]]], ['row-heavy', 'lats', [[0, 1]]], ['ohp', 'anterior_deltoids', [[0, 2]]], ['pulldown', 'lats', [[0, 3]]],
       ['lateral', 'lateral_deltoids', [[0, 4]]], ['curl', 'biceps', [[0, 5]]], ['pushdown', 'triceps', [[0, 6]]],
@@ -69,7 +82,7 @@ describe('two-day Upper/Lower policy', () => {
 
   const mixes = [{ build_muscle: 100, build_strength: 0, lose_fat: 0, get_fitter: 0 }, { build_muscle: 0, build_strength: 100, lose_fat: 0, get_fitter: 0 },
     { build_muscle: 50, build_strength: 50, lose_fat: 0, get_fitter: 0 }, { build_muscle: 40, build_strength: 40, lose_fat: 10, get_fitter: 10 }];
-  for (const goals of mixes) it(`compiles, passes R05 weeks 1-4 and honours caps (${JSON.stringify(goals)})`, () => {
+  for (const goals of mixes) it(`compiles, passes R05 weeks 1-4 and honours the v5 per-exercise and per-owner caps (${JSON.stringify(goals)})`, () => {
     const { setup, plan } = programme({ splitPreference: 'upper_lower', goals });
     const compilation = plan.weeks[0].compilation!;
     expect(compilation.strategyId).toBe(UPPER_LOWER_STRATEGY_ID);
@@ -90,11 +103,12 @@ describe('two-day Upper/Lower policy', () => {
           expect(item.plannedSets.length).toBeLessThanOrEqual(5);
         }
         for (const total of Object.values(owners)) expect(total).toBeLessThanOrEqual(10);
-        expect(session.exercises.reduce((total, item) => total + item.plannedSets.length, 0)).toBeLessThanOrEqual(24);
-        expect(session.estimatedDurationMinutes).toBeLessThanOrEqual(60);
+        // v5: no session total-set or minute cap; the estimate is display only.
+        expect(session.estimatedDurationMinutes).toBeGreaterThan(0);
+        expect(session.constraints.timeBudgetMinutes).toBe(session.estimatedDurationMinutes);
       }
-      // Each owner muscle is trained on exactly one day of the week.
-      for (const days of Object.values(ownerDays)) expect(days.size).toBe(1);
+      // Each owner muscle is trained on exactly one day of the week; v5 core is one slot per day by policy.
+      for (const [owner, days] of Object.entries(ownerDays)) expect(days.size).toBe(owner === 'core' ? 2 : 1);
     }
   });
 

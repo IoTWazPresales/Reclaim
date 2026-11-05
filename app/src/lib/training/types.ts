@@ -65,6 +65,8 @@ export interface Exercise {
   contraindications: string[];
   substitutionTags: string[];
   unilateral: boolean;
+  /** Target reps are counted per side ("8 per side"). Set on every unilateral exercise and per-side core work. Display only. */
+  repsPerSide?: boolean;
   notes?: string;
   /** Setup / brace / move / breathe cue lines for in-app guidance. */
   cues?: string[];

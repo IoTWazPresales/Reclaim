@@ -3,7 +3,10 @@ import catalogData from '../catalog/exercises.v1.json';
 import { blendedCount, blendedReps, buildBalancedProgramSession, normaliseGoalWeights, setsForDose, setsForSlot, BALANCED_DAY_POLICIES } from '../balancedHypertrophy';
 import { declareExposurePolicies, defineWeeklyRequirements, exposureDose, exposureRole } from '../weeklyProgramme';
 import { BALANCED_WEEKLY_OBJECTIVES } from '../weeklyProgrammePolicy';
-import { V3_WEEKLY_POLICY_VERSION, WEEKLY_POLICY_VERSION } from '../weeklyProgrammeTypes';
+import { V3_WEEKLY_POLICY_VERSION, V4_WEEKLY_POLICY_VERSION, WEEKLY_POLICY_VERSION } from '../weeklyProgrammeTypes';
+
+/** Frozen v4 behaviour (saved programmes). v5 is covered by weeklyPolicyV5.test.ts. */
+const V4 = V4_WEEKLY_POLICY_VERSION;
 import { buildFourWeekPlan } from '../programPlanner';
 import { programmeWeekProposal } from '../programmeWeekProposal';
 import { getRepRange } from '../progression';
@@ -23,7 +26,7 @@ function snapshot(goals: GoalWeights, equipment = fullEquipment, baselines: Reco
     constraints: { injuries: [], forbiddenMovements: [], preferences: { muscle_frequency_preference: 'twice' } } };
 }
 function plan(profile: TrainingProfileSnapshot, days: number) {
-  return buildFourWeekPlan({ ...profile, constraints: { ...profile.constraints, trainingMode: 'strength' } } as unknown as TrainingProfileRow, Array.from({ length: days }, (_, index) => index + 1));
+  return buildFourWeekPlan({ ...profile, constraints: { ...profile.constraints, trainingMode: 'strength' } } as unknown as TrainingProfileRow, Array.from({ length: days }, (_, index) => index + 1), new Date(), { policyVersion: V4 });
 }
 const allSlots = (built: ReturnType<typeof plan>) => Object.values(built.weeks[0].days).flatMap((day) => day.allocation?.slots ?? []);
 
@@ -50,8 +53,8 @@ describe('accessory dose uses the slot priority', () => {
   it('follow-up accessories get accessory sets, reps and rest; fly stays isolation', () => {
     const pulldown = BALANCED_WEEKLY_OBJECTIVES[5].find((row) => row.id === 'pulldown')!;
     const fly = BALANCED_WEEKLY_OBJECTIVES[5].find((row) => row.id === 'fly')!;
-    expect(exposureDose(pulldown, 0, shares)).toEqual({ setCount: 3, reps: 9, restSeconds: 90, priority: 'accessory', repRange: [7, 12] });
-    expect(exposureDose(fly, 0, shares)).toEqual({ setCount: 2, reps: 12, restSeconds: 55, priority: 'isolation', repRange: [9, 16] });
+    expect(exposureDose(pulldown, 0, shares, V4)).toEqual({ setCount: 3, reps: 9, restSeconds: 90, priority: 'accessory', repRange: [7, 12] });
+    expect(exposureDose(fly, 0, shares, V4)).toEqual({ setCount: 2, reps: 12, restSeconds: 55, priority: 'isolation', repRange: [9, 16] });
     // v3 replay keeps the old collapse to the isolation blend.
     expect(exposureDose(pulldown, 0, shares, V3_WEEKLY_POLICY_VERSION)).toEqual({ setCount: 2, reps: 12, restSeconds: 55, priority: 'accessory' });
   });
@@ -78,27 +81,27 @@ describe('mixed strength + muscle exposures', () => {
     const objectives = BALANCED_WEEKLY_OBJECTIVES[5];
     const shares = normaliseGoalWeights(warrenGoals);
     const bench = objectives.find((row) => row.id === 'bench')!;
-    expect(exposureRole(bench, 0, shares)).toBe('strength');
-    expect(exposureRole(bench, 1, shares)).toBe('hypertrophy');
-    for (const id of ['squat', 'deadlift', 'ohp', 'row-heavy', 'pullUp']) expect(exposureRole(objectives.find((row) => row.id === id)!, 0, shares)).toBe('strength');
-    for (const id of ['hingeHeavy', 'quadHeavy']) expect(exposureRole(objectives.find((row) => row.id === id)!, 0, shares)).toBe('hypertrophy');
-    expect(exposureRole(BALANCED_WEEKLY_OBJECTIVES[6].find((row) => row.id === 'incline')!, 0, shares)).toBe('hypertrophy');
-    for (const id of ['pulldown', 'fly', 'lateral', 'row-follow']) expect(exposureRole(objectives.find((row) => row.id === id)!, 0, shares)).toBeUndefined();
-    expect(exposureDose(bench, 0, warrenGoals)).toEqual({ setCount: 4, reps: 5, restSeconds: 180, priority: 'primary', repRange: [3, 6], exposure: 'strength' });
-    expect(exposureDose(bench, 1, warrenGoals)).toEqual({ setCount: 4, reps: 8, restSeconds: 90, priority: 'primary', repRange: [6, 12], exposure: 'hypertrophy' });
+    expect(exposureRole(bench, 0, shares, V4)).toBe('strength');
+    expect(exposureRole(bench, 1, shares, V4)).toBe('hypertrophy');
+    for (const id of ['squat', 'deadlift', 'ohp', 'row-heavy', 'pullUp']) expect(exposureRole(objectives.find((row) => row.id === id)!, 0, shares, V4)).toBe('strength');
+    for (const id of ['hingeHeavy', 'quadHeavy']) expect(exposureRole(objectives.find((row) => row.id === id)!, 0, shares, V4)).toBe('hypertrophy');
+    expect(exposureRole(BALANCED_WEEKLY_OBJECTIVES[6].find((row) => row.id === 'incline')!, 0, shares, V4)).toBe('hypertrophy');
+    for (const id of ['pulldown', 'fly', 'lateral', 'row-follow']) expect(exposureRole(objectives.find((row) => row.id === id)!, 0, shares, V4)).toBeUndefined();
+    expect(exposureDose(bench, 0, warrenGoals, V4)).toEqual({ setCount: 4, reps: 5, restSeconds: 180, priority: 'primary', repRange: [3, 6], exposure: 'strength' });
+    expect(exposureDose(bench, 1, warrenGoals, V4)).toEqual({ setCount: 4, reps: 8, restSeconds: 90, priority: 'primary', repRange: [6, 12], exposure: 'hypertrophy' });
   });
 
   it('applies only when both goals hold at least 0.3 of the mix', () => {
     const bench = BALANCED_WEEKLY_OBJECTIVES[5].find((row) => row.id === 'bench')!;
-    expect(exposureRole(bench, 0, normaliseGoalWeights({ build_muscle: 0.7, build_strength: 0.3 }))).toBe('strength');
-    expect(exposureRole(bench, 0, normaliseGoalWeights({ build_muscle: 0.75, build_strength: 0.25 }))).toBeUndefined();
-    expect(exposureRole(bench, 0, normaliseGoalWeights({ build_muscle: 0.4, build_strength: 0.4, lose_fat: 0.1, get_fitter: 0.1 }))).toBe('strength');
+    expect(exposureRole(bench, 0, normaliseGoalWeights({ build_muscle: 0.7, build_strength: 0.3 }), V4)).toBe('strength');
+    expect(exposureRole(bench, 0, normaliseGoalWeights({ build_muscle: 0.75, build_strength: 0.25 }), V4)).toBeUndefined();
+    expect(exposureRole(bench, 0, normaliseGoalWeights({ build_muscle: 0.4, build_strength: 0.4, lose_fat: 0.1, get_fitter: 0.1 }), V4)).toBe('strength');
   });
 
   for (const days of [2, 3, 4, 5, 6]) it(`${days} days: weekly targetSets is the sum of declared exposure sets`, () => {
     const profile = snapshot(warrenGoals);
-    const policies = declareExposurePolicies(days, profile);
-    for (const requirement of defineWeeklyRequirements(days, profile)) {
+    const policies = declareExposurePolicies(days, profile, V4);
+    for (const requirement of defineWeeklyRequirements(days, profile, V4)) {
       expect(requirement.exposureSetCounts).toEqual(requirement.exposureSlotIds.map((slotId) => policies[slotId].setCount));
       expect(requirement.targetSets).toBe(requirement.exposureSetCounts!.reduce((total, count) => total + count, 0));
     }
@@ -136,7 +139,7 @@ describe('pure goals keep the single-goal prescription', () => {
   for (const goals of [{ build_muscle: 1 }, { build_strength: 1 }] as GoalWeights[]) for (const days of [2, 3, 4, 5, 6]) it(`${Object.keys(goals)[0]} ${days} days: no exposure roles; heavy, isolation and support doses unchanged from v3`, () => {
     const profile = snapshot(goals);
     for (const objective of BALANCED_WEEKLY_OBJECTIVES[days]) objective.positions.forEach((_, position) => {
-      const v4 = exposureDose(objective, position, goals);
+      const v4 = exposureDose(objective, position, goals, V4);
       const v3 = exposureDose(objective, position, goals, V3_WEEKLY_POLICY_VERSION);
       expect(v4.exposure).toBeUndefined();
       expect(v4.repRange).toEqual(getRepRange(objective.slot.priority, goals));
@@ -164,10 +167,13 @@ describe('saved v3 programmes replay unchanged', () => {
     expect(policies['0:3']).toMatchObject({ priority: 'accessory', reps: blendedReps(warrenGoals, 'isolation') });
   });
 
-  it('new builds carry policy v4', () => {
+  it('a v4 compile carries policy v4; new builds default to the current version', () => {
     const built = plan(snapshot(warrenGoals), 5);
-    expect(built.programme!.policyVersion).toBe(WEEKLY_POLICY_VERSION);
-    expect(Object.values(built.weeks[0].days).every((day) => day.allocation?.policyVersion === WEEKLY_POLICY_VERSION)).toBe(true);
+    expect(built.programme!.policyVersion).toBe(V4);
+    expect(Object.values(built.weeks[0].days).every((day) => day.allocation?.policyVersion === V4)).toBe(true);
+    const current = buildFourWeekPlan({ ...snapshot(warrenGoals), constraints: { trainingMode: 'strength' } } as unknown as TrainingProfileRow, [1, 2, 3, 4, 5]);
+    expect(current.programme!.policyVersion).toBe(WEEKLY_POLICY_VERSION);
+    expect(WEEKLY_POLICY_VERSION).toBe('weekly-20261105-v5');
   });
 });
 

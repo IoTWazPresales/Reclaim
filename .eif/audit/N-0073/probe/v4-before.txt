@@ -1,0 +1,190 @@
+## 5-day (Mon-Fri) Auto — policy weekly-20261104-v4 strategy balanced-v1:5 status feasible
+### Mon Upper (Chest/Back) — 19 sets, about 43 min (budget 60); programme feasible; R05 unresolved
+1. Barbell Bench Press [barbell_bench_press] 4x5 rest 180s load 97.5 kg warm-ups 3 role S slot bench@0:0
+2. Dumbbell Flyes [dumbbell_flyes] 2x12 rest 55s load 0 kg warm-ups 0 role iso slot fly@0:1
+3. Barbell Row [barbell_row] 4x5 rest 180s load 70 kg warm-ups 0 role S slot row-heavy@0:2
+4. Lat Pulldown [lat_pulldown] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot pulldown@0:3
+5. Lateral Raises [lateral_raises] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot lateral@0:4
+6. Barbell Curl [barbell_curl] 3x12 rest 55s load 25 kg warm-ups 0 role iso slot curl@0:5
+### Tue Lower (Squat) — 17 sets, about 45 min (budget 60); programme feasible; R05 unresolved
+1. Barbell Back Squat [squat] 4x5 rest 180s load 90 kg warm-ups 3 role S slot squat@1:0
+2. Hack Squat [hack_squat] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot quadFollow@1:1
+3. Sumo Deadlift [sumo_deadlift] 4x8 rest 90s load 0 kg warm-ups 0 role H slot hingeHeavy@1:2
+4. Romanian Deadlift [romanian_deadlift] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot hingeFollow@1:3
+5. Calf Raises [calf_raises] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot calf@1:4
+### Wed Push (Chest/Shoulders) — 19 sets, about 38 min (budget 60); programme feasible; R05 unresolved
+1. Barbell Bench Press [barbell_bench_press] 4x8 rest 90s load 90 kg warm-ups 3 role H slot bench@2:0
+2. Cable Chest Flyes [cable_chest_flyes] 2x12 rest 55s load 0 kg warm-ups 0 role iso slot fly@2:1
+3. Overhead Press [overhead_press] 4x5 rest 180s load 85 kg warm-ups 0 role S slot ohp@2:2
+4. Lateral Raises [lateral_raises] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot lateral@2:3
+5. Tricep Pushdown [tricep_pushdown] 3x12 rest 55s load 40 kg warm-ups 0 role iso slot pushdown@2:4
+6. Face Pulls [face_pulls] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot face@2:5
+### Thu Pull (Back/Arms) — 16 sets, about 35 min (budget 60); programme feasible; R05 unresolved
+1. Pull-ups [pull_ups] 4x5 rest 180s load 0 kg warm-ups 0 role S slot pullUp@3:0
+2. T-Bar Row [t_bar_row] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot row-follow@3:1
+3. Dumbbell Curl [dumbbell_curl] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot curl@3:2
+4. Rear Delt Flyes [rear_delt_flyes] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot face@3:3
+5. Shrugs [shrugs] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot shrug@3:4
+### Fri Lower (Deadlift) — 20 sets, about 48 min (budget 60); programme feasible; R05 unresolved
+1. Conventional Deadlift [deadlift] 4x5 rest 180s load 100 kg warm-ups 3 role S slot deadlift@4:0
+2. Romanian Deadlift [romanian_deadlift] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot hingeFollow@4:1
+3. Leg Press [leg_press] 4x8 rest 90s load 0 kg warm-ups 0 role H slot quadHeavy@4:2
+4. Walking Lunges [lunges] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot quadFollow@4:3
+5. Calf Raises [calf_raises] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot calf@4:4
+6. Overhead Tricep Extension [overhead_tricep_extension] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot pushdown@4:5
+Weekly owner sets: anterior_deltoids 4, biceps 6, calves 6, hamstrings 14, lateral_deltoids 6, lats 14, pectorals 12, quadriceps 14, rear_deltoids 6, traps 3, triceps 6
+Region line: Chest 12 · Back 27 · Shoulders 28 · Arms 31 · Legs 34
+R05: unresolved; errors none; warnings 57
+
+## 5-day (Mon-Fri) Auto + leg_curl_machine — policy weekly-20261104-v4 strategy balanced-v1:5 status feasible
+### Mon Upper (Chest/Back) — 19 sets, about 43 min (budget 60); programme feasible; R05 unresolved
+1. Barbell Bench Press [barbell_bench_press] 4x5 rest 180s load 97.5 kg warm-ups 3 role S slot bench@0:0
+2. Dumbbell Flyes [dumbbell_flyes] 2x12 rest 55s load 0 kg warm-ups 0 role iso slot fly@0:1
+3. Barbell Row [barbell_row] 4x5 rest 180s load 70 kg warm-ups 0 role S slot row-heavy@0:2
+4. Lat Pulldown [lat_pulldown] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot pulldown@0:3
+5. Lateral Raises [lateral_raises] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot lateral@0:4
+6. Barbell Curl [barbell_curl] 3x12 rest 55s load 25 kg warm-ups 0 role iso slot curl@0:5
+### Tue Lower (Squat) — 17 sets, about 45 min (budget 60); programme feasible; R05 unresolved
+1. Barbell Back Squat [squat] 4x5 rest 180s load 90 kg warm-ups 3 role S slot squat@1:0
+2. Hack Squat [hack_squat] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot quadFollow@1:1
+3. Romanian Deadlift [romanian_deadlift] 4x8 rest 90s load 0 kg warm-ups 0 role H slot hingeHeavy@1:2
+4. Leg Curls [leg_curls] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot hingeFollow@1:3
+5. Calf Raises [calf_raises] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot calf@1:4
+### Wed Push (Chest/Shoulders) — 19 sets, about 38 min (budget 60); programme feasible; R05 unresolved
+1. Barbell Bench Press [barbell_bench_press] 4x8 rest 90s load 90 kg warm-ups 3 role H slot bench@2:0
+2. Cable Chest Flyes [cable_chest_flyes] 2x12 rest 55s load 0 kg warm-ups 0 role iso slot fly@2:1
+3. Overhead Press [overhead_press] 4x5 rest 180s load 85 kg warm-ups 0 role S slot ohp@2:2
+4. Lateral Raises [lateral_raises] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot lateral@2:3
+5. Tricep Pushdown [tricep_pushdown] 3x12 rest 55s load 40 kg warm-ups 0 role iso slot pushdown@2:4
+6. Face Pulls [face_pulls] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot face@2:5
+### Thu Pull (Back/Arms) — 16 sets, about 35 min (budget 60); programme feasible; R05 unresolved
+1. Pull-ups [pull_ups] 4x5 rest 180s load 0 kg warm-ups 0 role S slot pullUp@3:0
+2. T-Bar Row [t_bar_row] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot row-follow@3:1
+3. Dumbbell Curl [dumbbell_curl] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot curl@3:2
+4. Rear Delt Flyes [rear_delt_flyes] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot face@3:3
+5. Shrugs [shrugs] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot shrug@3:4
+### Fri Lower (Deadlift) — 20 sets, about 48 min (budget 60); programme feasible; R05 unresolved
+1. Conventional Deadlift [deadlift] 4x5 rest 180s load 100 kg warm-ups 3 role S slot deadlift@4:0
+2. Leg Curls [leg_curls] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot hingeFollow@4:1
+3. Leg Press [leg_press] 4x8 rest 90s load 0 kg warm-ups 0 role H slot quadHeavy@4:2
+4. Walking Lunges [lunges] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot quadFollow@4:3
+5. Calf Raises [calf_raises] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot calf@4:4
+6. Overhead Tricep Extension [overhead_tricep_extension] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot pushdown@4:5
+Weekly owner sets: anterior_deltoids 4, biceps 6, calves 6, hamstrings 14, lateral_deltoids 6, lats 14, pectorals 12, quadriceps 14, rear_deltoids 6, traps 3, triceps 6
+Region line: Chest 12 · Back 27 · Shoulders 28 · Arms 31 · Legs 34
+R05: unresolved; errors none; warnings 57
+
+## 2-day (Mon, Thu) Full body — policy weekly-20261104-v4 strategy balanced-v1:2 status feasible
+### Mon Full Body (Squat/Bench) — 19 sets, about 43 min (budget 60); programme feasible; R05 unresolved
+1. Barbell Bench Press [barbell_bench_press] 4x5 rest 180s load 97.5 kg warm-ups 3 role S slot bench@0:0
+2. Dumbbell Flyes [dumbbell_flyes] 2x12 rest 55s load 0 kg warm-ups 0 role iso slot fly@0:1
+3. Barbell Back Squat [squat] 4x5 rest 180s load 90 kg warm-ups 0 role S slot squat@0:2
+4. Hack Squat [hack_squat] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot quadFollow@0:3
+5. Lateral Raises [lateral_raises] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot lateral@0:4
+6. Tricep Pushdown [tricep_pushdown] 3x12 rest 55s load 40 kg warm-ups 0 role iso slot pushdown@0:5
+### Thu Full Body (Hinge/Press) — 21 sets, about 53 min (budget 60); programme feasible; R05 unresolved
+1. Barbell Row [barbell_row] 4x5 rest 180s load 70 kg warm-ups 3 role S slot row-heavy@1:0
+2. Lat Pulldown [lat_pulldown] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot pulldown@1:1
+3. Conventional Deadlift [deadlift] 4x5 rest 180s load 100 kg warm-ups 0 role S slot deadlift@1:2
+4. Romanian Deadlift [romanian_deadlift] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot hingeFollow@1:3
+5. Barbell Curl [barbell_curl] 3x12 rest 55s load 25 kg warm-ups 0 role iso slot curl@1:4
+6. Overhead Press [overhead_press] 4x5 rest 180s load 85 kg warm-ups 0 role S slot ohp@1:5
+Weekly owner sets: anterior_deltoids 4, biceps 3, hamstrings 7, lateral_deltoids 3, lats 7, pectorals 6, quadriceps 7, triceps 3
+Region line: Chest 6 · Back 11 · Shoulders 15 · Arms 17 · Legs 14
+R05: unresolved; errors none; warnings 14
+
+## 2-day (Mon, Thu) Auto — policy weekly-20261104-v4 strategy balanced-v1:2 status feasible
+### Mon Full Body (Squat/Bench) — 19 sets, about 43 min (budget 60); programme feasible; R05 unresolved
+1. Barbell Bench Press [barbell_bench_press] 4x5 rest 180s load 97.5 kg warm-ups 3 role S slot bench@0:0
+2. Dumbbell Flyes [dumbbell_flyes] 2x12 rest 55s load 0 kg warm-ups 0 role iso slot fly@0:1
+3. Barbell Back Squat [squat] 4x5 rest 180s load 90 kg warm-ups 0 role S slot squat@0:2
+4. Hack Squat [hack_squat] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot quadFollow@0:3
+5. Lateral Raises [lateral_raises] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot lateral@0:4
+6. Tricep Pushdown [tricep_pushdown] 3x12 rest 55s load 40 kg warm-ups 0 role iso slot pushdown@0:5
+### Thu Full Body (Hinge/Press) — 21 sets, about 53 min (budget 60); programme feasible; R05 unresolved
+1. Barbell Row [barbell_row] 4x5 rest 180s load 70 kg warm-ups 3 role S slot row-heavy@1:0
+2. Lat Pulldown [lat_pulldown] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot pulldown@1:1
+3. Conventional Deadlift [deadlift] 4x5 rest 180s load 100 kg warm-ups 0 role S slot deadlift@1:2
+4. Romanian Deadlift [romanian_deadlift] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot hingeFollow@1:3
+5. Barbell Curl [barbell_curl] 3x12 rest 55s load 25 kg warm-ups 0 role iso slot curl@1:4
+6. Overhead Press [overhead_press] 4x5 rest 180s load 85 kg warm-ups 0 role S slot ohp@1:5
+Weekly owner sets: anterior_deltoids 4, biceps 3, hamstrings 7, lateral_deltoids 3, lats 7, pectorals 6, quadriceps 7, triceps 3
+Region line: Chest 6 · Back 11 · Shoulders 15 · Arms 17 · Legs 14
+R05: unresolved; errors none; warnings 14
+
+## 2-day (Mon, Thu) Upper/Lower — policy weekly-20261104-v4 strategy balanced-v1:2-upper-lower status feasible
+### Mon Upper Body — 24 sets, about 51 min (budget 60); programme feasible; R05 unresolved
+1. Barbell Bench Press [barbell_bench_press] 4x5 rest 180s load 97.5 kg warm-ups 3 role S slot bench@0:0
+2. Barbell Row [barbell_row] 4x5 rest 180s load 70 kg warm-ups 0 role S slot row-heavy@0:1
+3. Overhead Press [overhead_press] 4x5 rest 180s load 85 kg warm-ups 0 role S slot ohp@0:2
+4. Lat Pulldown [lat_pulldown] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot pulldown@0:3
+5. Lateral Raises [lateral_raises] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot lateral@0:4
+6. Barbell Curl [barbell_curl] 3x12 rest 55s load 25 kg warm-ups 0 role iso slot curl@0:5
+7. Tricep Pushdown [tricep_pushdown] 3x12 rest 55s load 40 kg warm-ups 0 role iso slot pushdown@0:6
+### Thu Lower Body — 17 sets, about 45 min (budget 60); programme feasible; R05 unresolved
+1. Barbell Back Squat [squat] 4x5 rest 180s load 90 kg warm-ups 3 role S slot squat@1:0
+2. Conventional Deadlift [deadlift] 4x8 rest 90s load 95 kg warm-ups 0 role H slot hingeHeavy@1:1
+3. Hack Squat [hack_squat] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot quadFollow@1:2
+4. Romanian Deadlift [romanian_deadlift] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot hingeFollow@1:3
+5. Calf Raises [calf_raises] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot calf@1:4
+Weekly owner sets: anterior_deltoids 4, biceps 3, calves 3, hamstrings 7, lateral_deltoids 3, lats 7, pectorals 4, quadriceps 7, triceps 3
+Region line: Chest 4 · Back 11 · Shoulders 15 · Arms 17 · Legs 17
+R05: unresolved; errors none; warnings 15
+
+## 3-day Auto — policy weekly-20261104-v4 strategy balanced-v1:3 status feasible
+### Mon Full Body (Squat/Bench) — 19 sets, about 43 min (budget 60); programme feasible; R05 unresolved
+1. Barbell Bench Press [barbell_bench_press] 4x5 rest 180s load 97.5 kg warm-ups 3 role S slot bench@0:0
+2. Dumbbell Flyes [dumbbell_flyes] 2x12 rest 55s load 0 kg warm-ups 0 role iso slot fly@0:1
+3. Barbell Back Squat [squat] 4x5 rest 180s load 90 kg warm-ups 0 role S slot squat@0:2
+4. Hack Squat [hack_squat] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot quadFollow@0:3
+5. Lateral Raises [lateral_raises] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot lateral@0:4
+6. Tricep Pushdown [tricep_pushdown] 3x12 rest 55s load 40 kg warm-ups 0 role iso slot pushdown@0:5
+### Tue Full Body (Hinge/Shoulders) — 20 sets, about 48 min (budget 60); programme feasible; R05 unresolved
+1. Barbell Row [barbell_row] 4x5 rest 180s load 70 kg warm-ups 3 role S slot row-heavy@1:0
+2. Lat Pulldown [lat_pulldown] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot pulldown@1:1
+3. Conventional Deadlift [deadlift] 4x5 rest 180s load 100 kg warm-ups 0 role S slot deadlift@1:2
+4. Romanian Deadlift [romanian_deadlift] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot hingeFollow@1:3
+5. Barbell Curl [barbell_curl] 3x12 rest 55s load 25 kg warm-ups 0 role iso slot curl@1:4
+6. Calf Raises [calf_raises] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot calf@1:5
+### Wed Full Body (Squat/Chest) — 23 sets, about 53 min (budget 60); programme feasible; R05 unresolved
+1. Barbell Bench Press [barbell_bench_press] 4x8 rest 90s load 90 kg warm-ups 3 role H slot bench@2:0
+2. Pull-ups [pull_ups] 4x5 rest 180s load 0 kg warm-ups 0 role S slot pullUp@2:1
+3. Barbell Back Squat [squat] 4x8 rest 90s load 85 kg warm-ups 0 role H slot squat@2:2
+4. Romanian Deadlift [romanian_deadlift] 4x8 rest 90s load 0 kg warm-ups 0 role H slot hingeHeavy@2:3
+5. Overhead Press [overhead_press] 4x5 rest 180s load 85 kg warm-ups 0 role S slot ohp@2:4
+6. Face Pulls [face_pulls] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot face@2:5
+Weekly owner sets: anterior_deltoids 4, biceps 3, calves 3, hamstrings 11, lateral_deltoids 3, lats 11, pectorals 10, quadriceps 11, rear_deltoids 3, triceps 3
+Region line: Chest 10 · Back 18 · Shoulders 22 · Arms 25 · Legs 25
+R05: unresolved; errors none; warnings 24
+
+## 4-day Auto — policy weekly-20261104-v4 strategy balanced-v1:4 status feasible
+### Mon Upper (Chest/Back) — 19 sets, about 43 min (budget 60); programme feasible; R05 unresolved
+1. Barbell Bench Press [barbell_bench_press] 4x5 rest 180s load 97.5 kg warm-ups 3 role S slot bench@0:0
+2. Dumbbell Flyes [dumbbell_flyes] 2x12 rest 55s load 0 kg warm-ups 0 role iso slot fly@0:1
+3. Barbell Row [barbell_row] 4x5 rest 180s load 70 kg warm-ups 0 role S slot row-heavy@0:2
+4. Lat Pulldown [lat_pulldown] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot pulldown@0:3
+5. Lateral Raises [lateral_raises] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot lateral@0:4
+6. Tricep Pushdown [tricep_pushdown] 3x12 rest 55s load 40 kg warm-ups 0 role iso slot pushdown@0:5
+### Tue Lower (Squat) — 17 sets, about 45 min (budget 60); programme feasible; R05 unresolved
+1. Barbell Back Squat [squat] 4x5 rest 180s load 90 kg warm-ups 3 role S slot squat@1:0
+2. Hack Squat [hack_squat] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot quadFollow@1:1
+3. Sumo Deadlift [sumo_deadlift] 4x8 rest 90s load 0 kg warm-ups 0 role H slot hingeHeavy@1:2
+4. Romanian Deadlift [romanian_deadlift] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot hingeFollow@1:3
+5. Calf Raises [calf_raises] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot calf@1:4
+### Wed Upper (Shoulders/Back) — 23 sets, about 51 min (budget 60); programme feasible; R05 unresolved
+1. Barbell Bench Press [barbell_bench_press] 4x8 rest 90s load 90 kg warm-ups 3 role H slot bench@2:0
+2. Cable Chest Flyes [cable_chest_flyes] 2x12 rest 55s load 0 kg warm-ups 0 role iso slot fly@2:1
+3. Overhead Press [overhead_press] 4x5 rest 180s load 85 kg warm-ups 0 role S slot ohp@2:2
+4. Pull-ups [pull_ups] 4x5 rest 180s load 0 kg warm-ups 0 role S slot pullUp@2:3
+5. T-Bar Row [t_bar_row] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot row-follow@2:4
+6. Barbell Curl [barbell_curl] 3x12 rest 55s load 25 kg warm-ups 0 role iso slot curl@2:5
+7. Face Pulls [face_pulls] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot face@2:6
+### Thu Lower B (Deadlift) — 17 sets, about 45 min (budget 60); programme feasible; R05 unresolved
+1. Conventional Deadlift [deadlift] 4x5 rest 180s load 100 kg warm-ups 3 role S slot deadlift@3:0
+2. Romanian Deadlift [romanian_deadlift] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot hingeFollow@3:1
+3. Leg Press [leg_press] 4x8 rest 90s load 0 kg warm-ups 0 role H slot quadHeavy@3:2
+4. Walking Lunges [lunges] 3x9 rest 90s load 0 kg warm-ups 0 role acc slot quadFollow@3:3
+5. Calf Raises [calf_raises] 3x12 rest 55s load 0 kg warm-ups 0 role iso slot calf@3:4
+Weekly owner sets: anterior_deltoids 4, biceps 3, calves 6, hamstrings 14, lateral_deltoids 3, lats 14, pectorals 12, quadriceps 14, rear_deltoids 3, triceps 3
+Region line: Chest 12 · Back 21 · Shoulders 22 · Arms 25 · Legs 34
+R05: unresolved; errors none; warnings 42

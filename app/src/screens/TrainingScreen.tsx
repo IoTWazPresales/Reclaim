@@ -69,6 +69,7 @@ import GuidedPrepScreen from '@/components/training/GuidedPrepScreen';
 import WeekView from '@/components/training/WeekView';
 import WeeklyProgrammeReview from '@/components/training/WeeklyProgrammeReview';
 import FourWeekPreview from '@/components/training/FourWeekPreview';
+import { formatEstimatedDuration } from '@/components/training/uiFormat';
 import TrainingAnalyticsScreen from './training/TrainingAnalyticsScreen';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 import type { DrawerParamList } from '@/navigation/types';
@@ -1466,7 +1467,7 @@ export default function TrainingScreen() {
                           marginBottom: appTheme.spacing.sm,
                         }}
                       >
-                        ~{nextSession.plan.estimatedDurationMinutes} min
+                        {formatEstimatedDuration(nextSession.plan.estimatedDurationMinutes)}
                       </Text>
                     ) : null}
 

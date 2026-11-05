@@ -40,6 +40,11 @@ export function formatDuration(minutes: number): string {
   return `${Math.round(minutes)} min`;
 }
 
+/** Planned session length is an estimate: "about 45 min". */
+export function formatEstimatedDuration(minutes: number): string {
+  return `about ${formatDuration(minutes)}`;
+}
+
 /**
  * Format weight × reps for display: "60kg × 8", "Bodyweight × 12".
  * A 0×0 entry is a skipped set, not a lift.

@@ -1,3 +1,7 @@
+## 2026-11-05 - Weekly policy v5 (N-0073)
+
+New builds use `weekly-20261105-v5`: v5 tables in one section of weeklyProgrammePolicy.ts (hinge lists, DEADLIFT_VARIANT_IDS only in the deadlift slot, core requirements, two-day full body and Upper/Lower, in-day order tiers, 120 s hypertrophy rest, pull-ups strength only with an entered weighted variant). No session minute or total-set cap for v5 (D-P2-01 amendment, Warren-approved 2026-11-05); per exercise <=5 and per owner <=10 remain; the realistic duration estimate is display only. `repsPerSide` catalogue field shows "N per side"; mid-session replacements inherit the planned reps, range and rest. v2/v3/v4 are frozen and replay byte-identical. Policy and citations: docs/training/ROUTINE_AUDIT.md (Weekly policy v5, 2026-11-05); evidence: docs/training/recovery/evidence/weekly-policy-v5-20261105.md.
+
 ## 2026-11-04 - Split preference (N-0072)
 
 Setup offers Auto / Full body / Upper-Lower where an approved policy exists (strength only). Two-day Upper/Lower is the new strategy `balanced-v1:2-upper-lower`; other choices select existing balanced policies. Stored in the existing preferences JSON; Auto output unchanged. Policy: docs/training/ROUTINE_AUDIT.md (Split preference, 2026-11-04).

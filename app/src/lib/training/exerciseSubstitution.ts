@@ -39,7 +39,22 @@ export function replacementCandidates(item: TrainingSessionItemRow, profile: Tra
   return ordered.filter((ex, index) => ordered.findIndex(other => other.id === ex.id) === index && !replacementEligibility(item, ex, profile).length);
 }
 
-/** Explicit session-only replacement. Frozen set count stays; targets use existing engine policies. */
+/** The replaced item's planned rep range (its exposure), when it carries a valid one. */
+function plannedRepRange(item: TrainingSessionItemRow): [number, number] | undefined {
+  const range = item.planned.decisionTrace?.prescriptionContext?.repRange;
+  return Array.isArray(range) && range.length === 2 && range.every(value => Number.isInteger(value) && value > 0) && range[0] <= range[1]
+    ? [range[0], range[1]] : undefined;
+}
+
+/**
+ * Explicit session-only replacement. Frozen set count stays. A rep-based
+ * replacement inherits the replaced item's planned reps, rep range and rest
+ * (its exposure, e.g. a strength day's 5 reps / 180 s); the load is resolved
+ * for the new exercise at those reps. When the replacement has its own earned
+ * progression decision inside that range, its reps/load pair is kept together
+ * (2026-11-03 combined decision). Other prescription units keep the existing
+ * engine targets.
+ */
 export function prescribeReplacement(item: TrainingSessionItemRow, replacement: Exercise, profile: TrainingProfileSnapshot): TrainingSessionItemRow['planned'] {
   const reasons = replacementEligibility(item, replacement, profile);
   if (reasons.length) throw new Error(reasons.join(' '));
@@ -57,8 +72,11 @@ export function prescribeReplacement(item: TrainingSessionItemRow, replacement: 
     lastSessionPerformance: profile.lastSessionPerformance,
     recentSessionPerformance: profile.recentSessionPerformance,
   };
-  const repRange = getRepRange(priority, profile.goals);
-  const resolved = suggestPrescription({ exercise: replacement, plannedReps: getExerciseTargetReps(replacement, repRange), priority,
+  const inherit = loading.prescriptionType === 'reps' && item.planned.sets.length > 0 &&
+    item.planned.sets.every(set => Number.isInteger(set.targetReps) && set.targetReps > 0 && Number.isFinite(set.restSeconds) && set.restSeconds >= 0);
+  const repRange = (inherit ? plannedRepRange(item) : undefined) ?? getRepRange(priority, profile.goals);
+  const plannedReps = inherit ? item.planned.sets[0].targetReps : getExerciseTargetReps(replacement, repRange);
+  const resolved = suggestPrescription({ exercise: replacement, plannedReps, priority, repRange,
     goalWeights: profile.goals, userState, plannedSetCount: item.planned.sets.length });
   const hasHistory = !!resolved.progression || isQualifiedPerformance(replacement, profile.lastSessionPerformance?.[replacement.id]) &&
     profile.performanceHistory?.status === 'available' && profile.performanceHistory.requestedExerciseIds.includes(replacement.id);
@@ -70,9 +88,9 @@ export function prescribeReplacement(item: TrainingSessionItemRow, replacement: 
     ? 'Uncalibrated replacement: enter a load for this exercise. No weight was transferred from the previous exercise.'
     : resolved.reason ?? (bodyweight ? 'Bodyweight replacement; no external load transferred.' : 'Uses this replacement exercise own baseline.');
   return {
-    sets: item.planned.sets.map(set => ({ setIndex: set.setIndex, targetReps, suggestedWeight,
+    sets: item.planned.sets.map(set => ({ setIndex: set.setIndex, targetReps: inherit && !resolved.progression ? set.targetReps : targetReps, suggestedWeight,
       ...(requiresLoadConfirmation(replacement, suggestedWeight, userState) ? { loadRequiresConfirmation: true } : {}),
-      restSeconds: getRestSeconds(priority, profile.goals) })),
+      restSeconds: inherit ? set.restSeconds : getRestSeconds(priority, profile.goals) })),
     priority, intents: [...replacement.intents],
     decisionTrace: {
       intent: slotIntents(item), selectionReason: 'User selected an eligible replacement for this session.',

@@ -370,7 +370,8 @@
     "difficulty": "beginner",
     "contraindications": ["knee_injury"],
     "substitutionTags": ["knee_dominant", "legs"],
-    "unilateral": true
+    "unilateral": true,
+    "repsPerSide": true
   },
   {
     "id": "bulgarian_split_squat",
@@ -384,7 +385,8 @@
     "difficulty": "intermediate",
     "contraindications": ["knee_injury"],
     "substitutionTags": ["knee_dominant", "legs"],
-    "unilateral": true
+    "unilateral": true,
+    "repsPerSide": true
   },
   {
     "id": "good_mornings",
@@ -450,7 +452,8 @@
     "difficulty": "beginner",
     "contraindications": ["lower_back_injury"],
     "substitutionTags": ["trunk_stability", "core"],
-    "unilateral": false
+    "unilateral": false,
+    "repsPerSide": true
   },
   {
     "id": "russian_twist",
@@ -660,7 +663,8 @@
     "difficulty": "intermediate",
     "contraindications": ["lower_back_injury"],
     "substitutionTags": ["horizontal_pull", "back"],
-    "unilateral": true
+    "unilateral": true,
+    "repsPerSide": true
   },
   {
     "id": "chin_ups",
@@ -765,7 +769,8 @@
     "difficulty": "beginner",
     "contraindications": ["knee_injury"],
     "substitutionTags": ["knee_dominant", "legs"],
-    "unilateral": true
+    "unilateral": true,
+    "repsPerSide": true
   },
   {
     "id": "reverse_lunges",
@@ -778,7 +783,8 @@
     "difficulty": "beginner",
     "contraindications": ["knee_injury"],
     "substitutionTags": ["knee_dominant", "legs"],
-    "unilateral": true
+    "unilateral": true,
+    "repsPerSide": true
   },
   {
     "id": "sumo_deadlift",
@@ -817,7 +823,8 @@
     "difficulty": "advanced",
     "contraindications": ["lower_back_injury"],
     "substitutionTags": ["hip_hinge", "posterior_chain"],
-    "unilateral": true
+    "unilateral": true,
+    "repsPerSide": true
   },
   {
     "id": "glute_ham_raise",
@@ -936,7 +943,8 @@
     "difficulty": "beginner",
     "contraindications": [],
     "substitutionTags": ["elbow_flexion", "biceps"],
-    "unilateral": true
+    "unilateral": true,
+    "repsPerSide": true
   },
   {
     "id": "side_plank",
@@ -975,7 +983,8 @@
     "difficulty": "intermediate",
     "contraindications": ["lower_back_injury"],
     "substitutionTags": ["trunk_stability", "core"],
-    "unilateral": false
+    "unilateral": false,
+    "repsPerSide": true
   },
   {
     "id": "ab_wheel_rollout",
@@ -1001,7 +1010,8 @@
     "difficulty": "beginner",
     "contraindications": [],
     "substitutionTags": ["carry", "conditioning"],
-    "unilateral": true
+    "unilateral": true,
+    "repsPerSide": true
   },
   {
     "id": "waiters_walk",
@@ -1014,7 +1024,8 @@
     "difficulty": "intermediate",
     "contraindications": ["shoulder_injury"],
     "substitutionTags": ["carry", "conditioning"],
-    "unilateral": true
+    "unilateral": true,
+    "repsPerSide": true
   },
   {
     "id": "jumping_jacks",
@@ -1144,7 +1155,8 @@
     "difficulty": "advanced",
     "contraindications": ["shoulder_impingement", "lower_back_injury"],
     "substitutionTags": ["conditioning", "full_body"],
-    "unilateral": true
+    "unilateral": true,
+    "repsPerSide": true
   },
   {
     "id": "clean_and_press",
@@ -1209,7 +1221,8 @@
     "difficulty": "advanced",
     "contraindications": ["knee_injury"],
     "substitutionTags": ["knee_dominant", "legs"],
-    "unilateral": true
+    "unilateral": true,
+    "repsPerSide": true
   },
   {
     "id": "cossack_squat",
@@ -1222,7 +1235,8 @@
     "difficulty": "intermediate",
     "contraindications": ["knee_injury", "hip_injury"],
     "substitutionTags": ["knee_dominant", "legs"],
-    "unilateral": true
+    "unilateral": true,
+    "repsPerSide": true
   },
   {
     "id": "calf_raises",
@@ -1326,7 +1340,8 @@
     "difficulty": "intermediate",
     "contraindications": ["lower_back_injury"],
     "substitutionTags": ["horizontal_pull", "back"],
-    "unilateral": true
+    "unilateral": true,
+    "repsPerSide": true
   },
   {
     "id": "chest_supported_t_bar_row",
@@ -1365,7 +1380,8 @@
     "difficulty": "advanced",
     "contraindications": ["shoulder_impingement"],
     "substitutionTags": ["vertical_pull", "back"],
-    "unilateral": true
+    "unilateral": true,
+    "repsPerSide": true
   },
   {
     "id": "weighted_pull_ups",
@@ -1417,7 +1433,8 @@
     "difficulty": "intermediate",
     "contraindications": ["shoulder_impingement"],
     "substitutionTags": ["vertical_press", "shoulders"],
-    "unilateral": true
+    "unilateral": true,
+    "repsPerSide": true
   },
   {
     "id": "bradford_press",

@@ -20,11 +20,11 @@ function item(id = 'barbell_bench_press'): TrainingSessionItemRow {
 }
 
 describe('safe exercise-specific substitution', () => {
-  it('barbell to dumbbell never transfers total-bar weight or old repetitions', () => {
+  it('barbell to dumbbell never transfers total-bar weight; reps and rest come from the planned exposure (2026-11-05)', () => {
     const source = item(); const before = JSON.stringify(source);
     const result = prescribeReplacement(source, ex('dumbbell_bench_press'), profile);
     expect(result.sets).toHaveLength(3);
-    expect(result.sets.every(s => s.suggestedWeight === 0 && s.targetReps === getExerciseTargetReps(ex('dumbbell_bench_press'), getRepRange('primary', profile.goals)))).toBe(true);
+    expect(result.sets.every(s => s.suggestedWeight === 0 && s.targetReps === 99 && s.restSeconds === 1)).toBe(true);
     expect(result.decisionTrace).toMatchObject({ loadCalibration: 'uncalibrated', loadDisplayMode: 'per_dumbbell', replacementScope: 'session', originalPlanned: source.planned });
     expect(result.decisionTrace.progressionReason).toContain('enter a load');
     expect(JSON.stringify(source)).toBe(before);
@@ -36,9 +36,9 @@ describe('safe exercise-specific substitution', () => {
     expect(a.sets[0].suggestedWeight).toBeGreaterThan(0);
     expect(a.sets[0].suggestedWeight).toBeLessThan(30);
   });
-  it('machine to bodyweight clears external kg and recalculates reps', () => {
+  it('machine to bodyweight clears external kg and keeps the planned reps', () => {
     const result = prescribeReplacement(item('lat_pulldown'), ex('pull_ups'), profile);
-    expect(result.sets.every(s => s.suggestedWeight === 0 && s.targetReps !== 99)).toBe(true);
+    expect(result.sets.every(s => s.suggestedWeight === 0 && s.targetReps === 99)).toBe(true);
     expect(result.decisionTrace.loadCalibration).toBe('bodyweight');
   });
   it('replacement-specific 21s and time hold use the engine prescription', () => {
