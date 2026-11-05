@@ -8,9 +8,9 @@ import { reclaimPrimaryCapsuleButton, reclaimTertiaryOutlineCapsuleButton } from
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { getExerciseById } from '@/lib/training/engine';
 import type { SessionPlan, MovementIntent, Exercise } from '@/lib/training/types';
-import { formatExercisePreviewLine } from '@/lib/training/loadDisplayFormat';
+import { formatExercisePreviewLine, formatRepTarget } from '@/lib/training/loadDisplayFormat';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
-import { formatDuration } from './uiFormat';
+import { formatEstimatedDuration } from './uiFormat';
 import ExerciseDetailsModal from './ExerciseDetailsModal';
 import { PreviewProgrammeReview, previewExerciseIssues, type PreviewDiagnosticLocation } from './SessionPreviewProgrammeReview';
 
@@ -192,7 +192,7 @@ export default function SessionPreviewModal({
                     Duration
                   </Text>
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurface, fontWeight: '600', flex: 1 }}>
-                    ~{formatDuration(plan.estimatedDurationMinutes)}
+                    {formatEstimatedDuration(plan.estimatedDurationMinutes)}
                   </Text>
                 </View>
                 {weeklySetsLine ? (
@@ -239,7 +239,7 @@ export default function SessionPreviewModal({
                         </Text>
                         <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
                           {needsWeight
-                            ? `${ex.plannedSets.length} sets · ${ex.plannedSets[0]?.targetReps ?? '—'} reps · weight confirmation required`
+                            ? `${ex.plannedSets.length} sets · ${ex.plannedSets[0] ? formatRepTarget(exercise, ex.plannedSets[0].targetReps) : '— reps'} · weight confirmation required`
                             : formatExercisePreviewLine(ex, exercise)}
                         </Text>
                         <Text variant="bodySmall" style={{ color: theme.colors.primary, marginTop: appTheme.spacing.xs }}>

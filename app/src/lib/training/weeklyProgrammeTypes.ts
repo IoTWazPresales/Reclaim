@@ -4,14 +4,18 @@ import type { Dose, LoadPolicy } from './balancedHypertrophy';
 export const LEGACY_WEEKLY_POLICY_VERSION = 'weekly-20261014-v2' as const;
 /** D-P2-01 caps and load precedence; dose blend replayed exactly for saved programmes. */
 export const V3_WEEKLY_POLICY_VERSION = 'weekly-20261030-v3' as const;
-/** New builds: per-exposure dose (slot priority, 0.05 goal shares, mixed-goal exposures). */
-export const WEEKLY_POLICY_VERSION = 'weekly-20261104-v4' as const;
-export type WeeklyPolicyVersion = typeof WEEKLY_POLICY_VERSION | typeof V3_WEEKLY_POLICY_VERSION | typeof LEGACY_WEEKLY_POLICY_VERSION;
-export const supportsWeeklyPolicy = (version: string) => version === WEEKLY_POLICY_VERSION || version === V3_WEEKLY_POLICY_VERSION || version === LEGACY_WEEKLY_POLICY_VERSION;
-/** v3 and v4 share session caps, D-P2-01 load precedence and progression checks. */
-export const usesCappedWeeklyPolicy = (version: string | undefined) => version === WEEKLY_POLICY_VERSION || version === V3_WEEKLY_POLICY_VERSION;
-/** Only v4 declares a dose per exposure; earlier versions divide the weekly target evenly. */
-export const usesExposureDosePolicy = (version: string | undefined) => version === WEEKLY_POLICY_VERSION;
+/** Per-exposure dose (slot priority, 0.05 goal shares, mixed-goal exposures). Frozen for saved programmes. */
+export const V4_WEEKLY_POLICY_VERSION = 'weekly-20261104-v4' as const;
+/** New builds: v5 tables (hinge slots, in-day order, core), no session time/total cap (ROUTINE_AUDIT.md, weekly policy v5 2026-11-05). */
+export const WEEKLY_POLICY_VERSION = 'weekly-20261105-v5' as const;
+export type WeeklyPolicyVersion = typeof WEEKLY_POLICY_VERSION | typeof V4_WEEKLY_POLICY_VERSION | typeof V3_WEEKLY_POLICY_VERSION | typeof LEGACY_WEEKLY_POLICY_VERSION;
+export const supportsWeeklyPolicy = (version: string) => version === WEEKLY_POLICY_VERSION || version === V4_WEEKLY_POLICY_VERSION || version === V3_WEEKLY_POLICY_VERSION || version === LEGACY_WEEKLY_POLICY_VERSION;
+/** v3, v4 and v5 share D-P2-01 load precedence, progression checks and the per-exercise / per-owner caps. */
+export const usesCappedWeeklyPolicy = (version: string | undefined) => version === WEEKLY_POLICY_VERSION || version === V4_WEEKLY_POLICY_VERSION || version === V3_WEEKLY_POLICY_VERSION;
+/** v4 and v5 declare a dose per exposure; earlier versions divide the weekly target evenly. */
+export const usesExposureDosePolicy = (version: string | undefined) => version === WEEKLY_POLICY_VERSION || version === V4_WEEKLY_POLICY_VERSION;
+/** v5 only: v5 objective tables, in-day order, core, realistic duration, and no session minute/total/per-priority cap. */
+export const usesV5WeeklyPolicy = (version: string | undefined) => version === WEEKLY_POLICY_VERSION;
 /** Mixed strength + muscle goals: the role a heavy exposure plays in the week (v4). */
 export type ExposureRole = 'strength' | 'hypertrophy';
 export type ProgrammeIssue = {

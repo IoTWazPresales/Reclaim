@@ -6,7 +6,7 @@ import { validateProgrammeWeek, validateTrainingProgramme, type ProgrammeWeekDec
 import { buildFourWeekPlan } from '../programPlanner';
 import { defineWeeklyRequirements } from '../weeklyProgramme';
 import { buildProgramDaySession } from '../buildProgramDaySession';
-import { V3_WEEKLY_POLICY_VERSION, WEEKLY_POLICY_VERSION, type AllocatedSlot, type WeeklyRequirement } from '../weeklyProgrammeTypes';
+import { V3_WEEKLY_POLICY_VERSION, V4_WEEKLY_POLICY_VERSION, WEEKLY_POLICY_VERSION, type AllocatedSlot, type WeeklyRequirement } from '../weeklyProgrammeTypes';
 import { getExerciseLoadingProfile } from '../exerciseLoadingProfile';
 import { BALANCED_WEEKLY_OBJECTIVES } from '../weeklyProgrammePolicy';
 import type { Exercise, SessionPlan, TrainingProfileSnapshot } from '../types';
@@ -371,16 +371,17 @@ const V4_LITERAL_DOSE = {
   isolation: { setCount: 2, reps: 12, restSeconds: 55, repRange: [9, 16] as [number, number] },
   support: { setCount: 3, reps: 12, restSeconds: 55, repRange: [9, 16] as [number, number] },
 };
+// Frozen v4 integration (saved programmes). v5 literal acceptance lives in programmeAcceptance.test.ts (R10 v5 oracle).
 function publicProgramme(n: number, mode: 'strength' | 'running' | 'hybrid', equipment = completeEquipment) {
   const snapshot = { ...clone(profile), trainingMode: mode, equipment_access: equipment };
-  const plan = buildFourWeekPlan({ ...snapshot, constraints: { ...snapshot.constraints, trainingMode: mode } } as unknown as TrainingProfileRow, Array.from({ length: n }, (_, index) => index + 1));
+  const plan = buildFourWeekPlan({ ...snapshot, constraints: { ...snapshot.constraints, trainingMode: mode } } as unknown as TrainingProfileRow, Array.from({ length: n }, (_, index) => index + 1), new Date(), { policyVersion: V4_WEEKLY_POLICY_VERSION });
   const exposurePolicies: ProgrammeWeekDeclaration['exposurePolicies'] = mode === 'running' ? {} : Object.fromEntries(BALANCED_WEEKLY_OBJECTIVES[n].flatMap((objective) => objective.positions.map(([ordinal, index], position) => {
     const first = position === objective.positions.reduce((best, [o], at) => o < objective.positions[best][0] ? at : best, 0);
     const role = objective.slot.priority !== 'primary' ? undefined : objective.slot.load === 'own' && first ? 'strength' as const : 'hypertrophy' as const;
     const dose = role ? V4_LITERAL_DOSE[role] : objective.slot.dose === 'support' ? V4_LITERAL_DOSE.support : V4_LITERAL_DOSE[objective.slot.priority as 'accessory' | 'isolation'];
     return [`${ordinal}:${index}`, { intent: objective.slot.intent, priority: objective.slot.priority, loadPolicy: objective.slot.load, approvedExerciseIds: [...objective.slot.candidates], selectionKind: getExerciseLoadingProfile(catalog.find((exercise) => exercise.id === objective.slot.candidates[0])!).compoundClassification === 'isolation' ? 'isolation' : 'primary_role', ...dose, ...(role ? { exposure: role } : {}) }];
   })));
-  const declarations: ProgrammeWeekDeclaration[] = plan.weeks.map((week) => ({ weekIndex: week.weekIndex, policyVersion: WEEKLY_POLICY_VERSION, strategyId: mode === 'running' ? 'running-v1' : `balanced-v1:${n}`, policyStatus: 'accepted', requirements: mode === 'running' ? [] : defineWeeklyRequirements(n, snapshot), exposurePolicies, calendar: clone(Object.values(week.days)), runRequirement: clone(week.compilation!.runRequirement), provenance }));
+  const declarations: ProgrammeWeekDeclaration[] = plan.weeks.map((week) => ({ weekIndex: week.weekIndex, policyVersion: V4_WEEKLY_POLICY_VERSION, strategyId: mode === 'running' ? 'running-v1' : `balanced-v1:${n}`, policyStatus: 'accepted', requirements: mode === 'running' ? [] : defineWeeklyRequirements(n, snapshot, V4_WEEKLY_POLICY_VERSION), exposurePolicies, calendar: clone(Object.values(week.days)), runRequirement: clone(week.compilation!.runRequirement), provenance }));
   const weeks: GeneratedProgrammeWeek[] = plan.weeks.map((week) => ({ weekIndex: week.weekIndex, allocation: week.compilation!, sessions: Object.entries(week.days).flatMap(([dayKey, day]) => {
     const session = buildProgramDaySession({ label: day.label, template_key: day.template, intents: day.intents, allocation: day.allocation, weekIndex: week.weekIndex }, snapshot);
     const entries: GeneratedProgrammeWeek['sessions'][number][] = [{ dayKey, kind: day.template === 'run' ? 'run' : 'strength', plan: session }];

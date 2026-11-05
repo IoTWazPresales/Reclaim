@@ -34,11 +34,14 @@ export function programme(extra: Partial<TrainingSetupDraft> = {}) {
 
 // Literal requirements from ROUTINE_AUDIT.md, Balanced week (2026-10-09).
 // No defineWeeklyRequirements/policy-table import and no generated targets as oracle.
-// New builds use the v4 oracle section; the v3 section remains for saved-programme replay.
-const v4 = oracle.balancedHalfMuscleHalfStrengthV4;
-const majorSets = v4.weeklySetsPerMajorOwner as Record<string, Record<string, number>>;
+// New builds use the v5 oracle section; the v4 and v3 sections remain for saved-programme replay.
+const current = oracle.balancedHalfMuscleHalfStrengthV5;
+const majorSets = current.weeklySetsPerMajorOwner as Record<string, Record<string, number>>;
+const coreSets = current.weeklyCoreSets as Record<string, number>;
 const majorOwners = oracle.balancedHalfMuscleHalfStrength.majorOwners;
-type V4Role = keyof typeof v4.dose;
+type Role = keyof typeof current.dose;
+/** Literal v5 in-day order (strength, hypertrophy, accessory, isolation/support, core). */
+const orderRank: Record<Role, number> = { strength: 0, hypertrophy: 1, accessory: 2, isolation: 3, support: 3, core: 4 };
 const region = (owner: string) => ({ upper_pectorals: 'pectorals', lower_pectorals: 'pectorals', gastrocnemius: 'calves', soleus: 'calves', upper_traps: 'traps' }[owner] ?? owner);
 export function inspectBalanced(f: ReturnType<typeof programme>, weekIndex: number, proposals = programmeWeekProposal(f.plan, weekIndex, f.snapshot)) {
   const errors: string[] = [];
@@ -52,9 +55,11 @@ export function inspectBalanced(f: ReturnType<typeof programme>, weekIndex: numb
     if (!session || !session.exercises.length) { errors.push('empty workout'); continue; }
     const slots = week.days[day].allocation!.slots;
     if (session.exercises.length !== slots.length) errors.push('incomplete workout');
-    if (session.exercises.reduce((n, e) => n + e.plannedSets.length, 0) > 24) errors.push('set budget');
-    if (!(session.estimatedDurationMinutes > 0 && session.estimatedDurationMinutes <= 60)) errors.push('time budget');
+    // v5: no session total-set or time cap; the estimate must still be a finite positive number.
+    if (!(Number.isFinite(session.estimatedDurationMinutes) && session.estimatedDurationMinutes > 0)) errors.push('time estimate');
     const seen = new Set<string>();
+    const ownerSession: Record<string, number> = {};
+    let lastRank = -1;
     for (const [index, item] of session.exercises.entries()) {
       if (seen.has(item.exerciseId)) errors.push('duplicate exercise');
       seen.add(item.exerciseId);
@@ -62,16 +67,22 @@ export function inspectBalanced(f: ReturnType<typeof programme>, weekIndex: numb
       if (!slot || slot.exerciseId !== item.exerciseId) { errors.push('delivered identity'); continue; }
       // Allocation ownership is used only to locate delivered work, never its required quantity.
       const actual = catalog.find(e => e.id === item.exerciseId)!;
-      const owner = region(actual.musclesPrimary[0]);
-      if (owner !== region(slot.owner)) errors.push('owner mismatch');
+      // v5 lists hip thrust (glutes first) for the hamstring follow-up, so the owner must be one of the lift's primaries.
+      const owner = region(slot.owner);
+      if (!actual.musclesPrimary.map(region).includes(owner)) errors.push('owner mismatch');
+      ownerSession[owner] = (ownerSession[owner] ?? 0) + item.plannedSets.length;
+      if (item.plannedSets.length > 5 || ownerSession[owner] > 10) errors.push('session cap');
       counts[owner] = (counts[owner] ?? 0) + item.plannedSets.length;
       (exposures[owner] ??= new Set()).add(day);
       // Role from the literal prose rule; the allocation only locates the exposure.
       const firstOfRequirement = !seenRequirement.has(slot.requirementId);
       seenRequirement.add(slot.requirementId);
-      const role: V4Role = slot.dose === 'heavy' ? (slot.loadPolicy === 'own' && firstOfRequirement ? 'strength' : 'hypertrophy')
-        : slot.dose === 'support' ? 'support' : slot.priority === 'accessory' ? 'accessory' : 'isolation';
-      const expected = v4.dose[role];
+      const bodyweightLead = current.bodyweightLeadLiftsWithoutAddedLoad.includes(item.exerciseId);
+      const role: Role = slot.dose === 'heavy' ? (slot.loadPolicy === 'own' && firstOfRequirement && !bodyweightLead ? 'strength' : 'hypertrophy')
+        : slot.dose === 'support' ? (owner === 'core' ? 'core' : 'support') : slot.priority === 'accessory' ? 'accessory' : 'isolation';
+      if (orderRank[role] < lastRank) errors.push('order');
+      lastRank = orderRank[role];
+      const expected = current.dose[role];
       if (item.plannedSets.length !== expected.sets) errors.push('dose');
       const expectedReps = expected.reps;
       const expectedRest = expected.restSeconds;
@@ -84,14 +95,15 @@ export function inspectBalanced(f: ReturnType<typeof programme>, weekIndex: numb
   }
   for (const owner of majorOwners) {
     if (counts[owner] !== majorSets[f.selectedWeekdaysJs.length][owner]) errors.push(`weekly ${owner}`);
-    if (exposures[owner]?.size !== (f.selectedWeekdaysJs.length === 2 ? 1 : 2)) errors.push(`exposure ${owner}`);
+    if (exposures[owner]?.size !== current.majorOwnerExposuresPerWeek) errors.push(`exposure ${owner}`);
   }
+  if (counts.core !== coreSets[f.selectedWeekdaysJs.length]) errors.push('weekly core');
   for (const owner of oracle.balancedHalfMuscleHalfStrength.supportOwners) {
     if (counts[owner] !== undefined && ![3, 6].includes(counts[owner])) errors.push(`direct support ${owner}`);
   }
   if (f.selectedWeekdaysJs.length === 5) for (const [ordinal, day] of f.selectedWeekdaysJs.entries()) {
     const first = proposals.get(day)?.exercises[0];
-    if (!first || region(catalog.find(e => e.id === first.exerciseId)!.musclesPrimary[0]) !== oracle.balancedHalfMuscleHalfStrength.requiredFirstOwnersByFiveDayOrdinal[ordinal]) errors.push('five-day coherence');
+    if (!first || region(catalog.find(e => e.id === first.exerciseId)!.musclesPrimary[0]) !== current.requiredFirstOwnersByFiveDayOrdinal[ordinal]) errors.push('five-day coherence');
   }
   return { errors, counts };
 }
@@ -146,7 +158,7 @@ describe('R10 independent whole-programme acceptance', () => {
       // Same lift and set count; the first exposure trains strength, the repeat hypertrophy.
       expect(chest.map(e => e.plannedSets.length)).toEqual([3, 3]);
       expect(chest.map(e => e.plannedSets[0].targetReps)).toEqual([5, 8]);
-      expect(chest.map(e => e.plannedSets[0].restSeconds)).toEqual([180, 90]);
+      expect(chest.map(e => e.plannedSets[0].restSeconds)).toEqual([180, 120]);
       captures.push({ scenario: 'original-five-day', week, totals, sessions: [...proposals] });
     }
   });
@@ -158,7 +170,7 @@ describe('R10 independent whole-programme acceptance', () => {
       if (damage === 'missing') session.exercises.pop();
       if (damage === 'lowered') { session.exercises[0].plannedSets.pop(); f.plan.weeks[0].days[1].allocation!.slots[0].setCount--; }
       if (damage === 'reps') session.exercises[0].plannedSets[0].targetReps = 1;
-      if (damage === 'time') session.estimatedDurationMinutes = 61;
+      if (damage === 'time') session.estimatedDurationMinutes = 0;
       if (damage === 'load') session.exercises[0].plannedSets[0].suggestedWeight = -1;
       if (damage === 'owner') { f.plan.weeks[0].days[1].allocation!.slots[0].owner = 'triceps'; f.plan.weeks[0].compilation!.requirements[0].owner = 'triceps'; }
       expect(inspectBalanced(f, 1, proposals).errors.length).toBeGreaterThan(0);

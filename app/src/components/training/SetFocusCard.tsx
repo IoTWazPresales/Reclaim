@@ -330,7 +330,7 @@ export default function SetFocusCard({
 
         {/* Reps control */}
         <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 6 }}>
-          Reps
+          {exercise.repsPerSide ? 'Reps per side' : 'Reps'}
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: appTheme.spacing.lg, gap: 6 }}>
           <IconButton

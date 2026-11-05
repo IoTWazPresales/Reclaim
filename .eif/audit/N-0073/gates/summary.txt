@@ -1,0 +1,13 @@
+typecheck exit 0
+shard 1 exit 0
+[2m Test Files [22m [1m[32m54 passed[39m[22m[90m (54)[39m
+--- retry after stalled shard 2 (no output after moodOutbox for 12 min; orphaned focused run killed) ---
+shard 2 exit 0
+ Test Files  54 passed (54)
+      Tests  386 passed (386)
+shard 3 exit 0
+ Test Files  53 passed (53)
+      Tests  565 passed (565)
+shard 4 exit 0
+ Test Files  52 passed | 1 skipped (53)
+      Tests  338 passed | 1 skipped (339)

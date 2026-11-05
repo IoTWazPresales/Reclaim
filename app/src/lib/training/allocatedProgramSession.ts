@@ -6,12 +6,15 @@ import { evaluateExerciseEligibility } from './exerciseEligibility';
 import { getWeightStep } from './progression';
 import { warmupSetsForWorkingWeight } from './warmupSets';
 import type { AllocatedProgrammeDay, ProgrammeIssue } from './weeklyProgrammeTypes';
-import { supportsWeeklyPolicy, usesCappedWeeklyPolicy } from './weeklyProgrammeTypes';
+import { supportsWeeklyPolicy, usesCappedWeeklyPolicy, usesV5WeeklyPolicy } from './weeklyProgrammeTypes';
+import { V5_SESSION_CAPS } from './weeklyProgrammePolicy';
+import { estimateSessionMinutes } from './sessionDurationEstimate';
 import { capNewSession } from './sessionCapPolicy';
 import { isBalancedDayStrategyId } from './weeklyProgramme';
 import type { Exercise, ExercisePriority, PlannedExercise, SessionPlan, SessionTemplate, TrainingProfileSnapshot } from './types';
 
-/** Materialize an allocation; v2 withholds over-cap sets with explicit diagnostics. */
+/** Materialize an allocation; v2 withholds over-cap sets with explicit diagnostics.
+ * v5 applies only the per-exercise and per-owner caps and reports a realistic estimate. */
 export function buildAllocatedProgramSession(input: {
   allocation: AllocatedProgrammeDay;
   label: string;
@@ -67,21 +70,28 @@ export function buildAllocatedProgramSession(input: {
       },
     });
   }
-  if (allocation.slots.reduce((total, slot) => total + slot.setCount, 0) > SESSION_SET_CAP ||
-      10 + allocation.slots.reduce((total, slot) => total + (slot.compound ? 8 : 3), 0) > SESSION_MINUTE_CAP) {
+  const v5 = usesV5WeeklyPolicy(allocation.policyVersion);
+  // V5-2: v5 has no session minute or total-set budget (D-P2-01 amendment 2026-11-05).
+  if (!v5 && (allocation.slots.reduce((total, slot) => total + slot.setCount, 0) > SESSION_SET_CAP ||
+      10 + allocation.slots.reduce((total, slot) => total + (slot.compound ? 8 : 3), 0) > SESSION_MINUTE_CAP)) {
     issues.push({ code: 'allocation_budget_exceeded', severity: 'error', message: 'Saved weekly requirements exceed the accepted session budget; no sets were silently trimmed.' });
   }
-  const capped = usesCappedWeeklyPolicy(allocation.policyVersion)
-    ? capNewSession(exercises, undefined, SESSION_MINUTE_CAP, exercises.map(ex => allocation.slots.find(s => s.exerciseId === ex.exerciseId)!.owner), exercises.map(ex => allocation.slots.find(s => s.exerciseId === ex.exerciseId)!.compound ? 8 : 3))
-    : { exercises, issues: [], estimatedDurationMinutes: 10 + allocation.slots.filter(slot => slot.exerciseId).reduce((n, slot) => n + (slot.compound ? 8 : 3), 0) };
+  const ownersOf = (list: PlannedExercise[]) => list.map(ex => allocation.slots.find(s => s.exerciseId === ex.exerciseId)!.owner);
+  const capped = v5
+    ? capNewSession(exercises, undefined, undefined, ownersOf(exercises), undefined, V5_SESSION_CAPS)
+    : usesCappedWeeklyPolicy(allocation.policyVersion)
+      ? capNewSession(exercises, undefined, SESSION_MINUTE_CAP, ownersOf(exercises), exercises.map(ex => allocation.slots.find(s => s.exerciseId === ex.exerciseId)!.compound ? 8 : 3))
+      : { exercises, issues: [], estimatedDurationMinutes: 10 + allocation.slots.filter(slot => slot.exerciseId).reduce((n, slot) => n + (slot.compound ? 8 : 3), 0) };
+  // V5-5: realistic display estimate; earlier versions keep their accepted estimate.
+  const estimatedDurationMinutes = v5 ? estimateSessionMinutes(capped.exercises) : capped.estimatedDurationMinutes;
   issues.push(...capped.issues);
   return annotateLoadConfirmation({
     id: `session_${Date.now()}`, template: input.template, goals: profile.goals,
-    constraints: { availableEquipment: profile.equipment_access, injuries: profile.constraints?.injuries ?? [], forbiddenMovements: (profile.constraints?.forbiddenMovements ?? []) as SessionPlan['constraints']['forbiddenMovements'], preferences: profile.constraints?.preferences, timeBudgetMinutes: SESSION_MINUTE_CAP },
+    constraints: { availableEquipment: profile.equipment_access, injuries: profile.constraints?.injuries ?? [], forbiddenMovements: (profile.constraints?.forbiddenMovements ?? []) as SessionPlan['constraints']['forbiddenMovements'], preferences: profile.constraints?.preferences, timeBudgetMinutes: v5 ? estimatedDurationMinutes : SESSION_MINUTE_CAP },
     userState: { experienceLevel: profile.experienceLevel ?? 'beginner', estimated1RM: profile.baselines, baselineUpdatedAt: profile.baselineUpdatedAt, performanceHistory: profile.performanceHistory, lastSessionPerformance: profile.lastSessionPerformance, recentSessionPerformance: profile.recentSessionPerformance },
     exercises: capped.exercises,
-    // Existing estimate retained; not a proof of actual completion time.
-    estimatedDurationMinutes: capped.estimatedDurationMinutes,
+    // An estimate, not a proof of actual completion time.
+    estimatedDurationMinutes,
     createdAt: new Date().toISOString(), sessionLabel: input.label, weekIndex: input.weekIndex,
     programmeValidation: { policyVersion: allocation.policyVersion, status: issues.some((issue) => issue.severity === 'error') ? 'infeasible' : 'feasible', issues },
   });

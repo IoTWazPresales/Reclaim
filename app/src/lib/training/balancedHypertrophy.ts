@@ -48,6 +48,10 @@ export type BalancedSlot = {
   /** Compound minutes are 8. Isolation minutes are 3. */
   compound: boolean;
   load: LoadPolicy;
+  /** v5 only: fill from `candidates` alone; no off-list compatible() fill. */
+  explicitOnly?: boolean;
+  /** v5 only: an added-load variant that gives a bodyweight lead lift a prescribable load when entered. */
+  addedLoadCandidates?: string[];
 };
 
 type Slot = BalancedSlot;

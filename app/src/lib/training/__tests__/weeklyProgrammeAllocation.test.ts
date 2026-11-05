@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { WEEKLY_POLICY_VERSION, LEGACY_WEEKLY_POLICY_VERSION } from '../weeklyProgrammeTypes';
+import { WEEKLY_POLICY_VERSION, V4_WEEKLY_POLICY_VERSION, LEGACY_WEEKLY_POLICY_VERSION } from '../weeklyProgrammeTypes';
 import { writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { buildFourWeekPlan } from '../programPlanner';
@@ -73,9 +73,14 @@ describe('R04 declared weekly objectives constrain real planner sessions', () =>
       const { plan, weeks } = sessions(input, n);
       expect(plan.weeks[0].compilation!.requirements).toEqual(defineWeeklyRequirements(n, input));
       for (const session of weeks.flat()) for (const exercise of session.exercises) expect(evaluateExerciseEligibility(exercise.exercise, input, { allowEnteredRackException: true, selectionIntent: exercise.decisionTrace.intent[0] }).eligible).toBe(true);
+      // v5 (D-P2-01 amendment 2026-11-05): per exercise <= 5 and per owner per session <= 10; no session total or minute cap.
       for (const day of Object.values(plan.weeks[0].days)) {
-        expect(day.allocation!.slots.reduce((total, slot) => total + slot.setCount, 0)).toBeLessThanOrEqual(24);
-        expect(10 + day.allocation!.slots.reduce((total, slot) => total + (slot.compound ? 8 : 3), 0)).toBeLessThanOrEqual(60);
+        const owners: Record<string, number> = {};
+        for (const slot of day.allocation!.slots) {
+          expect(slot.setCount).toBeLessThanOrEqual(5);
+          owners[slot.owner] = (owners[slot.owner] ?? 0) + slot.setCount;
+        }
+        for (const total of Object.values(owners)) expect(total).toBeLessThanOrEqual(10);
       }
     }
   });
@@ -123,11 +128,20 @@ describe('R04 declared weekly objectives constrain real planner sessions', () =>
     expect(session.programmeValidation!.issues.some((issue) => issue.code === 'allocation_budget_exceeded')).toBe(true);
     expect(session.exercises.reduce((total, item) => total + item.plannedSets.length, 0)).toBe(allocation.slots.length * 10);
     expect(session.estimatedDurationMinutes).toBe(10 + allocation.slots.filter(s => s.exerciseId).reduce((n, s) => n + (s.compound ? 8 : 3), 0));
-    allocation.policyVersion = WEEKLY_POLICY_VERSION;
+    allocation.policyVersion = V4_WEEKLY_POLICY_VERSION;
     const capped = buildProgramDaySession({ label: day.label, template_key: day.template, intents: day.intents, allocation }, base);
     expect(capped.exercises.reduce((n, ex) => n + ex.plannedSets.length, 0)).toBeLessThanOrEqual(24);
     expect(capped.exercises.every(ex => ex.plannedSets.length <= 5)).toBe(true);
     expect(capped.programmeValidation!.issues.some(i => i.code === 'volume_cap_shortfall')).toBe(true);
+    // v5: the same over-dosed allocation keeps only the per-exercise and per-owner caps.
+    allocation.policyVersion = WEEKLY_POLICY_VERSION;
+    const v5 = buildProgramDaySession({ label: day.label, template_key: day.template, intents: day.intents, allocation }, base);
+    const owners: Record<string, number> = {};
+    for (const ex of v5.exercises) { const owner = allocation.slots.find(s => s.exerciseId === ex.exerciseId)!.owner; owners[owner] = (owners[owner] ?? 0) + ex.plannedSets.length; }
+    expect(v5.exercises.every(ex => ex.plannedSets.length <= 5)).toBe(true);
+    for (const total of Object.values(owners)) expect(total).toBeLessThanOrEqual(10);
+    expect(v5.programmeValidation!.issues.some(i => i.code === 'allocation_budget_exceeded' || i.code === 'session_minute_budget')).toBe(false);
+    expect(v5.constraints.timeBudgetMinutes).toBe(v5.estimatedDurationMinutes);
 
   });
 

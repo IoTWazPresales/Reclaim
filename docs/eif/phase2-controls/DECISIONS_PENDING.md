@@ -1,3 +1,15 @@
+## D-P2-01 amendment - 2026-11-05: weekly policy v5 session caps (Warren-approved 2026-11-05)
+
+Status: **Warren-approved 2026-11-05.** Applies to new builds under `weekly-20261105-v5` only (node N-0073).
+
+- v5 has **no session time cap** and **no session total-set cap** (the <=24 working sets and <=60 min estimate of decision 2 do not apply to v5).
+- Binding v5 caps: per exercise <=5 sets; per owner muscle per session <=10 sets. No per-priority session limit.
+- The v5 session duration is a realistic display estimate (ROUTINE_AUDIT.md, weekly policy v5 2026-11-05, V5-5); it never trims sets or warns.
+- Saved v2, v3 and v4 programmes and the generic engine v2 path keep decision 2's caps unchanged; started and guided sessions keep their frozen sets.
+- Decision 1 (most recent evidence wins) and the 2026-11-03 progression amendment are unchanged for v5.
+
+Policy text and citations: [ROUTINE_AUDIT.md, Weekly policy v5 (2026-11-05)](../../training/ROUTINE_AUDIT.md).
+
 ## Approved amendment ? 2026-11-03: prescription progression
 
 The operator approved the combined reps/load correction and explicitly prohibited dual workflows. D-P2-01 retains newer explicit baseline precedence and immutable entered baselines. For comparable frozen prescriptions, the existing double-progression decision now governs the next reps/load pair without the history-derived Epley cap cancelling that decision. Estimates continue to apply to initial calibration/re-anchoring. Reset reps to the range minimum after an earned load increase or deload; retain optional RPE; count only two comparable unsuccessful attempts without improvement toward the existing deload. Incomplete/mixed/adjusted work is a barrier, not earned progression or stagnation.

@@ -67,6 +67,36 @@
     },
     "weeklySetsProvenance": "Sum of the balanced-week placements at the v4 doses above; e.g. five days lats = row 4 + pulldown 3 + pull-up 4 + row follow-up 3 = 14, chest = bench 4+4 + fly 2+2 = 12."
   },
+  "balancedHalfMuscleHalfStrengthV5": {
+    "appliesTo": "New builds under weekly policy weekly-20261105-v5. Saved v4 programmes keep balancedHalfMuscleHalfStrengthV4 above; saved v3 programmes keep balancedHalfMuscleHalfStrength.",
+    "provenance": "docs/training/ROUTINE_AUDIT.md#weekly-policy-v5-2026-11-05 (operator brief 2026-11-05)",
+    "goals": { "build_muscle": 0.5, "build_strength": 0.5, "lose_fat": 0, "get_fitter": 0 },
+    "roleRule": "As v4, plus: an own-load lift whose lead exercise is bodyweight takes the strength role only with an entered, eligible added-load variant; otherwise it is a hypertrophy exposure. A hypertrophy exposure of a compound slot rests 120 s.",
+    "bodyweightLeadLiftsWithoutAddedLoad": ["pull_ups"],
+    "dose": {
+      "strength": { "sets": 4, "reps": 5, "restSeconds": 180, "repRange": [3, 6] },
+      "hypertrophy": { "sets": 4, "reps": 8, "restSeconds": 120, "repRange": [6, 12] },
+      "accessory": { "sets": 3, "reps": 9, "restSeconds": 90, "repRange": [7, 12] },
+      "isolation": { "sets": 2, "reps": 12, "restSeconds": 55, "repRange": [9, 16] },
+      "support": { "sets": 3, "reps": 12, "restSeconds": 55, "repRange": [9, 16] },
+      "core": { "sets": 3, "reps": 12, "restSeconds": 55, "repRange": [9, 16] }
+    },
+    "doseProvenance": "v4 doses unchanged except hypertrophy rest 120 s (brief item 3, Schoenfeld et al. 2016). Core is a support requirement: 3 sets, isolation reps and rest.",
+    "sessionCaps": "No session time cap and no session total-set cap; per exercise <= 5 sets and per owner muscle per session <= 10 sets (D-P2-01 amendment, Warren-approved 2026-11-05).",
+    "inDayOrder": ["strength", "hypertrophy", "accessory", "isolation|support", "core"],
+    "majorOwnerExposuresPerWeek": 2,
+    "weeklySetsPerMajorOwner": {
+      "2": { "pectorals": 10, "lats": 8, "quadriceps": 8, "hamstrings": 8 },
+      "3": { "pectorals": 10, "lats": 11, "quadriceps": 11, "hamstrings": 11 },
+      "4": { "pectorals": 12, "lats": 14, "quadriceps": 14, "hamstrings": 14 },
+      "5": { "pectorals": 12, "lats": 14, "quadriceps": 14, "hamstrings": 14 },
+      "6": { "pectorals": 12, "lats": 14, "quadriceps": 14, "hamstrings": 14 }
+    },
+    "weeklyCoreSets": { "2": 6, "3": 6, "4": 9, "5": 9, "6": 9 },
+    "weeklySetsProvenance": "Brief item 6, two days genuine full body: chest bench 4+4 + fly 2 = 10; lats row 4 + pull-up 4 = 8; quads squat 4 + quad heavy 4 = 8; hamstrings RDL 4 + deadlift 4 = 8. Three to six days keep the v4 placements and doses. Core: two days one slot per day, three days two, four to six days three, 3 sets each.",
+    "requiredFirstOwnersByFiveDayOrdinal": ["pectorals", "quadriceps", "anterior_deltoids", "lats", "hamstrings"],
+    "firstOwnersProvenance": "Brief item 3 order: Wednesday's first strength exposure is the overhead press; the bench repeat is a hypertrophy exposure and follows it."
+  },
   "invariants": {
     "maxWorkingSetsPerSession": 24,
     "maxEstimatedMinutesPerSession": 60,

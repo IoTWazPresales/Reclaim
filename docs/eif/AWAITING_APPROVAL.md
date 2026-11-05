@@ -1,5 +1,9 @@
 # Awaiting visual approval — PRG-20260917T222550
 
+## N-0072 policy v4 exposures and split preference (2026-11-05)
+
+Wrapper `await-approval` under `R20261104SPLIT` for `.eif/audit/N-0072/renders` (six release-build renders from source `407bb27`; [receipt](../../.eif/audit/N-0072/renders/result.md)). Approve or reject: (1) Session Preview collapses weight confirmations into one named block and hides codes/ids/source paths; (2) weekly region line counts each exercise once per region; (3) setup Weekly split row (Auto / Full body / Upper-Lower, shown only where a policy exists) and its one-line note; (4) new-build doses as shown in the setup dry run. Saved programmes are unchanged; no Save on the operator account. Web beta alias redeployed from merge `c4e13cf` (deployment `kiuocudv7k`).
+
 
 ## N-0070 prescription progression ? runtime review pending (2026-11-03)
 
@@ -293,3 +297,11 @@ not prove the device. Steps: `baseline/N0059_DEVICE_CHECK.md`.
 ### R02 correction scope ? 2026-10-18
 
 The N-0070 queue entry above covers the corrected R02 running preview in source b7644d1: actual prescribed run minutes, distance/pace qualification, honest unavailable state and confirmation wording. Public await-approval succeeded and recorded no PNG/JPEG images, UNABLE_TO_VERIFY. Follow `.eif/audit/N-0070/R02/correction-20261018/visual-steps.md`; scoped visual approval grants no full-node acceptance or completion. Nothing ships until operator approval.
+
+## N-0072 50/50 routine policy fix and split preference
+
+**Status:** pending operator review; this queue note grants no approval.
+
+**Renders:** `.eif/audit/N-0072/renders; image artifacts=[{"path": ".eif/audit/N-0072/renders/03-training-week.png", "sha256": "e2d88aa3c032b2a93a63e3ece839b940c0b89ce0b43f96bf3d2a631d877f298f"}, {"path": ".eif/audit/N-0072/renders/05-preview-mon-review.png", "sha256": "962f0209f615c87b4f9dfbb7edb6338350cbd50753ff794aa8a9b9da3f96160b"}, {"path": ".eif/audit/N-0072/renders/06-preview-mon-exercises.png", "sha256": "d93d2d82fb51055513b89a69a7c5cc321a5be5ae9fe034cfa2cd27603b001935"}, {"path": ".eif/audit/N-0072/renders/08-setup-outcome-preview.png", "sha256": "432143dcccd1ca705c754e137fbab12d46f0e2100bd1f601c0c5583e40fbdc74"}, {"path": ".eif/audit/N-0072/renders/11-setup-upper-lower-selected.png", "sha256": "597e9a55c727284790079f227b4143071ae9a5942f20c87da2b4d3d599df9be7"}, {"path": ".eif/audit/N-0072/renders/12-setup-upper-lower-outcome.png", "sha256": "ab4a0aaf9aea2c4442aaf91366149c64d6729d567536e6383fa75c244c8bcd18"}]; authenticity and visual quality UNVERIFIED`
+
+**Approve?** N-0072

@@ -39,6 +39,7 @@ export const SPLIT_PREFERENCE_LABELS: Record<SplitPreference, string> = {
   upper_lower: 'Upper/Lower',
 };
 
-/** One plain-language line for two-day Upper/Lower (ROUTINE_AUDIT.md, split preference 2026-11-04). */
+/** One plain-language line for two-day Upper/Lower (ROUTINE_AUDIT.md, weekly policy v5 2026-11-05, V5-8:
+ * Pelland et al. 2024 preprint, frequency; Remmert et al. 2025 preprint, per-session volume). */
 export const UPPER_LOWER_TWO_DAY_NOTE =
-  'Upper body one day, lower body the other. Each muscle is still trained once a week, as in the two-day full-body plan, with about the same weekly sets.';
+  'Upper body one day, lower body the other. Each muscle is trained once a week; full body trains each muscle twice and is usually better for strength.';
